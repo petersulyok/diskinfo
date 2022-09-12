@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "disk_info"
+description = "Disk information Python package for Linux"
+readme = "README.md"
+version = "0.9.1"
+authors = [
+    { name = "Peter Sulyok", email = "peter@sulyok.net" }
+]
+requires-python = ">=3.6"
+keywords = ["disk", "linux"]
+license = {file = "LICENCE"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: System :: Hardware"
+]
