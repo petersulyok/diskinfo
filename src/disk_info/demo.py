@@ -1,6 +1,12 @@
-from disk_info import Disk, DiskType, DiskInfo
+"""
+    Module `demo`: implements a simple demo about use of this package.
+    Copyright (c) 2022 Peter Sulyok.
+"""
+from disk_info import DiskType, DiskInfo
+
 
 def main():
+    """Demo application for package `disk_info`."""
 
     di = DiskInfo()
 
@@ -10,20 +16,24 @@ def main():
     nvme_num = di.get_disk_number(included={DiskType.NVME}, excluded={DiskType.HDD})
 
     print(f"There are {disk_num} disks installed in this system ({hdd_num} HDDs, {ssd_num} SSDs, {nvme_num} NVMEs).")
-    disks = di.get_disk_list(sorted=True)
+    disks = di.get_disk_list(sorting=True)
     for d in disks:
         print(f"[{d.get_name()}]")
-        print(f"\tpath:\t\t{d.get_path()}")
-        print(f"\tmodel:\t\t{d.get_model()}")
+        print(f"\tpath:                     {d.get_path()}")
+        print(f"\tmodel:                    {d.get_model()}")
         s, u = d.get_size_in_hrf(units=2)
-        print(f"\tsize:\t\t{s:.1f} {u}")
-        print(f"\tserial:\t\t{d.get_serial()}")
-        print(f"\tfirmware:\t\t{d.get_firmware()}")
-        print(f"\tdevice type:\t\t{d.get_type_str()}")
-        print(f"\tby-id path:\t\t{d.get_byid_path()}")
-        print(f"\tby-path path:\t\t{d.get_bypath_path()}")
-        print(f"\twwn id:\t\t{d.get_wwn()}")
-        print(f"\tdevice id:\t\t({d.get_dev_id()})")
+        print(f"\tsize:                     {s:.1f} {u}")
+        print(f"\tserial:                   {d.get_serial()}")
+        print(f"\tfirmware:                 {d.get_firmware()}")
+        print(f"\tdevice type:              {d.get_type_str()}")
+        print(f"\tby-id path:               {d.get_byid_path()}")
+        print(f"\tby-path path:             {d.get_bypath_path()}")
+        print(f"\twwn id:                   {d.get_wwn()}")
+        print(f"\tdevice id:                ({d.get_dev_id()})")
+        print(f"\tPhysical block size:      {d.get_physical_block_size()}")
+        print(f"\tLogical block size:       {d.get_logical_block_size()}")
+        print(f"\tPartition table type:     {d.get_partition_table_type()}")
+        print(f"\tPartition table UUID:     {d.get_partition_table_uuid()}")
 
 
 if __name__ == '__main__':

@@ -1,0 +1,6 @@
+[MASTER]
+init-hook='import sys; sys.path.append("."); sys.path.append("./src"); sys.path.append("./test")'
+
+[MESSAGES CONTROL]
+disable=protected-access, line-too-long, too-many-instance-attributes, too-many-branches, invalid-name,
+        too-few-public-methods
