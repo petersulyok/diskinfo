@@ -5,3 +5,9 @@ count = True
 show-source = True
 statistics = True
 per-file-ignores =
+    # undefined name
+    test_demo.py: F821
+    # undefined name
+    test_disk_info.py: F821
+    # undefined name
+    test_disk.py: F821

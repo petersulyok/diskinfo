@@ -18,7 +18,7 @@ The package does not have extra dependencies.
 
 Documentation
 -------------
-The detailed [API documentation]() can be found in the repository, in the `doc` folder.
+The detailed [API documentation](file://doc/disk_info/index.html) can be found in the repository, in the `doc` folder.
 
 Demo
 ----

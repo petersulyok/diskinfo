@@ -6,7 +6,7 @@
 <meta name="generator" content="pdoc 0.10.0" />
 <title>disk_info.disk_info API documentation</title>
 <meta name="description" content="Module `disk_info`: implements class `DiskInfo`.
-Copyright (c) 2022 Peter Sulyok." />
+Peter Sulyok (C) 2022" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -24,14 +24,14 @@ Copyright (c) 2022 Peter Sulyok." />
 </header>
 <section id="section-intro">
 <p>Module <code><a title="disk_info" href="index.html">disk_info</a></code>: implements class <code><a title="disk_info.disk_info.DiskInfo" href="#disk_info.disk_info.DiskInfo">DiskInfo</a></code>.
-Copyright (c) 2022 Peter Sulyok.</p>
+Peter Sulyok (C) 2022</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
     Module `disk_info`: implements class `DiskInfo`.
-    Copyright (c) 2022 Peter Sulyok.
+    Peter Sulyok (C) 2022
 &#34;&#34;&#34;
 import os
 from typing import List
@@ -87,12 +87,13 @@ class DiskInfo:
 
         # Check invalid filters.
         if included.intersection(excluded):
-            ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
+            raise ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
 
         # Count number of disks based on the specified filters.
         disk_number = 0
         for disk in self.__disk_list:
-            if disk.get_type().intersection(included) and not disk.get_type().intersection(excluded):
+            disk_type = disk.get_type()
+            if disk_type in included and disk_type not in excluded:
                 disk_number += 1
 
         return disk_number
@@ -137,11 +138,12 @@ class DiskInfo:
 
         # Check invalid filters.
         if included.intersection(excluded):
-            ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
+            raise ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
 
         # Collect selected disks based on the specified filters.
         for disk in self.__disk_list:
-            if disk.get_type().intersection(included) and not disk.get_type().intersection(excluded):
+            disk_type = disk.get_type()
+            if disk_type in included and disk_type not in excluded:
                 result.append(disk)
 
         # Sort the result list if needed.
@@ -149,6 +151,16 @@ class DiskInfo:
             result.sort(reverse=rev_order)
 
         return result
+
+    def __contains__(self, item):
+        &#34;&#34;&#34;Returns True if a specified disk is in the discovered list of disk otherwise False.&#34;&#34;&#34;
+
+        # Check identified list of disks if the specified disk can be found.
+        for disk in self.__disk_list:
+            if item.get_serial() == disk.get_serial():
+                return True
+        return False
+
 
 # End</code></pre>
 </details>
@@ -224,12 +236,13 @@ applied to query only the subset of the discovered disks.</p></div>
 
         # Check invalid filters.
         if included.intersection(excluded):
-            ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
+            raise ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
 
         # Count number of disks based on the specified filters.
         disk_number = 0
         for disk in self.__disk_list:
-            if disk.get_type().intersection(included) and not disk.get_type().intersection(excluded):
+            disk_type = disk.get_type()
+            if disk_type in included and disk_type not in excluded:
                 disk_number += 1
 
         return disk_number
@@ -274,18 +287,28 @@ applied to query only the subset of the discovered disks.</p></div>
 
         # Check invalid filters.
         if included.intersection(excluded):
-            ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
+            raise ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
 
         # Collect selected disks based on the specified filters.
         for disk in self.__disk_list:
-            if disk.get_type().intersection(included) and not disk.get_type().intersection(excluded):
+            disk_type = disk.get_type()
+            if disk_type in included and disk_type not in excluded:
                 result.append(disk)
 
         # Sort the result list if needed.
         if sorting:
             result.sort(reverse=rev_order)
 
-        return result</code></pre>
+        return result
+
+    def __contains__(self, item):
+        &#34;&#34;&#34;Returns True if a specified disk is in the discovered list of disk otherwise False.&#34;&#34;&#34;
+
+        # Check identified list of disks if the specified disk can be found.
+        for disk in self.__disk_list:
+            if item.get_serial() == disk.get_serial():
+                return True
+        return False</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -375,11 +398,12 @@ of the HDDs:</p>
 
     # Check invalid filters.
     if included.intersection(excluded):
-        ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
+        raise ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
 
     # Collect selected disks based on the specified filters.
     for disk in self.__disk_list:
-        if disk.get_type().intersection(included) and not disk.get_type().intersection(excluded):
+        disk_type = disk.get_type()
+        if disk_type in included and disk_type not in excluded:
             result.append(disk)
 
     # Sort the result list if needed.
@@ -454,12 +478,13 @@ Number of SSDs: 3
 
     # Check invalid filters.
     if included.intersection(excluded):
-        ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
+        raise ValueError(&#34;Parameter error: same value on included and excluded list.&#34;)
 
     # Count number of disks based on the specified filters.
     disk_number = 0
     for disk in self.__disk_list:
-        if disk.get_type().intersection(included) and not disk.get_type().intersection(excluded):
+        disk_type = disk.get_type()
+        if disk_type in included and disk_type not in excluded:
             disk_number += 1
 
     return disk_number</code></pre>

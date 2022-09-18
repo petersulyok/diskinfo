@@ -1,5 +1,5 @@
 """This Python package can discover and collect disk information on Linux. It can also provide persistent disk names
-for stable device refereces.
+for stable device referencing.
 
 Installation
 ============
@@ -36,8 +36,8 @@ See the complete list of the class methods in documentation of class `Disk`.
 
 Option 2: discover disks
 ------------------------
-Disk can be discovered by creation of an instance of the class `DiskInfo`. After that the number of disk can be
-queried and discovered disks can be listed:
+Disk can be discovered by creation of an instance of the class `DiskInfo`. After having an instance of DiskInfo class
+the list and the number of identified disks can be queried with `get_disk_number()` and `get_disk_list()` functions:
 
     >>> from disk_info import Disk, DiskInfo
     >>> di = DiskInfo()
@@ -51,27 +51,26 @@ queried and discovered disks can be listed:
     /dev/sdb
     /dev/sdc
 
-The list of disk can be sorted and filtered based on values in class `DiskType`. Please note that `nvme` SSDs have
-two DiskType attributes (they are SSD and NVME at the same time).
+The caller can apply filters (included and ecluded disk types) for both functions. The list of disk can be also sorted.
 
 Persistent disk names
 =====================
-Please note that not all kind of block device paths are persistent. For example this disk path
+Please note that not all kind of block device names are persistent. For example this disk path
 
      "/dev/sdb"
 
-can refer different physical disk after a reboot. That is reason why other persistent namings have been introduced in
+could refer different physical disk after a reboot. That is reason why other persistent names have been introduced in
 Linux and udev. The physical device can be referenced by the following path type:
 
      "/dev/disk/by-id/nvme-WDS80T1X06-00AFY1_2130GF574294"
 
-Many times these names are called `by-id` path in the API documentation. The connector (where the disk is connected)
-can be also referenced with the following path:
+This type of reference is called `by-id` path in this documentation. The physical connector (i.e. where the disck is
+connected) can be also referenced with the following path:
 
      "/dev/disk/by-path/pci-0000:02:00.0-nvme-1"
 
-This case is called `by-path` path in the API documentation. Both references are persistent, and they are safer
-and persistant in disk referencing.
+This type of reference is called `by-path` path in this documentation. Both references are persistent and
+safe in disk referencing.
 
 Read more about this topic at [Arch Linux wiki: Persistent block device naming] \
 (https://wiki.archlinux.org/title/persistent_block_device_naming).

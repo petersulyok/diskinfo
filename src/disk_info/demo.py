@@ -1,6 +1,6 @@
 """
     Module `demo`: implements a simple demo about use of this package.
-    Copyright (c) 2022 Peter Sulyok.
+    Peter Sulyok (C) 2022
 """
 from disk_info import DiskType, DiskInfo
 
@@ -8,13 +8,14 @@ from disk_info import DiskType, DiskInfo
 def main():
     """Demo application for package `disk_info`."""
 
+    # Discover disks in the system.
     di = DiskInfo()
-
+    # Count number of the different disk types.
     disk_num = di.get_disk_number()
     hdd_num = di.get_disk_number(included={DiskType.HDD}, excluded={DiskType.NVME, DiskType.SSD})
     ssd_num = di.get_disk_number(included={DiskType.SSD}, excluded={DiskType.NVME, DiskType.HDD})
     nvme_num = di.get_disk_number(included={DiskType.NVME}, excluded={DiskType.HDD})
-
+    # Print the attributes of the discovered disks.
     print(f"There are {disk_num} disks installed in this system ({hdd_num} HDDs, {ssd_num} SSDs, {nvme_num} NVMEs).")
     disks = di.get_disk_list(sorting=True)
     for d in disks:

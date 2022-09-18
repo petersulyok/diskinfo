@@ -1,6 +1,6 @@
 """
-    Module `disk`: implements class `DiskType` and `Disk`.
-    Copyright (c) 2022 Peter Sulyok.
+    Module `disk`: implements classes `DiskType` and `Disk`.
+    Peter Sulyok (C) 2022
 """
 import os
 from typing import List, Tuple
@@ -33,7 +33,7 @@ class Disk:
     __model: str                        # Disk model name
     __serial_number: str                # Disk serial number
     __firmware: str                     # Disk firmware
-    __type: set                         # Disk type (HDD, SSD and/or NVME)
+    __type: int                         # Disk type (HDD, SSD or NVME)
     __size: int                         # Disk size (number of 512-byte blocks)
     __physical_block_size: int          # Disk physical block size
     __logical_block_size: int           # Disk logical block size
@@ -42,11 +42,11 @@ class Disk:
     __device_hwmon_path: str            # Path of the hwmon temperature file
 
     def __init__(self, disk_name: str = None, byid_name: str = None, bypath_name: str = None) -> None:
-        """The class can be initialized with specifying one unique identifier of the disk. At class creation time
-        the disk information will be located in `/sys` and `udev` system data and stored in the class. One of
-        the input parameters must be specified otherwise ValueError exception will be raised. The disk will not
-        be accessed directly in this function, the power state of the disk will not be changed (e.g. will not
-        be awakened form a SLEEP state).
+        """The class can be initialized with specifying one unique identifier of the disk. Based on this identifier
+        the adequate disk information will be collected  (from `/sys` and `udev` system data) and stored in the class.
+        One of the input parameters MUST be specified otherwise ValueError exception will be raised. During the class
+        initialization the disk will not be directly accessed, so its power state will not be changed (e.g. will not
+        be awakened from a `STANDBY` state).
 
         Args:
             disk_name (str): disk name (e.g. `sda` or `nvme0n1`) located in directory `/dev/`.
@@ -58,6 +58,7 @@ class Disk:
         Raises:
             ValueError: in case of missing or invalid parameters
             RuntimeError: in case of any system error
+
         Example:
             A simple example of use:
 
@@ -90,17 +91,16 @@ class Disk:
             raise ValueError("Disk path (" + path + ") does not exist!")
 
         # Determine disk type (HDD, SSD, NVME)
-        self.__type = set()
         path = "/sys/block/" + self.__name + "/queue/rotational"
         result = self._read_file(path)
         if result == "1":
-            self.__type.add(DiskType.HDD)
+            self.__type = DiskType.HDD
         elif result == "0":
-            self.__type.add(DiskType.SSD)
+            self.__type = DiskType.SSD
         else:
             raise RuntimeError("Disk type cannot be determined based on this value (" + path + "=" + result + ").")
         if "nvme" in self.__name:
-            self.__type.add(DiskType.NVME)
+            self.__type = DiskType.NVME
 
         # Read attributes from /sys filesystem and from udev.
         self.__size = int(self._read_file("/sys/block/" + self.__name + "/size"))
@@ -117,16 +117,16 @@ class Disk:
         if model:
             self.__model = model
 
-        # Read /dev/disk/by-byid/ path elements from udev and check their existence.
+        # Read `/dev/disk/by-byid/` path elements from udev and check their existence.
         self.__byid_path = self._read_udev_path(True)
         for file_name in self.__byid_path:
-            if os.path.isfile(file_name):
+            if not os.path.exists(file_name):
                 raise RuntimeError("Disk by-id path (" + file_name + ") does not exist!")
 
-        # Read /dev/disk/by-path/ path elements from udev and check their existence.
+        # Read `/dev/disk/by-path/` path elements from udev and check their existence.
         self.__bypath_path = self._read_udev_path(False)
         for file_name in self.__bypath_path:
-            if os.path.isfile(file_name):
+            if not os.path.exists(file_name):
                 raise RuntimeError("Disk by-path path (" + file_name + ") does not exist!")
 
     def get_name(self) -> str:
@@ -168,7 +168,7 @@ class Disk:
         """Returns the disk firmware."""
         return self.__firmware
 
-    def get_type(self) -> set:
+    def get_type(self) -> int:
         """Returns the type of the disk."""
         return self.__type
 
@@ -181,16 +181,16 @@ class Disk:
         return DiskType.HDD_STR
 
     def is_ssd(self) -> bool:
-        """Returns True if the disk is SSD, otherwise False."""
-        return bool(DiskType.SSD in self.__type)
+        """Returns True if the disk type is SSD, otherwise False."""
+        return bool(self.__type == DiskType.SSD)
 
     def is_nvme(self) -> bool:
-        """Returns True if the disk is NVME device, otherwise False."""
-        return bool(DiskType.NVME in self.__type)
+        """Returns True if the disk type is NVME, otherwise False."""
+        return bool(self.__type == DiskType.NVME)
 
     def is_hdd(self) -> bool:
-        """Returns True if the disk is HDD, otherwise False."""
-        return bool(DiskType.HDD in self.__type)
+        """Returns True if the disk type is HDD, otherwise False."""
+        return bool(self.__type == DiskType.HDD)
 
     def get_size(self) -> int:
         """Returns the size of the disk in 512-byte units."""
@@ -202,12 +202,13 @@ class Disk:
         Args:
             units (int): unit system will be used in result (0-metric units (default), 1 - IEC units,
                          2-legacy units). Read more about [units here](https://en.wikipedia.org/wiki/Byte).
+
         Returns:
             Tuple[float, str]: size of the disk, proper unit
         """
-        metric_units: List[str] = ["B", "kB", "MB", "GB", "TB", "PT", "EB"]
-        iec_units: List[str] = ["B", "KiB", "MiB", "GiB", "TiB", "PiT", "EiB"]
-        legacy_units: List[str] = ["B", "KB", "MB", "GB", "TB", "PT", "EB"]
+        metric_units: List[str] = ["B", "kB", "MB", "GB", "TB", "PB", "EB"]
+        iec_units: List[str] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"]
+        legacy_units: List[str] = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
         divider: int    # Divider for the specified unit.
         size: float     # Result size
         unit: str       # Result unit
@@ -262,6 +263,7 @@ class Disk:
 
         Args:
             path (str): file path
+
         Returns:
             str: file content text
         """
@@ -280,10 +282,11 @@ class Disk:
 
         Args:
             udev_property (str): udev property string
+
         Returns:
             str: value of the property
         """
-        file_content: List[str]
+        file_content: List[str] = []
         result: str = ""
 
         # Read proper udev data file.
@@ -308,13 +311,13 @@ class Disk:
 
         Args:
             byid (bool):
-                True `by-id` path elements will be loaded
-                False `by-path` path elements will be loaded
+                True: `by-id` path elements will be loaded
+                False: `by-path` path elements will be loaded
         Returns:
             List[str]: path elements
         """
         path: str
-        file_content: List[str]
+        file_content: List[str] = []
         result: List[str] = []
         udev_property: str
 

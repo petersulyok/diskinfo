@@ -1,6 +1,6 @@
 """
     Module `disk_info`: implements class `DiskInfo`.
-    Copyright (c) 2022 Peter Sulyok.
+    Peter Sulyok (C) 2022
 """
 import os
 from typing import List
@@ -56,12 +56,13 @@ class DiskInfo:
 
         # Check invalid filters.
         if included.intersection(excluded):
-            ValueError("Parameter error: same value on included and excluded list.")
+            raise ValueError("Parameter error: same value on included and excluded list.")
 
         # Count number of disks based on the specified filters.
         disk_number = 0
         for disk in self.__disk_list:
-            if disk.get_type().intersection(included) and not disk.get_type().intersection(excluded):
+            disk_type = disk.get_type()
+            if disk_type in included and disk_type not in excluded:
                 disk_number += 1
 
         return disk_number
@@ -106,11 +107,12 @@ class DiskInfo:
 
         # Check invalid filters.
         if included.intersection(excluded):
-            ValueError("Parameter error: same value on included and excluded list.")
+            raise ValueError("Parameter error: same value on included and excluded list.")
 
         # Collect selected disks based on the specified filters.
         for disk in self.__disk_list:
-            if disk.get_type().intersection(included) and not disk.get_type().intersection(excluded):
+            disk_type = disk.get_type()
+            if disk_type in included and disk_type not in excluded:
                 result.append(disk)
 
         # Sort the result list if needed.
@@ -118,5 +120,15 @@ class DiskInfo:
             result.sort(reverse=rev_order)
 
         return result
+
+    def __contains__(self, item):
+        """Returns True if a specified disk is in the discovered list of disk otherwise False."""
+
+        # Check identified list of disks if the specified disk can be found.
+        for disk in self.__disk_list:
+            if item.get_serial() == disk.get_serial():
+                return True
+        return False
+
 
 # End
