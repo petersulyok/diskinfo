@@ -1,5 +1,5 @@
 [flake8]
-exclude = doc, htmlcov, .git, __pycache__, .pytest_cache, .vscode, .idea .venv build
+exclude = docs, htmlcov, .git, __pycache__, .pytest_cache, .vscode, .idea .venv build
 max-line-length = 120
 count = True
 show-source = True
