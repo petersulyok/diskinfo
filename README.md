@@ -1,9 +1,9 @@
 # disk_info
-A disk information Python package for Linux.
+A disk information Python library for Linux.
 
-This package provides API for:
-1. collecting information about a specific disk (see class `Disk()`)
-2. discovering existing disks in your system (see class `DiskInfo()`)
+This library provides API for:
+1. collecting information about a specific disk
+2. discovering existing disks in your system
 3. translation between device names and persistent names, for example:
 
        "/dev/sda" <-> "/dev/disk/by-id/ata-Samsung_SSD_850_PRO_1TB_S3D2NY0J819218R" 
@@ -16,9 +16,9 @@ Standard installation from `pypi`:
 
 The package does not have extra dependencies.
 
-Documentation
--------------
-The detailed [API documentation](file://doc/disk_info/index.html) can be found in the repository, in the `doc` folder.
+API documentation
+-----------------
+The detailed [API documentation](https://disk-info.readthedocs.io/en/latest/index.html) can be found on ``readthedocs.io``.
 
 Demo
 ----
