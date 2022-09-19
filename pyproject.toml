@@ -22,5 +22,5 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/petersulyok/disk_info"
-"Documentation" = "https://disk-info.readthedocs.io/en/latest/index.html"
+"Homepage" = "https://github.com/petersulyok/diskinfo"
+"Documentation" = "https://diskinfo.readthedocs.io/en/latest/index.html"
