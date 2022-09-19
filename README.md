@@ -1,4 +1,6 @@
 # disk_info
+[![Documentation Status](https://readthedocs.org/projects/disk-info/badge/?version=latest)](https://disk-info.readthedocs.io/en/latest/?badge=latest)
+
 A disk information Python library for Linux.
 
 This library provides API for:
