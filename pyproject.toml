@@ -5,8 +5,6 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "disk_info"
 description = "Disk information Python package for Linux"
-homepage = "https://github.com/petersulyok/disk_info"
-documentation = "https://disk-info.readthedocs.io/en/latest/index.html"
 readme = "README.md"
 version = "0.9.2"
 authors = [
@@ -22,3 +20,7 @@ classifiers = [
     "Topic :: System :: Hardware",
     "Development Status :: 4 - Beta"
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/petersulyok/disk_info"
+"Documentation" = "https://disk-info.readthedocs.io/en/latest/index.html"
