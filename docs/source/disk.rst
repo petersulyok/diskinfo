@@ -1,14 +1,13 @@
-.. automodule:: disk_info
-    :noindex:
+``disk`` module
+===============
+.. automodule:: disk_info.disk
 
-Class ``Disk``
-==============
-
+``Disk`` class
+--------------
 .. autoclass:: Disk
     :members:
 
-Class ``DiskType``
-==================
-
+``DiskType`` class
+------------------
 .. autoclass:: DiskType
     :members:

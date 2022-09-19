@@ -1,8 +1,9 @@
-.. automodule:: disk_info
-    :noindex:
+``disk_info`` module
+====================
+.. automodule:: disk_info.disk_info
+    :members:
 
-Class ``DiskInfo``
-==================
-
-.. autoclass:: DiskInfo
+``Disk`` class
+--------------
+.. autoclass:: Disk
     :members:
