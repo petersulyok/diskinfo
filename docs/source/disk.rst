@@ -1,6 +1,6 @@
 ``disk`` module
 ===============
-.. automodule:: disk_info.disk
+.. automodule:: diskinfo.disk
 
 ``Disk`` class
 --------------

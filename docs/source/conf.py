@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'disk_info'
+project = 'diskinfo'
 copyright = '2022, Peter Sulyok'
 author = 'Peter Sulyok'
 release = '0.9.2'

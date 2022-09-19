@@ -46,7 +46,7 @@ class Disk:
     Example:
         This exampe shows how to create a ``Disk`` class then how to print the disk path and disk serial number:
 
-        >>> from disk_info import Disk
+        >>> from diskinfo import Disk
         >>> d = Disk("sda")
         >>> d.get_path()
         '/dev/sda'
@@ -179,7 +179,7 @@ class Disk:
         return self.__type
 
     def get_type_str(self) -> str:
-        """Returns the name of the disk type. See the return values in :class:`~disk_info.DiskType` class."""
+        """Returns the name of the disk type. See the return values in :class:`~diskinfo.DiskType` class."""
         if self.is_nvme():
             return DiskType.NVME_STR
         if self.is_ssd():
@@ -220,7 +220,7 @@ class Disk:
         Example:
             This example showa the basic use of this method:
 
-                >>> from disk_info import Disk
+                >>> from diskinfo import Disk
                 >>> d = Disk("sda")
                 >>> s, u = d.get_size_in_hrf()
                 >>> print(f"{s:.1f} {u}")

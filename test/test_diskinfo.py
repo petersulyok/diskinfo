@@ -1,5 +1,5 @@
 """
-    Unitest for `disk_info` module
+    Unitest for `diskinfo` module
     Peter Sulyok (C) 2022
 """
 import os
@@ -7,7 +7,7 @@ import unittest
 from typing import List
 from unittest.mock import patch, MagicMock
 from test_data import TestData
-from disk_info import DiskType, Disk, DiskInfo
+from diskinfo import DiskType, Disk, DiskInfo
 
 
 class DiskInfoTest(unittest.TestCase):

@@ -8,7 +8,7 @@ import random
 import unittest
 from unittest.mock import patch, MagicMock
 from test_data import TestData
-from disk_info import Disk, DiskType
+from diskinfo import Disk, DiskType
 
 
 class DiskTest(unittest.TestCase):

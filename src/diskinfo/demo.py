@@ -1,8 +1,8 @@
 """
     Module `demo`: implements a simple demo about use of this package.
-    Peter Sulyok (C) 2022
+    Peter Sulyok (C) 2022.
 """
-from disk_info import DiskType, DiskInfo
+from diskinfo import DiskType, DiskInfo
 
 
 def main():

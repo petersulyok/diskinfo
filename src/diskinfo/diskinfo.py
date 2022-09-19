@@ -1,26 +1,26 @@
 """
-    Module `disk_info`: implements class `DiskInfo`.
+    Module `diskinfo`: implements class `DiskInfo`.
     Peter Sulyok (C) 2022
 """
 import os
 from typing import List
-from disk_info.disk import Disk, DiskType
+from diskinfo.disk import Disk, DiskType
 
 
 class DiskInfo:
     """At class initialization time all existing disks will be discovered in the runtime system. After that,
-    :meth:`~disk_info.DiskInfo.get_disk_number()` method will provide the number of identified disk and
-    :meth:`~disk_info.DiskInfo.get_disk_list()` method will return the list of the identified disks.
+    :meth:`~diskinfo.DiskInfo.get_disk_number()` method will provide the number of identified disk and
+    :meth:`~diskinfo.DiskInfo.get_disk_list()` method will return the list of the identified disks.
     In both cases disk type filters can be applied to get only the subset of the discovered disks. The filters are
-    set of :class:`~disk_info.DiskType` values.
+    set of :class:`~diskinfo.DiskType` values.
 
-    Operator ``in`` is also implemented for this class. Caller can check if a :class:`~disk_info.Disk` class instance
+    Operator ``in`` is also implemented for this class. Caller can check if a :class:`~diskinfo.Disk` class instance
     can be found on the list of the dicovered disks.
 
     Example:
         A code example about the basic use of the class and the ``in`` operator.
 
-            >>> from disk_info import Disk, DiskType, DiskInfo
+            >>> from diskinfo import Disk, DiskType, DiskInfo
             >>> di = DiskInfo()
             >>> n = di.get_disk_number(included={DiskType.SSD}, excluded={DiskType.NVME})
             >>> print(f"Number of SSDs: {n}")
@@ -57,7 +57,7 @@ class DiskInfo:
         Example:
             A code example about using filters: it counts the number of SSDs excluding NVME disks.
 
-            >>> from disk_info import DiskType, DiskInfo
+            >>> from diskinfo import DiskType, DiskInfo
             >>> di = DiskInfo()
             >>> n = di.get_disk_number(included={DiskType.SSD}, excluded={DiskType.NVME})
             >>> print(f"Number of SSDs: {n}")
@@ -104,7 +104,7 @@ class DiskInfo:
             A code example about using filters and sorting: it will list the device path of the sorted list
             of the HDDs:
 
-            >>> from disk_info import DiskType, DiskInfo
+            >>> from diskinfo import DiskType, DiskInfo
             >>> di = DiskInfo()
             >>> disks = di.get_disk_list(included={DiskType.HDD}, sorting=True)
             >>> for d in disks:

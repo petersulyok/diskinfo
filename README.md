@@ -1,5 +1,5 @@
-# disk_info
-[![Documentation Status](https://readthedocs.org/projects/disk-info/badge/?version=latest)](https://disk-info.readthedocs.io/en/latest/?badge=latest)
+# diskinfo
+[![Documentation Status](https://readthedocs.org/projects/diskinfo/badge/?version=latest)](https://disk-info.readthedocs.io/en/latest/?badge=latest)
 
 A disk information Python library for Linux.
 
@@ -14,19 +14,19 @@ Installation
 ------------
 Standard installation from `pypi`:
 
-    pip install disk_info
+    pip install diskinfo
 
 The package does not have extra dependencies.
 
 API documentation
 -----------------
-The detailed [API documentation](https://disk-info.readthedocs.io/en/latest/index.html) can be found on ``readthedocs.io``.
+The detailed [API documentation](https://diskinfo.readthedocs.io/en/latest/index.html) can be found on ``readthedocs.io``.
 
 Demo
 ----
 In the package a short demo can be found. For running the demo, execute this:
 
-    python -m disk_info.demo
+    python -m diskinfo.demo
     There are 2 disks installed in this system (0 HDDs, 2 SSDs, 0 NVMEs).
     [sda]
         path:                     /dev/sda

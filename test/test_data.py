@@ -10,7 +10,7 @@ import shutil
 import os
 import uuid
 from typing import List
-from disk_info import DiskType
+from diskinfo import DiskType
 
 
 class TestDisk:
