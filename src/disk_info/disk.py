@@ -23,7 +23,38 @@ class DiskType:
 
 
 class Disk:
-    """Disk class implementation."""
+    """The class can be initialized with specifying one unique identifier of the disk. Based on this identifier
+    disk information will be collected  (from ``/sys`` and ``udev`` system data) and stored in the class.
+    One of the input parameters MUST be specified otherwise :py:obj:`ValueError` exception will be raised.
+    During the class initialization the disk will not be directly accessed, so its power state will not change
+    (e.g. it will not be awakened from a `STANDBY` or `SLEEP` state).
+
+    Operators (``<``, ``>`` and ``==``) are also implemented for this class
+    to compare class instances, they use the disk name for comparision.
+
+    Args:
+        disk_name (str): disk name (e.g. ``"sda"`` or ``"nvmep0n1"``) located in directory ``/dev/``.
+        byid_name (str): by-id name of the disk (e.g. ``"ata-WDC_WD320GLAX-68UNT16_A9HM3FTY"``) located in
+                         directory ``/dev/disk/by-id/``.
+        bypath_name (str): by-path name of the disk (e.g. ``"pci-0000:00:17.0-ata-1"``) located in
+                           directory ``/dev/disk/by-path/``.
+
+    Raises:
+        ValueError: in case of missing or invalid parameters
+        RuntimeError: in case of any system error
+
+    Example:
+        This exampe shows how to create a ``Disk`` class then how to print the disk path and disk serial number:
+
+        >>> from disk_info import Disk
+        >>> d = Disk("sda")
+        >>> d.get_path()
+        '/dev/sda'
+        >>> d.get_serial()
+        'S3D2NY0J819210S'
+
+    """
+    # Disk attributes:
     __name: str                         # Disk name (e.g. sda)
     __path: str                         # Disk path (e.g. /dev/sda)
     __byid_path: List[str]              # Disk by-byid paths (e.g. /dev/disk/by-byid/ata-WDC_WD80FLAX...)
@@ -42,33 +73,8 @@ class Disk:
     __device_hwmon_path: str            # Path of the hwmon temperature file
 
     def __init__(self, disk_name: str = None, byid_name: str = None, bypath_name: str = None) -> None:
-        """The class can be initialized with specifying one unique identifier of the disk. Based on this identifier
-        the adequate disk information will be collected  (from `/sys` and `udev` system data) and stored in the class.
-        One of the input parameters MUST be specified otherwise ValueError exception will be raised. During the class
-        initialization the disk will not be directly accessed, so its power state will not be changed (e.g. will not
-        be awakened from a `STANDBY` state).
+        """See class definition."""
 
-        Args:
-            disk_name (str): disk name (e.g. `sda` or `nvme0n1`) located in directory `/dev/`.
-            byid_name (str): by-id name of the disk (e.g. `ata-WDC_WD320GLAX-68UNT16_A9HM3FTY`) located in
-                             directory `/dev/disk/by-id/`.
-            bypath_name (str): by-path name of the disk (e.g. `pci-0000:00:17.0-ata-1`) located in
-                               directory `/dev/disk/by-path/`.
-
-        Raises:
-            ValueError: in case of missing or invalid parameters
-            RuntimeError: in case of any system error
-
-        Example:
-            A simple example of use:
-
-            >>> from disk_info import Disk
-            >>> d = Disk("sda")
-            >>> d.get_path()
-            '/dev/sda'
-            >>> d.get_serial()
-            'S3D2NY0J819210S'
-         """
         # Identify disk name and path.
         if disk_name:
             # Save disk name and check device path.
@@ -138,18 +144,18 @@ class Disk:
         return self.__path
 
     def get_byid_path(self) -> List[str]:
-        """Returns the disk path elements in a persistent `/dev/disk/by-byid/...` form.
+        """Returns the disk path elements in a persistent ``/dev/disk/by-byid/...`` form.
         The result could be one or more path elements."""
         return self.__byid_path
 
     def get_bypath_path(self) -> List[str]:
-        """Returns the disk path elements in a persistent `/dev/disk/by-path/...` form.
+        """Returns the disk path elements in a persistent ``/dev/disk/by-path/...`` form.
         The result could be one or more path elements."""
         return self.__bypath_path
 
     def get_wwn(self) -> str:
         """Returns the WWN name of the disk. Read more about
-        [WWN names here](https://en.wikipedia.org/wiki/World_Wide_Name)."""
+        `WWN names here <https://en.wikipedia.org/wiki/World_Wide_Name>`_."""
         return self.__wwn
 
     def get_dev_id(self) -> str:
@@ -173,7 +179,7 @@ class Disk:
         return self.__type
 
     def get_type_str(self) -> str:
-        """Returns the name of the disk type."""
+        """Returns the name of the disk type. See the return values in :class:`~disk_info.DiskType` class."""
         if self.is_nvme():
             return DiskType.NVME_STR
         if self.is_ssd():
@@ -197,14 +203,29 @@ class Disk:
         return self.__size
 
     def get_size_in_hrf(self, units: int = 0) -> Tuple[float, str]:
-        """Returns the size of the disk in a human-readable form (e.g. "1 TB").
+        """Returns the size of the disk in a human-readable form (e.g. ``"1 TB"``).
 
         Args:
-            units (int): unit system will be used in result (0-metric units (default), 1 - IEC units,
-                         2-legacy units). Read more about [units here](https://en.wikipedia.org/wiki/Byte).
+            units (int): unit system will be used in result:
+
+                            - 0 metric units (default)
+                            - 1 IEC units
+                            - 2 legacy units
+
+                         Read more about `units here <https://en.wikipedia.org/wiki/Byte>`_.
 
         Returns:
             Tuple[float, str]: size of the disk, proper unit
+
+        Example:
+            This example showa the basic use of this method:
+
+                >>> from disk_info import Disk
+                >>> d = Disk("sda")
+                >>> s, u = d.get_size_in_hrf()
+                >>> print(f"{s:.1f} {u}")
+                8.0 TB
+
         """
         metric_units: List[str] = ["B", "kB", "MB", "GB", "TB", "PB", "EB"]
         iec_units: List[str] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"]
@@ -241,19 +262,19 @@ class Disk:
         return size, unit
 
     def get_physical_block_size(self) -> int:
-        """Returns the physical block size in bytes."""
+        """Returns the physical block size of the disk in bytes."""
         return self.__physical_block_size
 
     def get_logical_block_size(self) -> int:
-        """Returns the logical block size in bytes."""
+        """Returns the logical block size of the disk in bytes."""
         return self.__logical_block_size
 
     def get_partition_table_type(self) -> str:
-        """Returns the type of the partition table."""
+        """Returns the type of the partition table on the disk."""
         return self.__part_table_type
 
     def get_partition_table_uuid(self) -> str:
-        """Returns the UUID of the partition table."""
+        """Returns the UUID of the partition table on the disk."""
         return self.__part_table_uuid
 
     @staticmethod

@@ -8,15 +8,32 @@ from disk_info.disk import Disk, DiskType
 
 
 class DiskInfo:
-    """ DisksInfo class implementation."""
+    """At class initialization time all existing disks will be discovered in the runtime system. After that,
+    :meth:`~disk_info.DiskInfo.get_disk_number()` method will provide the number of identified disk and
+    :meth:`~disk_info.DiskInfo.get_disk_list()` method will return the list of the identified disks.
+    In both cases disk type filters can be applied to get only the subset of the discovered disks. The filters are
+    set of :class:`~disk_info.DiskType` values.
+
+    Operator ``in`` is also implemented for this class. Caller can check if a :class:`~disk_info.Disk` class instance
+    can be found on the list of the dicovered disks.
+
+    Example:
+        A code example about the basic use of the class and the ``in`` operator.
+
+            >>> from disk_info import Disk, DiskType, DiskInfo
+            >>> di = DiskInfo()
+            >>> n = di.get_disk_number(included={DiskType.SSD}, excluded={DiskType.NVME})
+            >>> print(f"Number of SSDs: {n}")
+            Number of SSDs: 3
+            >>> d = Disk("sda")
+            >>> print(d in di)
+            True
+        """
 
     __disk_list: List[Disk]           # List of discovered disks.
 
     def __init__(self):
-        """At class initialization time all existing disks will be discovered in the system. After this,
-        the number of identified disk can be queried with method `get_disk_number()` and the list of the identified
-        disks can be also queried with method `get_disk_list()`. In both cases disk type filters can be
-        applied to query only the subset of the discovered disks."""
+        """See class definition."""
 
         # Initialize class variables.
         self.__disk_list = []
