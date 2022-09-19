@@ -1,7 +1,7 @@
-"""
-    Unitest for `disk` module
-    Peter Sulyok (C) 2022
-"""
+#
+#    Unitest for `disk` module
+#    Peter Sulyok (C) 2022.
+#
 import os
 import shutil
 import random

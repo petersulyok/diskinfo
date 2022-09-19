@@ -1,7 +1,7 @@
-"""
-    Module `demo`: implements a simple demo about use of this package.
-    Peter Sulyok (C) 2022.
-"""
+#
+#    Module `demo`: implements a simple demo for `diskinfo` package.
+#    Peter Sulyok (C) 2022.
+#
 from diskinfo import DiskType, DiskInfo
 
 

@@ -1,7 +1,7 @@
-"""
-    Unitest for `diskinfo` module
-    Peter Sulyok (C) 2022
-"""
+#
+#    Unitest for `diskinfo` module
+#    Peter Sulyok (C) 2022.
+#
 import os
 import unittest
 from typing import List

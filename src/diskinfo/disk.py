@@ -1,7 +1,7 @@
-"""
-    Module `disk`: implements classes `DiskType` and `Disk`.
-    Peter Sulyok (C) 2022
-"""
+#
+#    Module `disk`: implements classes `DiskType` and `Disk`.
+#    Peter Sulyok (C) 2022.
+#
 import os
 from typing import List, Tuple
 

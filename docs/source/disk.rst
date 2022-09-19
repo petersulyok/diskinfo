@@ -1,5 +1,3 @@
-``disk`` module
-===============
 .. automodule:: diskinfo.disk
 
 ``Disk`` class

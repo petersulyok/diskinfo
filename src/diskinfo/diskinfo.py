@@ -1,7 +1,7 @@
-"""
-    Module `diskinfo`: implements class `DiskInfo`.
-    Peter Sulyok (C) 2022
-"""
+#
+#    Module `diskinfo`: implements class `DiskInfo`.
+#    Peter Sulyok (C) 2022.
+#
 import os
 from typing import List
 from diskinfo.disk import Disk, DiskType

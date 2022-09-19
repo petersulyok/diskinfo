@@ -1,9 +1,7 @@
-"""
-    Test data generation
-    Peter Sulyok (C) 2022
-"""
-
-
+#
+#    Test data generation
+#    Peter Sulyok (C) 2022.
+#
 import tempfile
 import random
 import shutil
