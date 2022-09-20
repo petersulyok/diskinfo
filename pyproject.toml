@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "diskinfo"
-description = "A disk information Python library for Linux"
+description = "Disk information Python library for Linux"
 readme = "README.md"
-version = "0.9.3"
+version = "0.9.4"
 authors = [
     { name = "Peter Sulyok", email = "peter@sulyok.net" }
 ]
