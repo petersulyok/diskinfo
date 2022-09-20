@@ -5,17 +5,17 @@ Disk information Python library for Linux.
 
 Demo
 ----
-A simple demo is provided in the package, can be executed in this way:
+The library contains a simple demo, it can be executed in the following way:
 
     python -m diskinfo.demo
 
 <img src="https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png" align="left">
 
-(for this colorful demo the `rich` Python library needs to be installed)
+(please note the `rich` Python library needs to be installed for this colorful demo)
 
 Installation
 ------------
-Standard installation from `pypi` with any of your favourite tools:
+Standard installation tools from `pypi.org`:
 
     pip install diskinfo
 
@@ -23,4 +23,5 @@ The package does not have extra dependencies.
 
 API documentation
 -----------------
-The complete [API documentation](https://diskinfo.readthedocs.io/en/latest/index.html) can be found on `readthedocs.io`.
+The complete [API documentation](https://diskinfo.readthedocs.io/en/latest/index.html) can be found on
+`readthedocs.io`.
