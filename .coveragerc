@@ -4,4 +4,4 @@ exclude_lines =
     if __name__ == .__main__.:
         unittest.main()
 omit =
-    src/disk_info/demo.py
+    src/diskinfo/demo.py
