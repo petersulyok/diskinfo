@@ -6,7 +6,7 @@ from diskinfo import DiskType, DiskInfo
 
 
 def main():
-    """Demo application for package `disk_info`."""
+    """Demo application for package `diskinfo`."""
 
     # Discover disks in the system.
     di = DiskInfo()
