@@ -95,7 +95,7 @@ class DiskInfoTest(unittest.TestCase):
 
         # Test valid disk list combinations.
         for i, tdl in enumerate(self.test_disks_list):
-            self.pt_init_p1(tdl[0], tdl[1], "disk_info_init " + str(i + 1))
+            self.pt_init_p1(tdl[0], tdl[1], "diskinfo_init " + str(i + 1))
 
     def pt_gdn_p1(self, disk_names: List[str], disk_types: List[int], error: str) -> None:
         """Primitive positive test function. It contains the following steps:
