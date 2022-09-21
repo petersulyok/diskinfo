@@ -1,5 +1,7 @@
 # diskinfo
-[![Documentation Status](https://readthedocs.org/projects/diskinfo/badge/?version=latest)](https://diskinfo.readthedocs.io/en/latest/?badge=latest)
+[![Tests](https://github.com/petersulyok/smfc/actions/workflows/test.yml/badge.svg)
+](https://github.com/petersulyok/smfc/actions/workflows/tests.yml)  [![Codecov](https://codecov.io/gh/petersulyok/smfc/branch/main/graph/badge.svg) [![Documentation Status](https://readthedocs.org/projects/diskinfo/badge/?version=latest)](https://diskinfo.readthedocs.io/en/latest/?badge=latest)
+ [![Supported Python Versions](https://img.shields.io/pypi/pyversions/diskinfo/0.9.3)](https://pypi.org/project/rich/) [![PyPI version](https://badge.fury.io/py/diskinfo.svg)](https://badge.fury.io/py/diskinfo)
 
 Disk information Python library for Linux.
 
