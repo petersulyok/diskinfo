@@ -19,7 +19,7 @@ The library contains a simple demo, it can be executed in the following way::
 
 .. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png
 
-Please note that the demo will create different output if ``rich`` Python library installed or not.
+Please note that the demo will create different output if `rich <https://pypi.org/project/rich/>`_ Python library installed or not.
 
 How to use
 ----------
