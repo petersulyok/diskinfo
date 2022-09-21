@@ -9,7 +9,17 @@ Standard installation from `pypi <https://pypi.org>`_::
 
     pip install diskinfo
 
-The package does not have extra dependencies.
+The package requires Python version >= 3.6 and does not have extra dependencies.
+
+Demo
+----
+The library contains a simple demo, it can be executed in the following way::
+
+     python -m diskinfo.demo
+
+.. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png
+
+Please note that the demo will create different output if ``rich`` Python library installed or not.
 
 How to use
 ----------
@@ -78,11 +88,4 @@ safe in disk referencing.
 
 Read more about this topic at `Arch Linux wiki: Persistent block device naming
 <https://wiki.archlinux.org/title/persistent_block_device_naming>`_.
-
-Demo
-----
-There is a simple demo included in the package. You can execute it with in the following way::
-
-     python -m diskinfo.demo
-
 
