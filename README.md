@@ -8,6 +8,14 @@
 
 Disk information Python library for Linux.
 
+Installation
+------------
+Standard installation from [pypi.org](https://pypi.irg):
+
+    pip install diskinfo
+
+The package requires Python version >= 3.6 and does not have extra dependencies. 
+
 Demo
 ----
 The library contains a simple demo, it can be executed in the following way:
@@ -18,15 +26,7 @@ The library contains a simple demo, it can be executed in the following way:
 
 (please note the `rich` Python library needs to be installed for this colorful demo)
 
-Installation
-------------
-Standard installation tools from `pypi.org`:
-
-    pip install diskinfo
-
-The package does not have extra dependencies.
-
 API documentation
 -----------------
-The complete [API documentation](https://diskinfo.readthedocs.io/en/latest/index.html) can be found on
+The detailed  [API documentation](https://diskinfo.readthedocs.io/en/latest/index.html) can be found on
 `readthedocs.io`.
