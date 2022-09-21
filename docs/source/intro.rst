@@ -28,7 +28,7 @@ or you can discover all existing disks on your system.
 
 Option 1: collect information about a disk
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Information can be collected about a specific disk with the creation of a :class:`~diskinfo.Disk` class. Here the caller has
+Information can be collected about a specific disk with the creation of a :class:`~diskinfo.disk.Disk` class. Here the caller has
 to provide a unique identifier for the disk. Disk information will be collected at class creation time then the user
 can call several member functions to get collected attributes::
 
@@ -44,13 +44,13 @@ can call several member functions to get collected attributes::
     >>> d.get_serial()
     'S5SXNG0MB01829M'
 
-See the complete list of the class methods in documentation of :class:`~diskinfo.Disk` class.
+See the complete list of the class methods in documentation of :class:`~diskinfo.disk.Disk` class.
 
 Option 2: discover disks
 ^^^^^^^^^^^^^^^^^^^^^^^^
-Disks can be discovered width the creation of the :class:`~diskinfo.DiskInfo` class. After that the list and
-the number of identified disks can be queried with :meth:`~diskinfo.DiskInfo.get_disk_number()`
-and :meth:`~diskinfo.DiskInfo.get_disk_list()` functions::
+Disks can be discovered width the creation of the :class:`~diskinfo.diskinfo.DiskInfo` class. After that the list and
+the number of identified disks can be queried with :meth:`~diskinfo.diskinfo.DiskInfo.get_disk_number()`
+and :meth:`~diskinfo.diskinfo.DiskInfo.get_disk_list()` functions::
 
     >>> from diskinfo import Disk, DiskInfo
     >>> di = DiskInfo()
@@ -65,7 +65,7 @@ and :meth:`~diskinfo.DiskInfo.get_disk_list()` functions::
     /dev/sdc
 
 The caller can also apply filters (i.e. included and excluded disk types) for both functions and can query only subset
-of the disks based on one or more specific :class:`~diskinfo.DiskType`. The list of disk can be also sorted.
+of the disks based on one or more specific :class:`~diskinfo.disk.DiskType`. The list of disk can be also sorted.
 
 Persistent disk names
 ---------------------
