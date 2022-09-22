@@ -1,4 +1,4 @@
-.. automodule:: diskinfo.diskinfo
+.. py:currentmodule:: diskinfo
 
 ``DiskInfo`` class
 ------------------
