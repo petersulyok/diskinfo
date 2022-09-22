@@ -29,7 +29,7 @@ class Disk:
     unique identifiers of the disk are the following:
 
         - a disk name
-        - a ``by-id name`` of the disk (from ``"/dev/disk/by-id/..."``  directory)
+        - a ``by-id`` name of the disk (from ``"/dev/disk/by-id/..."``  directory)
         - a ``by-path`` name of the disk (from ``"/dev/disk/by-path/..."``  directory)
         - a disk serial number
         - a disk wwn name

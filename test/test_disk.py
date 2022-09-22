@@ -71,7 +71,7 @@ class DiskTest(unittest.TestCase):
                     name = my_td.disks[0].serial
                     d = Disk(serial_number=name)
                 # Disk class creation with disk wwn name
-                else: # if i == 4:
+                else:  # if i == 4:
                     name = my_td.disks[0].wwn
                     d = Disk(wwn_name=name)
 
