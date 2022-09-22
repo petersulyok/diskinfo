@@ -2,6 +2,7 @@
 #    Module `disk`: implements classes `DiskType` and `Disk`.
 #    Peter Sulyok (C) 2022.
 #
+import glob
 import os
 from typing import List, Tuple
 
@@ -24,13 +25,21 @@ class DiskType:
 
 class Disk:
     """The class can be initialized with specifying one unique identifier of the disk. Based on this identifier
-    disk information will be collected  (from ``/sys`` and ``udev`` system data) and stored in the class.
+    disk information will be collected  (from ``/sys`` and ``udev`` system data) and stored in the class. These
+    unique identifiers of the disk are the following:
+
+        - a disk name
+        - a ``by-id name`` of the disk (from ``"/dev/disk/by-id/..."``  directory)
+        - a ``by-path`` name of the disk (from ``"/dev/disk/by-path/..."``  directory)
+        - a disk serial number
+        - a disk wwn name
+
     One of the input parameters MUST be specified otherwise :py:obj:`ValueError` exception will be raised.
     During the class initialization the disk will not be directly accessed, so its power state will not change
     (e.g. it will not be awakened from a `STANDBY` or `SLEEP` state).
 
-    Operators (``<``, ``>`` and ``==``) are also implemented for this class
-    to compare class instances, they use the disk name for comparision.
+    Operators (``<``, ``>`` and ``==``) are also implemented for this class to compare class instances, they
+    use the disk name for comparision.
 
     Args:
         disk_name (str): disk name (e.g. ``"sda"`` or ``"nvmep0n1"``) located in directory ``/dev/``.
@@ -38,6 +47,8 @@ class Disk:
                          directory ``/dev/disk/by-id/``.
         bypath_name (str): by-path name of the disk (e.g. ``"pci-0000:00:17.0-ata-1"``) located in
                            directory ``/dev/disk/by-path/``.
+        serial_number (str): serial number of the disk (e.g. ``"92837A469FF876"``)
+        wwn_name (str): WWN name of the disk (e.g. ``"0x5002638c807270be"``)
 
     Raises:
         ValueError: in case of missing or invalid parameters
@@ -72,24 +83,49 @@ class Disk:
     __part_table_uuid: str              # Disk partition table UUID
     __device_hwmon_path: str            # Path of the hwmon temperature file
 
-    def __init__(self, disk_name: str = None, byid_name: str = None, bypath_name: str = None) -> None:
+    def __init__(self, disk_name: str = None, byid_name: str = None, bypath_name: str = None,
+                 serial_number: str = None, wwn_name: str = None) -> None:
         """See class definition."""
 
-        # Identify disk name and path.
+        # Initialize with a disk name.
         if disk_name:
-            # Save disk name and check device path.
             self.__name = disk_name
-            self.__path = "/dev/" + disk_name
+        # Initialize with a disk `by-id` name.
         elif byid_name:
             self.__name = os.path.basename(os.readlink("/dev/disk/by-id/" + byid_name))
-            self.__path = "/dev/" + self.__name
+        # Initialize with a disk `by-path` name.
         elif bypath_name:
             self.__name = os.path.basename(os.readlink("/dev/disk/by-path/" + bypath_name))
-            self.__path = "/dev/" + self.__name
+        # Initialize with a disk serial number.
+        elif serial_number:
+            name = ""
+            for file in os.listdir("/sys/block/"):
+                self.__dev_id = self._read_file("/sys/block/" + file + "/dev")
+                self.__serial_number = self._read_udev_property("ID_SERIAL_SHORT=")
+                if serial_number == self.__serial_number:
+                    name = file
+                    break
+            if name == "":
+                raise ValueError("Disk serial number (" + serial_number + ") cannot be found!")
+            self.__name = name
+        # Initialize with a disk WWN name.
+        elif wwn_name:
+            name = ""
+            for file in os.listdir("/sys/block/"):
+                self.__dev_id = self._read_file("/sys/block/" + file + "/dev")
+                self.__wwn = self._read_udev_property("ID_WWN=")
+                if wwn_name in self.__wwn:
+                    name = file
+                    break
+            if name == "":
+                raise ValueError("Disk WWN  name (" + wwn_name + ") cannot be found!")
+            self.__name = name
+        # If none of them was specified.
         else:
             raise ValueError("Missing initializer parameter, Disk() class cannot be initialized.")
 
         # Check the existence of disk name in /dev and /sys/block folders.
+        self.__path = "/dev/" + self.__name
         if not os.path.exists(self.__path):
             raise ValueError("Disk path (" + self.__path + ") does not exist!")
         path = "/sys/block/" + self.__name

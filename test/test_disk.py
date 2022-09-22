@@ -17,8 +17,8 @@ class DiskTest(unittest.TestCase):
     def pt_init_p1(self, disk_name: str, disk_type: int, error: str) -> None:
         """Primitive positive test function. It contains the following steps:
             - create TestData class
-            - mock os.readlink(), os.path.exists() and builtins.open() functions
-            - create Disk() class instance based on test data in all 3 ways
+            - mock os.readlink(), os.listdir(), os.path.exists() and builtins.open() functions
+            - create Disk() class instance based on test data in all five ways
             - ASSERT: if any attribute of the class is different from the generated test data
             - delete all instance
         """
@@ -26,6 +26,10 @@ class DiskTest(unittest.TestCase):
         # Mock function for os.readlink().
         def mocked_readlink(path: str,  *args, **kwargs):
             return original_readlink(my_td.td_dir + path, *args, **kwargs)
+
+        # Mock function for os.listdir().
+        def mocked_listdir(path: str):
+            return original_listdir(my_td.td_dir + path)
 
         # Mock function for os.path.exists().
         def mocked_exists(path: str):
@@ -39,15 +43,18 @@ class DiskTest(unittest.TestCase):
         my_td.create_disks([disk_name], [disk_type])
         original_readlink = os.readlink
         mock_readlink = MagicMock(side_effect=mocked_readlink)
+        original_listdir = os.listdir
+        mock_listdir = MagicMock(side_effect=mocked_listdir)
         original_exists = os.path.exists
         mock_exists = MagicMock(side_effect=mocked_exists)
         original_open = open
         mock_open = MagicMock(side_effect=mocked_open)
         with patch('os.readlink', mock_readlink), \
+             patch('os.listdir', mock_listdir), \
              patch('os.path.exists', mock_exists), \
              patch('builtins.open', mock_open):
 
-            for i in range(3):
+            for i in range(5):
                 # Disk class creation with disk name
                 if i == 0:
                     d = Disk(disk_name)
@@ -56,9 +63,17 @@ class DiskTest(unittest.TestCase):
                     name = os.path.basename(random.choice(my_td.disks[0].byid_path))
                     d = Disk(byid_name=name)
                 # Disk class creation with disk by-path name
-                else:
+                elif i == 2:
                     name = os.path.basename(random.choice(my_td.disks[0].bypath_path))
                     d = Disk(bypath_name=name)
+                # Disk class creation with disk serial number
+                elif i == 3:
+                    name = my_td.disks[0].serial
+                    d = Disk(serial_number=name)
+                # Disk class creation with disk wwn name
+                else: # if i == 4:
+                    name = my_td.disks[0].wwn
+                    d = Disk(wwn_name=name)
 
                 # Check all disk attributes.
                 self.assertEqual(d.get_name(), my_td.disks[0].name, error)
@@ -159,6 +174,39 @@ class DiskTest(unittest.TestCase):
             self.assertEqual(type(cm.exception), ValueError, error)
         del my_td
 
+    def pt_init_n2(self, name: str, serial: bool, error: str) -> None:
+        """Primitive negative test function. It contains the following steps:
+            - create TestData class
+            - mock os.listdir(), os.path.exists() and builtins.open() functions
+            - create Disk() class instance with serial and wwn name
+            - ASSERT: if assert not raised in case of invalid missing serial number or wwn name.
+            - delete all instance
+        """
+
+        # Mock function for os.listdir().
+        def mocked_listdir(path: str):
+            return original_listdir(my_td.td_dir + path)
+
+        # Mock function for builtin.open().
+        def mocked_open(path: str,  *args, **kwargs):
+            return original_open(my_td.td_dir + path, *args, **kwargs)
+
+        my_td = TestData()
+        my_td.create_disks(["sda"], [DiskType.SSD])
+        original_listdir = os.listdir
+        mock_listdir = MagicMock(side_effect=mocked_listdir)
+        original_open = open
+        mock_open = MagicMock(side_effect=mocked_open)
+        with patch('os.listdir', mock_listdir), \
+             patch('builtins.open', mock_open):
+            with self.assertRaises(Exception) as cm:
+                if serial:
+                    Disk(serial_number=name)
+                else:
+                    Disk(wwn_name=name)
+            self.assertEqual(type(cm.exception), ValueError, error)
+        del my_td
+
     def test_init(self):
         """Unit test for Disk.__init__()"""
 
@@ -167,10 +215,14 @@ class DiskTest(unittest.TestCase):
         self.pt_init_p1("sda", DiskType.SSD, "disk_init 2")
         self.pt_init_p1("sda", DiskType.HDD, "disk_init 3")
 
-        # Test of asserts in __init__().
+        # Test of asserts in __init__() in case of missing files.
         self.pt_init_n1("nvmep0n1", DiskType.NVME, "disk_init 4")
         self.pt_init_n1("sda", DiskType.SSD, "disk_init 5")
         self.pt_init_n1("sda", DiskType.HDD, "disk_init 6")
+
+        # Test of asserts in __init__() in case of invalid serial number and wwn name.
+        self.pt_init_n2("nonexisting_serial_0923409283408", True, "disk_init 7")
+        self.pt_init_n2("nonexisting_wwn_0923409283408", False,  "disk_init 8")
 
     def pt_gsih_p1(self, size_in_512: int, calc_size: float, calc_unit: str, metric: int, error: str) -> None:
         """Primitive positive test function. It contains the following steps:
