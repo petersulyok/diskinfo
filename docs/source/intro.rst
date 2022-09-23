@@ -19,7 +19,7 @@ The library contains a simple demo, it can be executed in the following way::
 
 .. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png
 
-Please note that the demo will create different output if `rich <https://pypi.org/project/rich/>`_ Python library installed or not.
+(please note the `rich <https://pypi.org/project/rich/>`_ Python library needs to be installed for this colorful demo)
 
 How to use
 ----------
@@ -29,8 +29,8 @@ or you can discover all existing disks on your system.
 Option 1: collect information about a disk
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Information can be collected about a specific disk with the creation of a :class:`~diskinfo.Disk` class. Here the caller has
-to provide a unique identifier for the disk. Disk information will be collected at class creation time then the user
-can call several member functions to get collected attributes::
+to provide a unique identifier for the disk. Disk information will be collected at class creation time then the caller
+can accees the collected disk attributes through get functions of the class::
 
     >>> from diskinfo import Disk
     >>> d = Disk("sda")
@@ -48,7 +48,7 @@ See the complete list of the class methods in documentation of :class:`~diskinfo
 
 Option 2: discover disks
 ^^^^^^^^^^^^^^^^^^^^^^^^
-Disks can be discovered width the creation of the :class:`~diskinfo.DiskInfo` class. After that the list and
+Disks can be discovered with the creation of the :class:`~diskinfo.DiskInfo` class. After that the list and
 the number of identified disks can be queried with :meth:`~diskinfo.DiskInfo.get_disk_number()`
 and :meth:`~diskinfo.DiskInfo.get_disk_list()` functions::
 
