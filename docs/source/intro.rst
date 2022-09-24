@@ -17,9 +17,11 @@ The library contains a simple demo, it can be executed in the following way::
 
      python -m diskinfo.demo
 
+
 .. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png
 
-(please note the `rich <https://pypi.org/project/rich/>`_ Python library needs to be installed for this colorful demo)
+
+Please note that `rich <https://pypi.org/project/rich/>`_ Python library needs to be installed for this colorful demo.
 
 How to use
 ----------

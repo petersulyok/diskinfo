@@ -24,9 +24,9 @@ The library contains a simple demo, it can be executed in the following way:
 
 <img src="https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png" align="left">
 
-(please note the `rich` Python library needs to be installed for this colorful demo)
+Please note that [rich](https://pypi.org/project/rich/) Python library needs to be installed for this colorful demo.
 
 API documentation
 -----------------
 The detailed  [API documentation](https://diskinfo.readthedocs.io/en/latest/index.html) can be found on
-`readthedocs.io`.
+[readthedocs.io](https://readthedocs.io/).
