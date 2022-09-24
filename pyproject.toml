@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "diskinfo"
 description = "Disk information Python library for Linux"
 readme = "README.md"
-version = "0.9.8"
+version = "0.9.9"
 authors = [
     { name = "Peter Sulyok", email = "peter@sulyok.net" }
 ]
@@ -23,7 +23,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Topic :: System :: Hardware",
-    "Development Status :: 4 - Beta"
+    "Development Status :: 5 - Production/Stable"
 ]
 
 [project.urls]
