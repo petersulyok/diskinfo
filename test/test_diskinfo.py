@@ -419,6 +419,40 @@ class DiskInfoTest(unittest.TestCase):
         for i, tdl in enumerate(self.test_disks_list):
             self.pt_con_p1(tdl[0], tdl[1], "contains " + str(i + 1))
 
+    def test_rep(self):
+        """Unit test for __repr__ function of DiskInfo class."""
+
+        # Mock function for os.listdir().
+        def mocked_listdir(path: str):
+            return original_listdir(my_td.td_dir + path)
+
+        # Mock function for os.path.exists().
+        def mocked_exists(path: str):
+            return original_exists(my_td.td_dir + path)
+
+        # Mock function for builtin.open().
+        def mocked_open(path: str,  *args, **kwargs):
+            return original_open(my_td.td_dir + path, *args, **kwargs)
+
+        my_td = TestData()
+        my_td.create_disks(["sda", "sdb"], [DiskType.SSD, DiskType.HDD])
+        original_listdir = os.listdir
+        mock_listdir = MagicMock(side_effect=mocked_listdir)
+        original_exists = os.path.exists
+        mock_exists = MagicMock(side_effect=mocked_exists)
+        original_open = open
+        mock_open = MagicMock(side_effect=mocked_open)
+        with patch('os.listdir', mock_listdir), \
+             patch('os.path.exists', mock_exists), \
+             patch('builtins.open', mock_open):
+            di = DiskInfo()
+            self.assertEqual(di.get_disk_number(), 2, "diskinfo repr 1")
+            disk_list = di.get_disk_list()
+            self.assertTrue(repr(disk_list[0]) in repr(di), "diskinfo repr 2")
+            self.assertTrue(repr(disk_list[1]) in repr(di), "diskinfo repr 3")
+            del di
+        del my_td
+
 
 if __name__ == "__main__":
     unittest.main()
