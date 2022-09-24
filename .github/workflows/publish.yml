@@ -2,6 +2,7 @@ name: Publish Python distribution packages to PypI.
 
 on:
   release:
+    types: [published]
     branches:
       - main
 
