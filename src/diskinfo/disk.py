@@ -24,8 +24,8 @@ class DiskType:
 
 class Disk:
     """The class can be initialized with specifying one unique identifier of the disk. Based on this identifier
-    disk information will be collected  (from ``/sys`` and ``udev`` system data) and stored in the class. These
-    unique identifiers of the disk are the following:
+    disk information will be collected  (from ``/sys`` and ``udev`` system data) and stored in the class. Here are
+    the unique identifiers of the disk:
 
         - a disk name
         - a ``by-id`` name of the disk (from ``"/dev/disk/by-id/..."``  directory)
@@ -33,7 +33,7 @@ class Disk:
         - a disk serial number
         - a disk wwn name
 
-    One of the input parameters MUST be specified otherwise :py:obj:`ValueError` exception will be raised.
+    and one of them MUST be specified as an input parameter otherwise :py:obj:`ValueError` exception will be raised.
     During the class initialization the disk will not be directly accessed, so its power state will not change
     (e.g. it will not be awakened from a `STANDBY` or `SLEEP` state).
 
@@ -60,22 +60,23 @@ class Disk:
         >>> d = Disk("sda")
         >>> d.get_path()
         '/dev/sda'
-        >>> d.get_serial()
+        >>> d.get_serial_number()
         'S3D2NY0J819210S'
 
     """
+
     # Disk attributes:
     __name: str                         # Disk name (e.g. sda)
     __path: str                         # Disk path (e.g. /dev/sda)
     __byid_path: List[str]              # Disk by-byid paths (e.g. /dev/disk/by-byid/ata-WDC_WD80FLAX...)
     __bypath_path: List[str]            # Disk by-path paths (e.g. /dev/disk/by-path/pci-0000:00:17.0-ata-1)
-    __wwn: str                          # Disk WWN byid
-    __dev_id: str                       # Disk device id (e.g. 8:0)
-    __model: str                        # Disk model name
+    __wwn: str                          # Disk WWN
+    __model: str                        # Disk model
     __serial_number: str                # Disk serial number
     __firmware: str                     # Disk firmware
     __type: int                         # Disk type (HDD, SSD or NVME)
     __size: int                         # Disk size (number of 512-byte blocks)
+    __device_id: str                    # Disk device id (e.g. 8:0)
     __physical_block_size: int          # Disk physical block size
     __logical_block_size: int           # Disk logical block size
     __part_table_type: str              # Disk partition table type
@@ -99,7 +100,7 @@ class Disk:
         elif serial_number:
             name = ""
             for file in os.listdir("/sys/block/"):
-                self.__dev_id = self._read_file("/sys/block/" + file + "/dev")
+                self.__device_id = self._read_file("/sys/block/" + file + "/dev")
                 self.__serial_number = self._read_udev_property("ID_SERIAL_SHORT=")
                 if serial_number == self.__serial_number:
                     name = file
@@ -111,7 +112,7 @@ class Disk:
         elif wwn_name:
             name = ""
             for file in os.listdir("/sys/block/"):
-                self.__dev_id = self._read_file("/sys/block/" + file + "/dev")
+                self.__device_id = self._read_file("/sys/block/" + file + "/dev")
                 self.__wwn = self._read_udev_property("ID_WWN=")
                 if wwn_name in self.__wwn:
                     name = file
@@ -146,7 +147,7 @@ class Disk:
         # Read attributes from /sys filesystem and from udev.
         self.__size = int(self._read_file("/sys/block/" + self.__name + "/size"))
         self.__model = self._read_file("/sys/block/" + self.__name + "/device/model")
-        self.__dev_id = self._read_file("/sys/block/" + self.__name + "/dev")
+        self.__device_id = self._read_file("/sys/block/" + self.__name + "/dev")
         self.__physical_block_size = int(self._read_file("/sys/block/" + self.__name + "/queue/physical_block_size"))
         self.__logical_block_size = int(self._read_file("/sys/block/" + self.__name + "/queue/logical_block_size"))
         self.__serial_number = self._read_udev_property("ID_SERIAL_SHORT=")
@@ -193,15 +194,11 @@ class Disk:
         `WWN names here <https://en.wikipedia.org/wiki/World_Wide_Name>`_."""
         return self.__wwn
 
-    def get_dev_id(self) -> str:
-        """Returns the disk device id."""
-        return self.__dev_id
-
     def get_model(self) -> str:
         """Returns the disk model."""
         return self.__model
 
-    def get_serial(self) -> str:
+    def get_serial_number(self) -> str:
         """Returns the disk serial number."""
         return self.__serial_number
 
@@ -212,14 +209,6 @@ class Disk:
     def get_type(self) -> int:
         """Returns the type of the disk."""
         return self.__type
-
-    def get_type_str(self) -> str:
-        """Returns the name of the disk type. See the return values in :class:`~diskinfo.DiskType` class."""
-        if self.is_nvme():
-            return DiskType.NVME_STR
-        if self.is_ssd():
-            return DiskType.SSD_STR
-        return DiskType.HDD_STR
 
     def is_ssd(self) -> bool:
         """Returns True if the disk type is SSD, otherwise False."""
@@ -232,6 +221,14 @@ class Disk:
     def is_hdd(self) -> bool:
         """Returns True if the disk type is HDD, otherwise False."""
         return bool(self.__type == DiskType.HDD)
+
+    def get_type_str(self) -> str:
+        """Returns the name of the disk type. See the return values in :class:`~diskinfo.DiskType` class."""
+        if self.is_nvme():
+            return DiskType.NVME_STR
+        if self.is_ssd():
+            return DiskType.SSD_STR
+        return DiskType.HDD_STR
 
     def get_size(self) -> int:
         """Returns the size of the disk in 512-byte units."""
@@ -296,6 +293,10 @@ class Disk:
 
         return size, unit
 
+    def get_device_id(self) -> str:
+        """Returns the disk device id."""
+        return self.__device_id
+
     def get_physical_block_size(self) -> int:
         """Returns the physical block size of the disk in bytes."""
         return self.__physical_block_size
@@ -347,7 +348,7 @@ class Disk:
 
         # Read proper udev data file.
         try:
-            path = "/run/udev/data/b" + self.__dev_id
+            path = "/run/udev/data/b" + self.__device_id
             with open(path, "rt", encoding="unicode_escape") as file:
                 file_content = file.read().splitlines()
         except (IOError, FileNotFoundError):
@@ -379,7 +380,7 @@ class Disk:
 
         # Read proper udev data file.
         try:
-            path = "/run/udev/data/b" + self.__dev_id
+            path = "/run/udev/data/b" + self.__device_id
             with open(path, "rt", encoding="UTF-8") as file:
                 file_content = file.read().splitlines()
         except (IOError, FileNotFoundError):
@@ -408,5 +409,23 @@ class Disk:
     def __eq__(self, other) -> bool:
         """Implementation of '==' operator for Disk class."""
         return bool(self.__name == other.__name)
+
+    def __repr__(self):
+        """String representation of the Disk class."""
+        return f"Disk(name={self.__name}, " \
+               f"path={self.__path}, " \
+               f"byid_path={self.__byid_path}, " \
+               f"by_path={self.__bypath_path}, " \
+               f"wwn={self.__wwn}, " \
+               f"model={self.__model}, " \
+               f"serial={self.__serial_number}, " \
+               f"firmware={self.__firmware}, " \
+               f"type={self.get_type_str()}, " \
+               f"size={self.__size}, " \
+               f"device_id={self.__device_id}, " \
+               f"physical_block_size={self.__physical_block_size}, " \
+               f"logical_block_size={self.__logical_block_size}" \
+               f"partition_table_type={self.__part_table_type}, " \
+               f"partition_table_uuid={self.__part_table_uuid})"
 
 # End.

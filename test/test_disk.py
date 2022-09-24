@@ -78,12 +78,12 @@ class DiskTest(unittest.TestCase):
                 # Check all disk attributes.
                 self.assertEqual(d.get_name(), my_td.disks[0].name, error)
                 self.assertEqual(d.get_path(), my_td.disks[0].path.replace(my_td.td_dir, ""), error)
-                self.assertEqual(d.get_serial(), my_td.disks[0].serial, error)
+                self.assertEqual(d.get_serial_number(), my_td.disks[0].serial, error)
                 self.assertEqual(d.get_firmware(), my_td.disks[0].firmware, error)
                 self.assertEqual(d.get_model(), my_td.disks[0].model, error)
                 self.assertEqual(d.get_wwn(), my_td.disks[0].wwn, error)
                 self.assertEqual(d.get_size(), my_td.disks[0].size, error)
-                self.assertEqual(d.get_dev_id(), my_td.disks[0].dev_id, error)
+                self.assertEqual(d.get_device_id(), my_td.disks[0].dev_id, error)
                 self.assertEqual(d.get_logical_block_size(), my_td.disks[0].log_bs, error)
                 self.assertEqual(d.get_physical_block_size(), my_td.disks[0].phys_bs, error)
                 self.assertEqual(d.get_partition_table_type(), my_td.disks[0].part_table_type, error)
@@ -272,7 +272,7 @@ class DiskTest(unittest.TestCase):
         # Test if the following functions return empty string/list in case of invalid path.
         d = Disk.__new__(Disk)
         self.assertEqual(d._read_file("./nonexistent_dir/nonexistent_dir/nonexistent_file"), "", "_read_file 1")
-        d._Disk__dev_id = "104567:03490834"
+        d._Disk__device_id = "104567:03490834"
         self.assertEqual(d._read_udev_property("NONEXISTENT_PROPERTY="), "", "_read_udev_property 1")
         self.assertEqual(d._read_udev_path(True), [], "_read_udev_path 1")
         self.assertEqual(d._read_udev_path(False), [], "_read_udev_path 2")
@@ -295,6 +295,45 @@ class DiskTest(unittest.TestCase):
         del d3
         del d2
         del d1
+
+    def test_repr(self):
+        """Unit test for __repr__ in Disk class"""
+
+        # Mock function for os.path.exists().
+        def mocked_exists(path: str):
+            return original_exists(my_td.td_dir + path)
+
+        # Mock function for builtin.open().
+        def mocked_open(path: str,  *args, **kwargs):
+            return original_open(my_td.td_dir + path, *args, **kwargs)
+
+        my_td = TestData()
+        my_td.create_disks(["sda"], [DiskType.HDD])
+        original_exists = os.path.exists
+        mock_exists = MagicMock(side_effect=mocked_exists)
+        original_open = open
+        mock_open = MagicMock(side_effect=mocked_open)
+        with patch('os.path.exists', mock_exists), \
+             patch('builtins.open', mock_open):
+            d = Disk("sda")
+            result = repr(d)
+            self.assertTrue(d.get_name() in result, "repr 1")
+            self.assertTrue(d.get_path() in result, "repr 2")
+            self.assertTrue(repr(d.get_byid_path()) in result, "repr 3")
+            self.assertTrue(repr(d.get_bypath_path()) in result, "repr 4")
+            self.assertTrue(d.get_wwn() in result, "repr 5")
+            self.assertTrue(d.get_model() in result, "repr 6")
+            self.assertTrue(d.get_serial_number() in result, "repr 7")
+            self.assertTrue(d.get_firmware() in result, "repr 8")
+            self.assertTrue(d.get_type_str() in result, "repr 9")
+            self.assertTrue(str(d.get_size()) in result, "repr 10")
+            self.assertTrue(d.get_device_id() in result, "repr 11")
+            self.assertTrue(str(d.get_physical_block_size()) in result, "repr 12")
+            self.assertTrue(str(d.get_logical_block_size()) in result, "repr 13")
+            self.assertTrue(d.get_partition_table_type() in result, "repr 14")
+            self.assertTrue(d.get_partition_table_uuid() in result, "repr 15")
+        del d
+        del my_td
 
 
 if __name__ == "__main__":

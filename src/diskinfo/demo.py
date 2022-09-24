@@ -48,7 +48,7 @@ def main():
         disks = di.get_disk_list(sorting=True)
         for d in disks:
             s, u = d.get_size_in_hrf()
-            table.add_row(d.get_name(), d.get_type_str(), d.get_model(), d.get_path(), d.get_serial(),
+            table.add_row(d.get_name(), d.get_type_str(), d.get_model(), d.get_path(), d.get_serial_number(),
                           d.get_firmware(), f"{s:.1f} {u}")
         group = Group(panel, table)
         rprint(Panel(group, title="Discovery", title_align="left", border_style="gray30", expand=False))
@@ -65,13 +65,13 @@ def main():
             print(f"\tmodel:                    {d.get_model()}")
             s, u = d.get_size_in_hrf(units=2)
             print(f"\tsize:                     {s:.1f} {u}")
-            print(f"\tserial:                   {d.get_serial()}")
+            print(f"\tserial:                   {d.get_serial_number()}")
             print(f"\tfirmware:                 {d.get_firmware()}")
             print(f"\tdevice type:              {d.get_type_str()}")
             print(f"\tby-id path:               {d.get_byid_path()}")
             print(f"\tby-path path:             {d.get_bypath_path()}")
             print(f"\twwn id:                   {d.get_wwn()}")
-            print(f"\tdevice id:                ({d.get_dev_id()})")
+            print(f"\tdevice id:                ({d.get_device_id()})")
             print(f"\tPhysical block size:      {d.get_physical_block_size()}")
             print(f"\tLogical block size:       {d.get_logical_block_size()}")
             print(f"\tPartition table type:     {d.get_partition_table_type()}")

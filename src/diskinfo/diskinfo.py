@@ -143,7 +143,7 @@ class DiskInfo:
 
         # Check identified list of disks if the specified disk can be found.
         for disk in self.__disk_list:
-            if item.get_serial() == disk.get_serial():
+            if item.get_serial_number() == disk.get_serial_number():
                 return True
         return False
 
