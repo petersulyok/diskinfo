@@ -28,5 +28,4 @@ Please note that [rich](https://pypi.org/project/rich/) Python library needs to 
 
 API documentation
 -----------------
-The detailed  [API documentation](https://diskinfo.readthedocs.io/en/latest/index.html) can be found on
-[readthedocs.io](https://readthedocs.io/).
+The detailed API documentation can be found on [readthedocs.io](https://diskinfo.readthedocs.io/en/latest/index.html).
