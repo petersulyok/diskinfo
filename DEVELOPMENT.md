@@ -47,6 +47,7 @@ For local development this package can be installed locally:
 
     pip install -e .
 
+
 ## Documentation
 This project is using `sphinx` to generate documentation on [readthedocs.io](https://readthedocs.io/). The
 github repository is connected to [readthedocs.io](https://readthedocs.io/) and when a new commit is
@@ -73,3 +74,15 @@ The project implemented the following github workflows:
 2. **Publish Python distribution packages to PypI** (`publish.yml`). A published release triggers this action:
    - build distribution package on Python `3.10`
    - upload the new package to PyPI
+
+## How to create a new release
+Follow these steps to create a new release:
+
+1. Commit all changes
+2. Run `pytest`, `flake8`, `pylint` and correct all warnings and errors
+3. Generate documentation locally and check it
+4. Change the version number in `pyproject.toml`
+5. Update `CHANGELOG.md` with the new release information
+6. Commit all changes again
+7. Create a new release on github with the same version number and the new package will be published on PyPI
+   automatically
