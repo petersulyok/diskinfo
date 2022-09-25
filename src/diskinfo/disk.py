@@ -4,7 +4,7 @@
 #
 import glob
 import os
-from typing import List, Tuple, Callable
+from typing import List, Tuple
 
 
 class DiskType:

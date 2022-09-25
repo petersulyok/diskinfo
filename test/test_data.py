@@ -103,7 +103,7 @@ class TestData:
                 td.bypath_path = [self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-ata-" + str(1 + index),
                                   self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-ata-" + str(1 + index) + ".0"]
                 td.hwmon_path = self.td_dir + "/sys/block/" + td.name + "/device/hwmon/hwmon" + \
-                                str(random.randint(0, 20))
+                    str(random.randint(0, 20))
 
             # Create an HDD type disk attributes
             else:  # if dt == DiskType.HDD:
@@ -119,7 +119,7 @@ class TestData:
                 td.bypath_path = [self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-ata-" + str(1 + index),
                                   self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-ata-" + str(1 + index) + ".0"]
                 td.hwmon_path = self.td_dir + "/sys/block/" + td.name + "/device/hwmon/hwmon" + \
-                                str(random.randint(0, 20))
+                    str(random.randint(0, 20))
 
             # Create further disk name based folders.
             os.makedirs(self.td_dir + "/sys/block/" + td.name + "/queue", exist_ok=True)
