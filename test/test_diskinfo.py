@@ -16,39 +16,39 @@ class DiskInfoTest(unittest.TestCase):
     # Test data: pre-defined disk lists.
     test_disks_list = [
         # Test data for 1 disk.
-        [["nvmep0n1"], [DiskType.NVME]],
+        [["nvme0n1"], [DiskType.NVME]],
         [["sda"], [DiskType.SSD]],
         [["sda"], [DiskType.HDD]],
         # Test data for 2 disks.
-        [["nvmep0n1", "sda"], [DiskType.NVME, DiskType.SSD]],
-        [["nvmep0n1", "sda"], [DiskType.NVME, DiskType.HDD]],
+        [["nvme0n1", "sda"], [DiskType.NVME, DiskType.SSD]],
+        [["nvme0n1", "sda"], [DiskType.NVME, DiskType.HDD]],
         [["sda", "sdb"], [DiskType.SSD, DiskType.HDD]],
-        [["sda", "nvmep0n1"], [DiskType.SSD, DiskType.NVME]],
+        [["sda", "nvme0n1"], [DiskType.SSD, DiskType.NVME]],
         [["sda", "sdb"], [DiskType.HDD, DiskType.SSD]],
-        [["sda", "nvmep0n1"], [DiskType.HDD, DiskType.NVME]],
+        [["sda", "nvme0n1"], [DiskType.HDD, DiskType.NVME]],
         # Tests data for 3 disks.
-        [["nvmep0n1", "nvmep0n2", "nvmep0n3"], [DiskType.NVME, DiskType.NVME, DiskType.NVME]],
-        [["nvmep0n1", "nvmep0n2", "sda"], [DiskType.NVME, DiskType.NVME, DiskType.SSD]],
-        [["nvmep0n1", "nvmep0n2", "sda"], [DiskType.NVME, DiskType.NVME, DiskType.HDD]],
-        [["nvmep0n1", "sda", "sdb"], [DiskType.NVME, DiskType.SSD, DiskType.HDD]],
-        [["nvmep0n1", "sda", "sdb"], [DiskType.NVME, DiskType.HDD, DiskType.SSD]],
+        [["nvme0n1", "nvme0n2", "nvme0n3"], [DiskType.NVME, DiskType.NVME, DiskType.NVME]],
+        [["nvme0n1", "nvme0n2", "sda"], [DiskType.NVME, DiskType.NVME, DiskType.SSD]],
+        [["nvme0n1", "nvme0n2", "sda"], [DiskType.NVME, DiskType.NVME, DiskType.HDD]],
+        [["nvme0n1", "sda", "sdb"], [DiskType.NVME, DiskType.SSD, DiskType.HDD]],
+        [["nvme0n1", "sda", "sdb"], [DiskType.NVME, DiskType.HDD, DiskType.SSD]],
         [["sda", "sdb", "sdc"], [DiskType.SSD, DiskType.SSD, DiskType.SSD]],
-        [["sda", "sdb", "nvmep0n1"], [DiskType.SSD, DiskType.SSD, DiskType.NVME]],
+        [["sda", "sdb", "nvme0n1"], [DiskType.SSD, DiskType.SSD, DiskType.NVME]],
         [["sda", "sdb", "sdc"], [DiskType.SSD, DiskType.SSD, DiskType.HDD]],
-        [["sda", "nvmep0n1", "sdb"], [DiskType.SSD, DiskType.NVME, DiskType.HDD]],
-        [["sda", "sdb", "nvmep0n1"], [DiskType.SSD, DiskType.HDD, DiskType.NVME]],
+        [["sda", "nvme0n1", "sdb"], [DiskType.SSD, DiskType.NVME, DiskType.HDD]],
+        [["sda", "sdb", "nvme0n1"], [DiskType.SSD, DiskType.HDD, DiskType.NVME]],
         [["sda", "sdb", "sdc"], [DiskType.HDD, DiskType.HDD, DiskType.HDD]],
-        [["sda", "sdb", "nvmep0n1"], [DiskType.HDD, DiskType.HDD, DiskType.NVME]],
+        [["sda", "sdb", "nvme0n1"], [DiskType.HDD, DiskType.HDD, DiskType.NVME]],
         [["sda", "sdb", "sdc"], [DiskType.HDD, DiskType.HDD, DiskType.SSD]],
-        [["sda", "nvmep0n1", "sdb"], [DiskType.HDD, DiskType.NVME, DiskType.SSD]],
-        [["sda", "sdb", "nvmep0n1"], [DiskType.HDD, DiskType.SSD, DiskType.NVME]],
+        [["sda", "nvme0n1", "sdb"], [DiskType.HDD, DiskType.NVME, DiskType.SSD]],
+        [["sda", "sdb", "nvme0n1"], [DiskType.HDD, DiskType.SSD, DiskType.NVME]],
         # Test data for 4 disks.
-        [["sda", "sdb", "sdc", "nvmep0n1"], [DiskType.HDD, DiskType.SSD, DiskType.SSD, DiskType.NVME]],
+        [["sda", "sdb", "sdc", "nvme0n1"], [DiskType.HDD, DiskType.SSD, DiskType.SSD, DiskType.NVME]],
         # Test data for 5 disks.
-        [["sda", "sdb", "sdc", "nvmep0n1", "nvmep0n2"],
+        [["sda", "sdb", "sdc", "nvme0n1", "nvme0n2"],
          [DiskType.HDD, DiskType.SSD, DiskType.SSD, DiskType.NVME, DiskType.NVME]],
         # Test data for 8 disks.
-        [["sda", "sdb", "sdc", "nvmep0n1", "nvmep0n2", "sdd", "nvmep0n3", "sde"],
+        [["sda", "sdb", "sdc", "nvme0n1", "nvme0n2", "sdd", "nvme0n3", "sde"],
          [DiskType.HDD, DiskType.SSD, DiskType.SSD, DiskType.NVME, DiskType.NVME, DiskType.HDD,
           DiskType.NVME, DiskType.SSD]],
     ]
@@ -206,7 +206,7 @@ class DiskInfoTest(unittest.TestCase):
             self.pt_gdn_p1(tdl[0], tdl[1], "get_disk_number " + str(i + 1))
 
         # Test for asserts for invalid filters.
-        self.pt_gdn_n1(["sda", "sdb", "nvmep0n1"], [DiskType.HDD, DiskType.SSD, DiskType.NVME],
+        self.pt_gdn_n1(["sda", "sdb", "nvme0n1"], [DiskType.HDD, DiskType.SSD, DiskType.NVME],
                        {DiskType.HDD}, {DiskType.HDD, DiskType.SSD}, "get_disk_number 30")
 
     def pt_gdl_p1(self, disk_names: List[str], disk_types: List[int], error: str) -> None:
@@ -361,13 +361,13 @@ class DiskInfoTest(unittest.TestCase):
         self.pt_gdl_p2(["sda", "sdb", "sdc"], ["sdc", "sdb", "sda"], True, True, "get_disk_list 32")
         self.pt_gdl_p2(["sdb", "sda", "sdc"], ["sda", "sdb", "sdc"], True, False, "get_disk_list 33")
         self.pt_gdl_p2(["sdb", "sda", "sdc"], ["sdc", "sdb", "sda"], True, True, "get_disk_list 34")
-        self.pt_gdl_p2(["sdb", "sda", "sdc", "nvmep0n1"], ["nvmep0n1", "sda", "sdb", "sdc"], True, False,
+        self.pt_gdl_p2(["sdb", "sda", "sdc", "nvme0n1"], ["nvme0n1", "sda", "sdb", "sdc"], True, False,
                        "get_disk_list 35")
-        self.pt_gdl_p2(["sdb", "sda", "sdc", "nvmep0n1"], ["sdc", "sdb", "sda", "nvmep0n1"], True, True,
+        self.pt_gdl_p2(["sdb", "sda", "sdc", "nvme0n1"], ["sdc", "sdb", "sda", "nvme0n1"], True, True,
                        "get_disk_list 36")
 
         # Test for asserts in case of invalid filters.
-        self.pt_gdl_n1(["sda", "sdb", "nvmep0n1"], [DiskType.HDD, DiskType.SSD, DiskType.NVME],
+        self.pt_gdl_n1(["sda", "sdb", "nvme0n1"], [DiskType.HDD, DiskType.SSD, DiskType.NVME],
                        {DiskType.HDD}, {DiskType.HDD, DiskType.SSD}, "get_disk_list 37")
 
     def pt_con_p1(self, disk_names: List[str], disk_types: List[int], error: str) -> None:
