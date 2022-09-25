@@ -4,4 +4,4 @@ init-hook='import sys; sys.path.append("."); sys.path.append("./src"); sys.path.
 [MESSAGES CONTROL]
 disable=protected-access, line-too-long, too-many-instance-attributes, too-many-branches, invalid-name,
         too-few-public-methods, too-many-statements, broad-except, too-many-locals, too-many-arguments,
-        missing-module-docstring, parse-error, duplicate-code
+        missing-module-docstring, parse-error, duplicate-code, too-many-public-methods, unused-variable
