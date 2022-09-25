@@ -2,8 +2,9 @@
 #    Module `disk`: implements classes `DiskType` and `Disk`.
 #    Peter Sulyok (C) 2022.
 #
+import glob
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 
 class DiskType:
@@ -81,7 +82,7 @@ class Disk:
     __logical_block_size: int           # Disk logical block size
     __part_table_type: str              # Disk partition table type
     __part_table_uuid: str              # Disk partition table UUID
-    __device_hwmon_path: str            # Path of the hwmon temperature file
+    __hwmon_path: str                   # Path for the HWMON temperature file
 
     def __init__(self, disk_name: str = None, byid_name: str = None, bypath_name: str = None,
                  serial_number: str = None, wwn_name: str = None) -> None:
@@ -170,6 +171,25 @@ class Disk:
         for file_name in self.__bypath_path:
             if not os.path.exists(file_name):
                 raise RuntimeError("Disk by-path path (" + file_name + ") does not exist!")
+
+        # Find the path for HWMON file of the disk.
+        # Step 1: Check typical HWMON path for HDD, SSD disks
+        path = "/sys/block/" + self.__name + "/device/hwmon/hwmon*/temp1_input"
+        file_names = glob.glob(path)
+        if file_names and os.path.exists(file_names[0]):
+            self.__hwmon_path = file_names[0]
+        else:
+            # Step 2: Check HWMON path for NVME disks in Linux kernel 5.10-5.18?
+            path = "/sys/block/" + self.__name + "/device/device/hwmon/hwmon*/temp1_input"
+            file_names = glob.glob(path)
+            if file_names and os.path.exists(file_names[0]):
+                self.__hwmon_path = file_names[0]
+            else:
+                # Step 3: Check HWMON path for NVME disks in Linux kernel 5.19+?
+                path = "/sys/block/" + self.__name + "/device/hwmon*/temp1_input"
+                file_names = glob.glob(path)
+                if file_names and os.path.exists(file_names[0]):
+                    self.__hwmon_path = file_names[0]
 
     def get_name(self) -> str:
         """Returns the disk name."""
@@ -312,6 +332,26 @@ class Disk:
     def get_partition_table_uuid(self) -> str:
         """Returns the UUID of the partition table on the disk."""
         return self.__part_table_uuid
+
+    def get_temperature(self) -> float:
+        """Returns the disk temperature. Important notes about using this function:
+
+            - This function relies on Linux kernel HWMON system, and the required functionality is available
+              from Linux kernel version ``5.6``.
+            - NVME disks do not require to load any kernel driver (this is a built-in functionality).
+            - SATA SSDs and HDDs require to load ``drivetemp`` kernel module! Without this the HWMON system
+              will not provide the temperature information.
+            - :py:obj:`RuntimeError` exception will be raised if the HWMON file cannot be found
+
+        Returns:
+            float: temperature in C degree
+
+        Raises:
+              RuntimeError: HWMON file cannot be found for this disk
+        """
+        if not self.__hwmon_path:
+            raise RuntimeError("HWMON file cannot be found for this disk.")
+        return float(int(self._read_file(self.__hwmon_path)) / 1000)
 
     @staticmethod
     def _read_file(path) -> str:

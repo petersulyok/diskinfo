@@ -35,23 +35,24 @@ def main():
     # Rich demo.
     if RICH:
         panel = Panel(f"[markdown.strong]There {verb} [bold sky_blue2]{disk_num}[/] disk{plural} installed in this"
-                      f" system :point_right: [bold sky_blue2]{hdd_num}[/] HDDs, [bold sky_blue2]{ssd_num}[/]"
-                      f" SSDs, [bold sky_blue2]{nvme_num}[/] NVMEs[/]", box=box.MINIMAL, expand=False)
+                      f" system :point_right: [bold sky_blue2]{hdd_num}[/] HDD(s), [bold sky_blue2]{ssd_num}[/]"
+                      f" SSD(s), [bold sky_blue2]{nvme_num}[/] NVME(s)[/]", box=box.MINIMAL, expand=False)
         table = Table(border_style="gray30", box=box.MINIMAL)
         table.add_column("Name", justify="left", style="bold orange1")
         table.add_column("Type", justify="left", style="bold orchid")
         table.add_column("Model", justify="left", style="bold gray54")
         table.add_column("Path", justify="left", style="bold green")
+        table.add_column("Temp", justify="right", style="bold orchid1")
         table.add_column("Serial", justify="left", style="bold purple3")
         table.add_column("Firmware", justify="left", style="bold slate_blue1")
         table.add_column("Size", justify="right", style="bold blue")
         disks = di.get_disk_list(sorting=True)
         for d in disks:
             s, u = d.get_size_in_hrf()
-            table.add_row(d.get_name(), d.get_type_str(), d.get_model(), d.get_path(), d.get_serial_number(),
-                          d.get_firmware(), f"{s:.1f} {u}")
+            table.add_row(d.get_name(), d.get_type_str(), d.get_model(), d.get_path(), f"{d.get_temperature():.1f} C",
+                          d.get_serial_number(), d.get_firmware(), f"{s:.1f} {u}")
         group = Group(panel, table)
-        rprint(Panel(group, title="Discovery", title_align="left", border_style="gray30", expand=False))
+        rprint(Panel(group, title="diskinfo demo", title_align="left", border_style="gray30", expand=False))
 
     # Normal demo.
     else:
@@ -67,6 +68,7 @@ def main():
             print(f"\tsize:                     {s:.1f} {u}")
             print(f"\tserial:                   {d.get_serial_number()}")
             print(f"\tfirmware:                 {d.get_firmware()}")
+            print(f"\ttemperature:              {d.get_temperature():.1f} C")
             print(f"\tdevice type:              {d.get_type_str()}")
             print(f"\tby-id path:               {d.get_byid_path()}")
             print(f"\tby-path path:             {d.get_bypath_path()}")

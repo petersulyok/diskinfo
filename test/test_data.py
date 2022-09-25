@@ -7,6 +7,7 @@ import random
 import shutil
 import os
 import uuid
+import time
 from typing import List
 from diskinfo import DiskType
 
@@ -28,6 +29,7 @@ class TestDisk:
     log_bs: int
     byid_path: List[str]
     bypath_path: List[str]
+    hwmon_path: str
 
 
 class TestData:
@@ -49,7 +51,7 @@ class TestData:
         """Creates data for disks."""
 
         # Create high-level disk folders.
-        random.seed(1)
+        random.seed(time.monotonic())
         os.makedirs(self.td_dir + "/dev/disk/by-id/", exist_ok=True)
         os.makedirs(self.td_dir + "/dev/disk/by-path/", exist_ok=True)
         os.makedirs(self.td_dir + "/sys/block/", exist_ok=True)
@@ -82,6 +84,10 @@ class TestData:
                 td.byid_path = [self.td_dir + "/dev/disk/by-id/nvme-" + td.model.replace(" ", "_") +
                                 "_" + td.serial, self.td_dir + "/dev/disk/by-id/nvme-" + td.wwn]
                 td.bypath_path = [self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-nvme-" + str(1 + index)]
+                td.hwmon_path = random.choice([self.td_dir + "/sys/block/" + td.name + "/device/device/hwmon/hwmon" +
+                                               str(random.randint(0, 20)),
+                                               self.td_dir + "/sys/block/" + td.name + "/device/hwmon" +
+                                               str(random.randint(0, 20))])
 
             # Create an SSD type disk attributes
             elif dt == DiskType.SSD:
@@ -96,8 +102,10 @@ class TestData:
                                 "_" + td.serial, self.td_dir + "/dev/disk/by-id/wwn-" + td.wwn]
                 td.bypath_path = [self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-ata-" + str(1 + index),
                                   self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-ata-" + str(1 + index) + ".0"]
+                td.hwmon_path = self.td_dir + "/sys/block/" + td.name + "/device/hwmon/hwmon" + \
+                                str(random.randint(0, 20))
 
-            # Create a HDD type disk attributes
+            # Create an HDD type disk attributes
             else:  # if dt == DiskType.HDD:
                 td.model = "WDC WD100SLAX-69VNTN1"
                 td.wwn = "0x500" + self._get_random_alphanum_str(8)
@@ -110,6 +118,8 @@ class TestData:
                                 "_" + td.serial, self.td_dir + "/dev/disk/by-id/wwn-" + td.wwn]
                 td.bypath_path = [self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-ata-" + str(1 + index),
                                   self.td_dir + "/dev/disk/by-path/pci-0000:00:17.0-ata-" + str(1 + index) + ".0"]
+                td.hwmon_path = self.td_dir + "/sys/block/" + td.name + "/device/hwmon/hwmon" + \
+                                str(random.randint(0, 20))
 
             # Create further disk name based folders.
             os.makedirs(self.td_dir + "/sys/block/" + td.name + "/queue", exist_ok=True)
@@ -127,6 +137,9 @@ class TestData:
                 self._create_link(item, "../../" + td.name)
             for item in td.bypath_path:
                 self._create_link(item, "../../" + td.name)
+            os.makedirs(td.hwmon_path, exist_ok=True)
+            td.hwmon_path += "/temp1_input"
+            self._create_file(td.hwmon_path, str(random.randint(30, 65)*1000))
 
             # Create /run/udev/data/b"device:id" file.
             udev_content = \

@@ -2,6 +2,7 @@
 #    Unitest for `disk` module
 #    Peter Sulyok (C) 2022.
 #
+import glob
 import os
 import shutil
 import random
@@ -17,11 +18,17 @@ class DiskTest(unittest.TestCase):
     def pt_init_p1(self, disk_name: str, disk_type: int, error: str) -> None:
         """Primitive positive test function. It contains the following steps:
             - create TestData class
-            - mock os.readlink(), os.listdir(), os.path.exists() and builtins.open() functions
+            - mock glob.glob(), os.readlink(), os.listdir(), os.path.exists() and builtins.open() functions
             - create Disk() class instance based on test data in all five ways
             - ASSERT: if any attribute of the class is different from the generated test data
             - delete all instance
         """
+
+        # Mock function for glob.glob().
+        def mocked_glob(file: str, *args, **kwargs):
+            if file.startswith('/sys/block'):
+                file = my_td.td_dir + file
+            return original_glob(file, *args, **kwargs)
 
         # Mock function for os.readlink().
         def mocked_readlink(path: str,  *args, **kwargs):
@@ -41,6 +48,8 @@ class DiskTest(unittest.TestCase):
 
         my_td = TestData()
         my_td.create_disks([disk_name], [disk_type])
+        original_glob = glob.glob
+        mock_glob = MagicMock(side_effect=mocked_glob)
         original_readlink = os.readlink
         mock_readlink = MagicMock(side_effect=mocked_readlink)
         original_listdir = os.listdir
@@ -49,7 +58,8 @@ class DiskTest(unittest.TestCase):
         mock_exists = MagicMock(side_effect=mocked_exists)
         original_open = open
         mock_open = MagicMock(side_effect=mocked_open)
-        with patch('os.readlink', mock_readlink), \
+        with patch('glob.glob', mock_glob), \
+             patch('os.readlink', mock_readlink), \
              patch('os.listdir', mock_listdir), \
              patch('os.path.exists', mock_exists), \
              patch('builtins.open', mock_open):
@@ -265,6 +275,113 @@ class DiskTest(unittest.TestCase):
         self.pt_gsih_p1(4398046511104, (4398046511104*512)/1000/1000/1000/1000/1000, "PB", 0, "get_size_in_hrf 16")
         self.pt_gsih_p1(4398046511104, (4398046511104*512)/1024/1024/1024/1024/1024, "PiB", 1, "get_size_in_hrf 17")
         self.pt_gsih_p1(4398046511104, (4398046511104*512)/1024/1024/1024/1024/1024, "PB", 2, "get_size_in_hrf 18")
+
+    def pt_gt_p1(self, disk_name: str, disk_type: int, error: str) -> None:
+        """Primitive positive test function. It contains the following steps:
+            - create TestData class
+            - mock glob.glob(), os.path.exists() and builtins.open() functions
+            - create Disk() class instance based on test data in all five ways
+            - call get_temperature() method
+            - ASSERT: if the returned temperature is different from the generated test data
+            - delete all instance
+        """
+
+        # Mock function for glob.glob().
+        def mocked_glob(file: str, *args, **kwargs):
+            if file.startswith('/sys/block'):
+                file = my_td.td_dir + file
+            return original_glob(file, *args, **kwargs)
+
+        # Mock function for os.path.exists().
+        def mocked_exists(path: str):
+            if not path.startswith(my_td.td_dir):
+                path = my_td.td_dir + path
+            return original_exists(path)
+
+        # Mock function for builtin.open().
+        def mocked_open(path: str,  *args, **kwargs):
+            if not path.startswith(my_td.td_dir):
+                path = my_td.td_dir + path
+            return original_open(path, *args, **kwargs)
+
+        my_td = TestData()
+        my_td.create_disks([disk_name], [disk_type])
+        original_glob = glob.glob
+        mock_glob = MagicMock(side_effect=mocked_glob)
+        original_exists = os.path.exists
+        mock_exists = MagicMock(side_effect=mocked_exists)
+        original_open = open
+        mock_open = MagicMock(side_effect=mocked_open)
+        with patch('glob.glob', mock_glob), \
+             patch('os.path.exists', mock_exists), \
+             patch('builtins.open', mock_open):
+            d = Disk(disk_name)
+            temp_str = Disk._read_file(my_td.disks[0].hwmon_path)
+            temp_val = float(temp_str) / 1000.0
+            self.assertEqual(d.get_temperature(), temp_val, error)
+            del d
+        del my_td
+
+    def pt_gt_n1(self, disk_name: str, disk_type: int, error: str) -> None:
+        """Primitive negative test function. It contains the following steps:
+            - create TestData class
+            - mock glob.glob(), os.path.exists() and builtins.open() functions
+            - create Disk() class instance
+            - call get_temperature() method
+            - ASSERT: if assertion is not raised in case of missing hwmon_path
+            - delete all instance
+        """
+
+        # Mock function for glob.glob().
+        def mocked_glob(file: str, *args, **kwargs):
+            if file.startswith('/sys/block'):
+                file = my_td.td_dir + file
+            return original_glob(file, *args, **kwargs)
+
+        # Mock function for os.path.exists().
+        def mocked_exists(path: str):
+            if not path.startswith(my_td.td_dir):
+                path = my_td.td_dir + path
+            return original_exists(path)
+
+        # Mock function for builtin.open().
+        def mocked_open(path: str,  *args, **kwargs):
+            if not path.startswith(my_td.td_dir):
+                path = my_td.td_dir + path
+            return original_open(path, *args, **kwargs)
+
+        my_td = TestData()
+        my_td.create_disks([disk_name], [disk_type])
+        original_glob = glob.glob
+        mock_glob = MagicMock(side_effect=mocked_glob)
+        original_exists = os.path.exists
+        mock_exists = MagicMock(side_effect=mocked_exists)
+        original_open = open
+        mock_open = MagicMock(side_effect=mocked_open)
+        with patch('glob.glob', mock_glob), \
+             patch('os.path.exists', mock_exists), \
+             patch('builtins.open', mock_open):
+            d = Disk(disk_name)
+            d._Disk__hwmon_path = None
+            with self.assertRaises(Exception) as cm:
+                d.get_temperature()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+            del d
+        del my_td
+
+    def test_get_temperature(self):
+        """Unit test for get_temperature method of Disk class."""
+
+        # Test valid functionality.
+        for i in range(20):
+            self.pt_gt_p1("nvme0n1", DiskType.NVME, "get_temperature 1")
+        self.pt_gt_p1("sda", DiskType.SSD, "get_temperature 2")
+        self.pt_gt_p1("sdb", DiskType.HDD, "get_temperature 3")
+
+        # Test assertino.
+        self.pt_gt_n1("nvme0n1", DiskType.NVME, "get_temperature 4")
+        self.pt_gt_n1("sda", DiskType.SSD, "get_temperature 5")
+        self.pt_gt_n1("sdb", DiskType.HDD, "get_temperature 6")
 
     def test_read_files(self):
         """Unit test for invalid file names in case of _read_file(), _read_udev_property(), _read_udev_path()."""
