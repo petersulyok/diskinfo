@@ -227,7 +227,7 @@ class Disk:
         return self.__firmware
 
     def get_type(self) -> int:
-        """Returns the type of the disk."""
+        """Returns the type of the disk. One of the constants in ``DiskType`` class"""
         return self.__type
 
     def is_ssd(self) -> bool:
@@ -334,7 +334,7 @@ class Disk:
         return self.__part_table_uuid
 
     def get_temperature(self) -> float:
-        """Returns the disk temperature. Important notes about using this function:
+        """Returns the current disk temperature. Important notes about using this function:
 
             - This function relies on Linux kernel HWMON system, and the required functionality is available
               from Linux kernel version ``5.6``.
