@@ -24,9 +24,7 @@ class DiskType:
 
 
 class Disk:
-    """The class can be initialized with specifying one unique identifier of the disk. Based on this identifier
-    disk information will be collected  (from ``/sys`` and ``udev`` system data) and stored in the class. Here are
-    the unique identifiers of the disk:
+    """The class can be initialized with specifying one of the unique identifiers of the disk:
 
         - a disk name
         - a ``by-id`` name of the disk (from ``"/dev/disk/by-id/..."``  directory)
@@ -34,7 +32,9 @@ class Disk:
         - a disk serial number
         - a disk wwn name
 
-    and one of them MUST be specified as an input parameter otherwise :py:obj:`ValueError` exception will be raised.
+    Based on the input parameter the disk will be indentified and its attributes will be saved. In case of
+    missing or invalid disk identifier :py:obj:`ValueError` exception will be raised.
+
     During the class initialization the disk will not be directly accessed, so its power state will not change
     (e.g. it will not be awakened from a `STANDBY` or `SLEEP` state).
 
@@ -55,7 +55,7 @@ class Disk:
         RuntimeError: in case of any system error
 
     Example:
-        This exampe shows how to create a ``Disk`` class then how to print the disk path and disk serial number:
+        This exampe shows how to create a ``Disk`` class then how to print its path and serial number:
 
         >>> from diskinfo import Disk
         >>> d = Disk("sda")
