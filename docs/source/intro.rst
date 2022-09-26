@@ -17,22 +17,20 @@ The library contains a simple demo, it can be executed in the following way::
 
      python -m diskinfo.demo
 
-
 .. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png
-
 
 Please note that `rich <https://pypi.org/project/rich/>`_ Python library needs to be installed for this colorful demo.
 
 How to use
 ----------
-There are two different ways how this package can be used. Either you can collect information about a specific disk
-or you can discover all existing disks on your system.
+There are two different use cases how this library can be used. In the first case the user can collect information about
+a specific disk, while in the second one all existing disks can be explored in the system.
 
 Option 1: collect information about a disk
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Information can be collected about a specific disk with the creation of a :class:`~diskinfo.Disk` class. Here the caller has
-to provide a unique identifier for the disk. Disk information will be collected at class creation time then the caller
-can accees the collected disk attributes through get functions of the class::
+Information can be collected about a specific disk with the creation of a :class:`~diskinfo.Disk` class. Here the user
+has to provide a unique identifier for the disk. Disk information will be collected at class creation time then the
+user can access the collected disk attributes through get functions of the class::
 
     >>> from diskinfo import Disk
     >>> d = Disk("sda")
@@ -46,11 +44,66 @@ can accees the collected disk attributes through get functions of the class::
     >>> d.get_serial()
     'S5SXNG0MB01829M'
 
+
+Here is the list about the collected disk attributes:
+
+.. list-table::
+    :header-rows: 1
+
+    *   - Attribute
+        - Description
+        - Example
+    *   - name
+        - Disk name
+        - ``sda`` or ``nvme0n1``
+    *   - path
+        - Disk path
+        - ``/dev/sda`` or ``/dev/nvme0n1``
+    *   - by-id path
+        - Persistent disk path in ``/dev/disk/by-id`` directory
+        - ``/dev/disk/by-id/ata-Samsung_SSD_850_PRO_1TB_S3E2NY0J723218R``
+    *   - by-path path
+        - Persistent disk path in ``/dev/disk/by-path`` directory
+        - ``/dev/disk/by-id/pci-0000:00:17.0-ata-2``
+    *   - wwn
+        - world wide name (unique identifier) for the disk
+        - ``0x5002538c307370ec``
+    *   - model
+        - Disk model
+        - ``Samsung SSD 850 PRO 1TB``
+    *   - serial number
+        - Disk serial number
+        - ``S3E2NY0J723218R``
+    *   - firmware
+        - Disk firmware
+        - ``EXM04B6Q``
+    *   - type
+        - Disk type
+        - ``HDD``, ``SSD``, ``NVME``
+    *   - size
+        - Disk size in 512-byte units
+        - ``2000409264``
+    *   - device id
+        - Disk device id (in ``major:minor`` form)
+        - ``8:0``
+    *   - physical block size
+        - Disk physical block size in bytes
+        - ``512``
+    *   - logical block size
+        - Disk logical block size in bytes
+        - ``512``
+    *   - partition table type
+        - Type of the partition table on disk
+        - ``gpt`` or ``mbr``
+    *   - partition table uuid
+        - UUID of the partition table on disk
+        - ``008e4c54-96c9-4771-9e13-60dfe00ebb7f``
+
 See the complete list of the class methods in documentation of :class:`~diskinfo.Disk` class.
 
-Option 2: discover disks
-^^^^^^^^^^^^^^^^^^^^^^^^
-Disks can be discovered with the creation of the :class:`~diskinfo.DiskInfo` class. After that the list and
+Option 2: explore disks
+^^^^^^^^^^^^^^^^^^^^^^^
+Disks can be explored with the creation of the :class:`~diskinfo.DiskInfo` class. After that the list and
 the number of identified disks can be queried with :meth:`~diskinfo.DiskInfo.get_disk_number()`
 and :meth:`~diskinfo.DiskInfo.get_disk_list()` functions::
 
