@@ -66,7 +66,7 @@ Here is the list about the collected disk attributes:
         - Persistent disk path in ``/dev/disk/by-path`` directory
         - ``/dev/disk/by-id/pci-0000:00:17.0-ata-2``
     *   - wwn
-        - world wide name (unique identifier) for the disk
+        - `World Wide Name <https://en.wikipedia.org/wiki/World_Wide_Name>`_
         - ``0x5002538c307370ec``
     *   - model
         - Disk model
@@ -79,7 +79,7 @@ Here is the list about the collected disk attributes:
         - ``EXM04B6Q``
     *   - type
         - Disk type
-        - ``HDD``, ``SSD``, ``NVME``
+        - ``HDD``, ``SSD`` or ``NVME``
     *   - size
         - Disk size in 512-byte units
         - ``2000409264``
@@ -103,9 +103,9 @@ See the complete list of the class methods in documentation of :class:`~diskinfo
 
 Option 2: explore disks
 ^^^^^^^^^^^^^^^^^^^^^^^
-Disks can be explored with the creation of the :class:`~diskinfo.DiskInfo` class. After that the list and
-the number of identified disks can be queried with :meth:`~diskinfo.DiskInfo.get_disk_number()`
-and :meth:`~diskinfo.DiskInfo.get_disk_list()` functions::
+Disks can be explored with the creation of the :class:`~diskinfo.DiskInfo` class (during this process all disks will
+identified and their attributes will be saved). After that the list and the number of identified disks can be queried
+with :meth:`~diskinfo.DiskInfo.get_disk_number()` and :meth:`~diskinfo.DiskInfo.get_disk_list()` functions::
 
     >>> from diskinfo import Disk, DiskInfo
     >>> di = DiskInfo()
