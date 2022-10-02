@@ -4,23 +4,11 @@
 #
 import glob
 import os
+import re
+import subprocess
 from typing import List, Tuple
-
-
-class DiskType:
-    """Constant values for disk types and for their names."""
-    HDD = 1
-    """Hard disk type."""
-    SSD = 2
-    """SSD disk type."""
-    NVME = 4
-    """NVME disk type."""
-    HDD_STR = "HDD"
-    """Hard disk type name."""
-    SSD_STR = "SSD"
-    """SSD disk type name."""
-    NVME_STR = "NVME"
-    """NVME disk type name."""
+from diskinfo.disktype import DiskType
+from diskinfo.disksmart import DiskSmartData, SmartAttribute, NvmeAttributes
 
 
 class Disk:
@@ -55,14 +43,14 @@ class Disk:
         RuntimeError: in case of any system error
 
     Example:
-        This exampe shows how to create a ``Disk`` class then how to print its path and serial number:
+        This exampe shows how to create a ``Disk`` class then how to print its path and serial number::
 
-        >>> from diskinfo import Disk
-        >>> d = Disk("sda")
-        >>> d.get_path()
-        '/dev/sda'
-        >>> d.get_serial_number()
-        'S3D2NY0J819210S'
+            >>> from diskinfo import Disk
+            >>> d = Disk("sda")
+            >>> d.get_path()
+            '/dev/sda'
+            >>> d.get_serial_number()
+            'S3D2NY0J819210S'
 
     """
 
@@ -270,7 +258,7 @@ class Disk:
             Tuple[float, str]: size of the disk, proper unit
 
         Example:
-            This example showa the basic use of this method:
+            This example showa the basic use of this method::
 
                 >>> from diskinfo import Disk
                 >>> d = Disk("sda")
@@ -347,11 +335,199 @@ class Disk:
             float: temperature in C degree
 
         Raises:
-              RuntimeError: HWMON file cannot be found for this disk
+              RuntimeError: if HWMON file cannot be found for this disk
         """
         if not self.__hwmon_path:
             raise RuntimeError("HWMON file cannot be found for this disk.")
         return float(int(self._read_file(self.__hwmon_path)) / 1000)
+
+    def get_smart_data(self, nocheck: bool = False, sudo: str = None, smartctl_path: str = "/usr/sbin/smartctl"):
+        """Returns smart data for the disk. This function will execute `smartctl` command from `smartmontool
+        <https://www.smartmontools.org/>`_ package, so it has to be installed.
+
+        .. note::
+
+            `smartctl` command needs special access right for reading device smart attributes. This function has
+            to be used as `root` user or call with `sudo=` parameter.
+
+        Args:
+            nocheck (bool):  No check should be applied for a HDDs (`"-n standby"` argument will be used)
+            sudo (str): sudo command should be used. Valid value is the full path for sudo command (e.g.
+             `"/usr/bin/sudo"`), default is `None`
+            smartctl_path (str): Path for `smartctl` command, default value is `/usr/sbin/smartctl`
+        Returns:
+            DiskSmartData: SMART information of the disk (see more details at
+            :class:`~diskinfo.DiskSmartData` class)
+        Raises:
+            FileNotFoundError: if `smartctl` command cannot be found
+            ValueError: if bad paramters passed to `smartctl` command
+            RuntimeError: in case of parsing errors of `smartctl` output
+        """
+        result: subprocess.CompletedProcess     # result of the executed process
+        arguments: List[str] = []               # argument list for execution of `smartctl` command
+
+        # If sudo command should be used.
+        if sudo:
+            arguments.append(sudo)
+
+        # Path for `smartctl`
+        arguments.append(smartctl_path)
+
+        # If no check should be applied in standby power mode of an HDD
+        if nocheck:
+            arguments.append("-n")
+            arguments.append("standby")
+
+        # The standards arguments.
+        arguments.append("-H")
+        arguments.append("-A")
+        arguments.append(self.__path)
+
+        # Execute `smartctl` command.
+        try:
+            result = subprocess.run(arguments, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        except (FileNotFoundError, ValueError) as e:
+            raise e
+
+        value = DiskSmartData()
+        value.raw_output = result.stdout
+        value.return_code = result.returncode
+        value.standby_mode = False
+
+        output_lines = str(result.stdout).splitlines()
+        # Remove first three lines (copyright and an empty line), e.g.:
+        # smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.10.0-14-amd64] (local build)
+        # Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org
+        #
+        del output_lines[0:3]
+
+        # Processing of normal smart attributes
+        if output_lines[0].startswith("==="):
+
+            # Remove next line, e.g.:
+            # === START OF SMART DATA SECTION ===
+            del output_lines[0]
+
+            # Find overall-health status e.g.:
+            # SMART overall-health self-assessment test result: PASSED
+            if "PASSED" in output_lines[0]:
+                value.healthy = True
+            else:
+                value.healthy = False
+
+            # Read and store of NVME attributes
+            if self.is_nvme():
+
+                # Remove three or more lines, e.g.:
+                # SMART overall-health self-assessment test result: PASSED
+                #
+                # SMART/Health Information (NVMe Log 0x02)
+                while not output_lines[0].startswith("Critical Warning"):
+                    del output_lines[0]
+
+                # Save all NVME attributes.
+                na = NvmeAttributes()
+                while output_lines[0]:
+
+                    if "Critical Warning" in output_lines[0]:
+                        mo = re.search(r"[\dxX]+$", output_lines[0])
+                        if mo:
+                            na.critical_warning = int(mo.group(), 16)
+                        else:
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
+                    if output_lines[0].startswith("Temperature:"):
+                        mo = re.search(r"\d+", output_lines[0])
+                        if mo:
+                            na.temperature = int(mo.group())
+                        else:
+                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                    if "Data Units Read" in output_lines[0]:
+                        mo = re.search(r"[\d,]+", output_lines[0])
+                        if mo:
+                            na.data_units_read = int(re.sub(",", "", mo.group()))
+                        else:
+                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                    if "Data Units Written" in output_lines[0]:
+                        mo = re.search(r"[\d,]+", output_lines[0])
+                        if mo:
+                            na.data_units_written = int(re.sub(",", "", mo.group()))
+                        else:
+                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                    if "Power Cycles" in output_lines[0]:
+                        mo = re.search(r"[\d,]+$", output_lines[0])
+                        if mo:
+                            na.power_cycles = int(re.sub(",", "", mo.group()))
+                        else:
+                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                    if "Power On Hours" in output_lines[0]:
+                        mo = re.search(r"[\d,]+$", output_lines[0])
+                        if mo:
+                            na.power_on_hours = int(re.sub(",", "", mo.group()))
+                        else:
+                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                    if "Unsafe Shutdowns" in output_lines[0]:
+                        mo = re.search(r"[\d,]+$", output_lines[0])
+                        if mo:
+                            na.unsafe_shutdowns = int(re.sub(",", "", mo.group()))
+                        else:
+                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                    if "Media and Data Integrity Errors" in output_lines[0]:
+                        mo = re.search(r"[\d,]+$", output_lines[0])
+                        if mo:
+                            na.media_and_data_integrity_errors = int(re.sub(",", "", mo.group()))
+                        else:
+                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                    if "Error Information Log Entries" in output_lines[0]:
+                        mo = re.search(r"[\d,]+$", output_lines[0])
+                        if mo:
+                            na.error_information_log_entries = int(re.sub(",", "", mo.group()))
+                        else:
+                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                    del output_lines[0]
+                value.nvme_attributes = na
+
+            # Read and store of SMART attributes of HDDs and SDDs
+            else:
+
+                # Remove lines until we reach the header of the SMART attributes, e.g.:
+                # SMART overall-health self-assessment test result: PASSED
+                #
+                # SMART Attributes Data Structure revision number: 1
+                # Vendor Specific SMART Attributes with Thresholds:
+                # ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+                while not output_lines[0].startswith("ID#"):
+                    del output_lines[0]
+                del output_lines[0]
+
+                # Save all SMART attributes.
+                value.smart_attributes = []
+                while output_lines[0]:
+                    # Normalize multiple spaces then split the line.
+                    split = re.sub(" +", " ", output_lines[0]).split()
+                    # Store all ten values of a SMART attribute
+                    sa = SmartAttribute()
+                    sa.id = int(split[0])
+                    sa.attribute_name = split[1]
+                    sa.flag = split[2]
+                    sa.value = int(split[3])
+                    sa.worst = int(split[4])
+                    sa.thresh = int(split[5])
+                    sa.type = split[6]
+                    sa.updated = split[7]
+                    sa.when_failed = split[8]
+                    sa.raw_value = int(split[9])
+                    value.smart_attributes.append(sa)
+                    # Remove the actual line.
+                    del output_lines[0]
+
+        # Process error messages or standby state.
+        else:
+            if "STANDBY" in output_lines[0]:
+                value.standby_mode = True
+            if "Smartctl open device" in output_lines[0]:
+                raise RuntimeError(output_lines[0])
+
+        return value
 
     @staticmethod
     def _read_file(path) -> str:

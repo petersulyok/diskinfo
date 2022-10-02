@@ -4,7 +4,8 @@
 #
 import os
 from typing import List
-from diskinfo.disk import Disk, DiskType
+from diskinfo.disktype import DiskType
+from diskinfo.disk import Disk
 
 
 class DiskInfo:
