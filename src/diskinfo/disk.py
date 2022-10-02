@@ -367,7 +367,7 @@ class Disk:
             :class:`~diskinfo.DiskSmartData` class)
         Raises:
             FileNotFoundError: if `smartctl` command cannot be found
-            ValueError: if bad parameters passed to `smartctl` command
+            ValueError: if invalid parameters passed to `smartctl` command
             RuntimeError: in case of parsing errors of `smartctl` output
         """
         result: subprocess.CompletedProcess     # result of the executed process
