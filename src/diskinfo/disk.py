@@ -331,6 +331,10 @@ class Disk:
               will not provide the temperature information.
             - :py:obj:`RuntimeError` exception will be raised if the HWMON file cannot be found
 
+        .. note::
+
+            This function will not access the disk and will not change its power state.
+
         Returns:
             float: temperature in C degree
 
@@ -349,6 +353,9 @@ class Disk:
 
             `smartctl` command needs special access right for reading device smart attributes. This function has
             to be used as `root` user or call with `sudo=` parameter.
+
+            In case of HDDs, the `smartctl` command will access the disk directly and the HDD can wake up. If
+            the `nocheck=True` parameter is used then the disk will preserve its current power state.
 
         Args:
             nocheck (bool):  No check should be applied for a HDDs (`"-n standby"` argument will be used)
