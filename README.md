@@ -3,7 +3,7 @@
 [![Codecov](https://codecov.io/gh/petersulyok/diskinfo/branch/main/graph/badge.svg)](https://app.codecov.io/gh/petersulyok/diskinfo)
 [![Documentation Status](https://readthedocs.org/projects/diskinfo/badge/?version=latest)](https://diskinfo.readthedocs.io/en/latest/?badge=latest)
 [![Issues](https://img.shields.io/github/issues/petersulyok/diskinfo)](https://github.com/petersulyok/diskinfo/issues)
-[![Supported Python Versions](https://img.shields.io/pypi/pyversions/diskinfo)](https://pypi.org/project/diskinfo/)
+[![Supported Python Versions](https://img.shields.io/pypi/pyversions/diskinfo/1.2.0)](https://pypi.org/project/diskinfo)
 [![PyPI version](https://badge.fury.io/py/diskinfo.svg)](https://badge.fury.io/py/diskinfo)
 
 Disk information Python library for Linux.
