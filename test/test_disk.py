@@ -4,11 +4,14 @@
 #
 import glob
 import os
+import re
 import shutil
 import random
+import subprocess
 import unittest
 from unittest.mock import patch, MagicMock
 from test_data import TestData
+from test_data_smart import TestSmartData
 from diskinfo import Disk, DiskType
 
 
@@ -370,7 +373,7 @@ class DiskTest(unittest.TestCase):
         del my_td
 
     def test_get_temperature(self):
-        """Unit test for get_temperature method of Disk class."""
+        """Unit test for get_temperature() method of Disk class."""
 
         # Test valid functionality.
         for i in range(20):
@@ -382,6 +385,329 @@ class DiskTest(unittest.TestCase):
         self.pt_gt_n1("nvme0n1", DiskType.NVME, "get_temperature 4")
         self.pt_gt_n1("sda", DiskType.SSD, "get_temperature 5")
         self.pt_gt_n1("sdb", DiskType.HDD, "get_temperature 6")
+
+    def pt_gsd_p1(self, disk: Disk, nocheck: bool, sudo: str, smartctrl_path: str, error: str) -> None:
+        """Primitive positive test function. It contains the following steps:
+            - mock subprocess.run() function
+            - call get_smart_data() method for a given Disk class
+            - ASSERT: if the subprocess.run (i.e. smartctl) received different arguments than needed
+        """
+        test_str: str = (
+            "smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.10.0-14-amd64] (local build)\n"
+            "Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org\n"
+            "\n"
+            "this is a test of input parameters\n"
+        )
+        mock_subprocess_run = MagicMock()
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout=test_str
+                )]
+        if not smartctrl_path:
+            smartctrl_path = "/usr/sbin/smartctl"
+        with patch('subprocess.run', mock_subprocess_run):
+            sd = disk.get_smart_data(nocheck=nocheck, sudo=sudo, smartctl_path=smartctrl_path)
+        args = []
+        if sudo:
+            args.append(sudo)
+        args.append(smartctrl_path)
+        if nocheck:
+            args.append("-n")
+            args.append("standby")
+        args.append("-H")
+        args.append("-A")
+        args.append(disk._Disk__path)
+        mock_subprocess_run.assert_called_with(args, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                               text=True)
+        self.assertTrue(sd, error)
+        self.assertEqual(sd.return_code, 0, error)
+        self.assertEqual(sd.raw_output, test_str, error)
+
+    def pt_gsd_n1(self, disk: Disk, smartctl_path: str, error: str) -> None:
+        """Primitive negative test function. It contains the following steps:
+            - mock subprocess.run() function
+            - call get_smart_data() method for a given Disk class
+            - ASSERT: if no exception raised on an invalid smartctl_path value
+        """
+        with self.assertRaises(Exception) as cm:
+            disk.get_smart_data(smartctl_path=smartctl_path)
+        self.assertTrue(type(cm.exception) in (FileNotFoundError, ValueError), error)
+
+    def pt_gsd_p2(self, disk: Disk, index: int, error: str) -> None:
+        """Primitive positive test function. It contains the following steps:
+            - mock subprocess.run() function
+            - call get_smart_data() method for a given Disk class
+            - ASSERT: if parsed values are different from expected ones
+        """
+        my_tsd = TestSmartData()
+        mock_subprocess_run = MagicMock()
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+                args=[],
+                returncode=my_tsd.smart_results[index].return_code,
+                stdout=my_tsd.input_texts[index]
+                )]
+        disk._Disk__type = my_tsd.disk_types[index]
+        with patch('subprocess.run', mock_subprocess_run):
+            sd = disk.get_smart_data()
+        self.assertTrue(sd, error)
+        self.assertEqual(sd.raw_output, my_tsd.input_texts[index], error)
+        self.assertEqual(sd.return_code, my_tsd.smart_results[index].return_code, error)
+        self.assertEqual(sd.standby_mode, my_tsd.smart_results[index].standby_mode, error)
+        if "smart_attributes" in dir(sd):
+            for j, item in enumerate(sd.smart_attributes):
+                self.assertEqual(item.id, my_tsd.smart_results[index].smart_attributes[j].id, error)
+                self.assertEqual(item.attribute_name, my_tsd.smart_results[index].smart_attributes[j].attribute_name,
+                                 error)
+                self.assertEqual(item.flag, my_tsd.smart_results[index].smart_attributes[j].flag, error)
+                self.assertEqual(item.value, my_tsd.smart_results[index].smart_attributes[j].value, error)
+                self.assertEqual(item.worst, my_tsd.smart_results[index].smart_attributes[j].worst, error)
+                self.assertEqual(item.thresh, my_tsd.smart_results[index].smart_attributes[j].thresh, error)
+                self.assertEqual(item.type, my_tsd.smart_results[index].smart_attributes[j].type, error)
+                self.assertEqual(item.updated, my_tsd.smart_results[index].smart_attributes[j].updated, error)
+                self.assertEqual(item.when_failed, my_tsd.smart_results[index].smart_attributes[j].when_failed, error)
+                self.assertEqual(item.raw_value, my_tsd.smart_results[index].smart_attributes[j].raw_value, error)
+        if "nvme_attributes" in dir(sd):
+            self.assertEqual(sd.nvme_attributes.critical_warning,
+                             my_tsd.smart_results[index].nvme_attributes.critical_warning,
+                             error)
+            self.assertEqual(sd.nvme_attributes.temperature,
+                             my_tsd.smart_results[index].nvme_attributes.temperature,
+                             error)
+            self.assertEqual(sd.nvme_attributes.data_units_read,
+                             my_tsd.smart_results[index].nvme_attributes.data_units_read,
+                             error)
+            self.assertEqual(sd.nvme_attributes.data_units_written,
+                             my_tsd.smart_results[index].nvme_attributes.data_units_written,
+                             error)
+            self.assertEqual(sd.nvme_attributes.power_cycles,
+                             my_tsd.smart_results[index].nvme_attributes.power_cycles,
+                             error)
+            self.assertEqual(sd.nvme_attributes.power_on_hours,
+                             my_tsd.smart_results[index].nvme_attributes.power_on_hours,
+                             error)
+            self.assertEqual(sd.nvme_attributes.unsafe_shutdowns,
+                             my_tsd.smart_results[index].nvme_attributes.unsafe_shutdowns,
+                             error)
+            self.assertEqual(sd.nvme_attributes.media_and_data_integrity_errors,
+                             my_tsd.smart_results[index].nvme_attributes.media_and_data_integrity_errors,
+                             error)
+            self.assertEqual(sd.nvme_attributes.error_information_log_entries,
+                             my_tsd.smart_results[index].nvme_attributes.error_information_log_entries,
+                             error)
+        del my_tsd
+
+    def pt_gsd_n2(self, disk: Disk, index: int, error: str) -> None:
+        """Primitive negative test function. It contains the following steps:
+            - mock subprocess.run() function
+            - call get_smart_data() method for a given Disk class
+            - ASSERT: if no RuntimeError exception is raised for parsing errors of the NVME smart values
+        """
+        # Critical Warning
+        mock_subprocess_run = MagicMock()
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Critical Warning:\s+[\dxX]+\n",
+                           r"Critical Warning:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+        # Temperature
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Temperature:\s+\d+\s\w+\n",
+                           r"Temperature:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+        # Data Units Read
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Data Units Read:\s+[\d,]+\s\[[\d.\s\w]+\]\n",
+                           r"Data Units Read:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+        # Data Units Written
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Data Units Written:\s+[\d,]+\s\[[\d.\s\w]+\]\n",
+                           r"Data Units Written:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+        # Power Cycles
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Power Cycles:\s+[\d,]+\n",
+                           r"Power Cycles:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+        # Power On Hours
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Power On Hours:\s+[\d,]+\n",
+                           r"Power On Hours:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+        # Unsafe Shutdowns
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Unsafe Shutdowns:\s+[\d,]+\n",
+                           r"Unsafe Shutdowns:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+        # Media and Data Integrity Errors
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Media and Data Integrity Errors:\s+[\d,]+\n",
+                           r"Media and Data Integrity Errors:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+        # Error Information Log Entries
+        my_tsd = TestSmartData()
+        disk._Disk__type = my_tsd.disk_types[index]
+        bad_input = re.sub(r"Error Information Log Entries:\s+[\d,]+\n",
+                           r"Error Information Log Entries:\n",
+                           my_tsd.input_texts[index])
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+            args=[],
+            returncode=my_tsd.smart_results[index].return_code,
+            stdout=bad_input
+        )]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+    def pt_gsd_n3(self, disk: Disk, index: int, error: str) -> None:
+        """Primitive negative test function. It contains the following steps:
+            - mock subprocess.run() function
+            - call get_smart_data() method for a given Disk class
+            - ASSERT: if no RuntimeError exception raised
+        """
+        my_tsd = TestSmartData()
+        mock_subprocess_run = MagicMock()
+        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
+                args=[],
+                returncode=my_tsd.smart_results[index].return_code,
+                stdout=my_tsd.input_texts[index]
+                )]
+        disk._Disk__type = my_tsd.disk_types[index]
+        with patch('subprocess.run', mock_subprocess_run):
+            with self.assertRaises(Exception) as cm:
+                disk.get_smart_data()
+            self.assertEqual(type(cm.exception), RuntimeError, error)
+        del my_tsd
+
+    def test_get_smart_data(self):
+        """Unit test for get_smart_data() method of Disk class."""
+
+        d = Disk.__new__(Disk)
+        d._Disk__path = "/dev/sda"
+
+        # Test all combination of the input parameters
+        self.pt_gsd_p1(d, True, None, None, "get_smart_data 1")
+        self.pt_gsd_p1(d, False, None, None, "get_smart_data 2")
+        self.pt_gsd_p1(d, True, "sudopath", None, "get_smart_data 3")
+        self.pt_gsd_p1(d, False, "sudopath", None, "get_smart_data 4")
+        self.pt_gsd_p1(d, True, None, "smartctlpath", "get_smart_data 5")
+        self.pt_gsd_p1(d, False, None, "smartctlpath", "get_smart_data 6")
+        self.pt_gsd_p1(d, True, "sudopath", "smartctlpath", "get_smart_data 7")
+        self.pt_gsd_p1(d, False, "sudopath", "smartctlpath", "get_smart_data 8")
+
+        # Test exception for invalid `smartctl_path` value
+        self.pt_gsd_n1(d, "./non_existent_dir$//non_existent_file_97541", "get_smart_data 10")
+
+        # Test of smart data parsing
+        self.pt_gsd_p2(d, 0, "get_smart_data 11")
+        self.pt_gsd_p2(d, 1, "get_smart_data 12")
+        self.pt_gsd_p2(d, 2, "get_smart_data 13")
+        self.pt_gsd_p2(d, 3, "get_smart_data 14")
+
+        # Test of NVME parsing errors -> RuntimeError exceptions
+        self.pt_gsd_n2(d, 1, "get_smart_data 15")
+
+        # Test of RuntimeError exceptions for `smartctl` errors
+        self.pt_gsd_n3(d, 4, "get_smart_data 16")
+        self.pt_gsd_n3(d, 5, "get_smart_data 17")
 
     def test_read_files(self):
         """Unit test for invalid file names in case of _read_file(), _read_udev_property(), _read_udev_path()."""
@@ -455,3 +781,5 @@ class DiskTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+# End
