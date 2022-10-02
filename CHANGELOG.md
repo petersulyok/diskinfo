@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   disk (feature request in issue #3 implemented). Additional classes have been defined for SMART data:
   `DiskSmartData()`, `SmartAttribute()`, `NvmeAttributes()`.
 - Documentation, unit tests have been updated
+### Removed
+- Python 3.6 has been removed from list of the supported Python versions because the package building and isnallation
+  is not working here.
 
 ## [1.1.0] - 2022-09-25
 

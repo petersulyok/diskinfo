@@ -16,7 +16,7 @@ Standard installation from `pypi <https://pypi.org>`_::
 
 The library has the following run-time requirements:
 
-    - Python version >= `3.6`
+    - Python version >= `3.7`
     - Linux kernel `5.6+` for reading temperature with :meth:`~diskinfo.Disk.get_temperature()` method. Please note
       `drivetemp` kernel module has to be also loaded for SSDs and HDDs.
     - `smartmontools` has to be installed for :meth:`~diskinfo.Disk.get_smart_data()` method.

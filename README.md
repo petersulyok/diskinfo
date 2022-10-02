@@ -14,7 +14,7 @@ Standard installation from [pypi.org](https://pypi.irg):
 
     pip install diskinfo
 
-The package requires Python version >= `3.6` and does not have extra dependencies. 
+The package requires Python version >= `3.7` and does not have extra dependencies. 
 
 Demo
 ----
