@@ -1,7 +1,12 @@
 Introduction
 ============
-This Python library can discover and can collect disk information on Linux. It can also provide persistent disk names
-for stable device referencing.
+This Python library can assist in collecting disk information on Linux. In more details, it can:
+
+    - collect information about a specific disk
+    - explore existing disks in the system
+    - translate between traditional and persistent device names
+    - read disk temperature from kernel's `HWMON` system
+    - read SMART data of the disk with the help of `smartctl` command
 
 Installation
 ------------
@@ -9,11 +14,16 @@ Standard installation from `pypi <https://pypi.org>`_::
 
     pip install diskinfo
 
-The package requires Python version >= 3.6 and does not have extra dependencies.
+The library has the following run-time requirements:
+
+    - Python version >= `3.6`
+    - Linux kernel `5.6+` for reading temperature with :meth:`~diskinfo.Disk.get_temperature()` method. Please note
+      `drivetemp` kernel module has to be also loaded for SSDs and HDDs.
+    - `smartmontools` has to be installed for :meth:`~diskinfo.Disk.get_smart_data()` method.
 
 Demo
 ----
-The library contains a simple demo, it can be executed in the following way::
+The library contains a simple demo, it can be executed this way::
 
      python -m diskinfo.demo
 

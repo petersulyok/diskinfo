@@ -5,4 +5,8 @@ In this section you will find the detailed API reference about the implemented c
 .. toctree::
 
     disk.rst
+    disktype.rst
+    disksmart.rst
+    smartattr.rst
+    nvmeattr.rst
     diskinfo.rst
