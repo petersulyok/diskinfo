@@ -404,7 +404,7 @@ class Disk:
         return self.__size
 
     def get_size_in_hrf(self, units: int = 0) -> Tuple[float, str]:
-        """Returns the size of the disk in a human-readable form (e.g. ``"1 TB"``).
+        """Returns the size of the disk in a human-readable form.
 
         Args:
             units (int): unit system will be used in result:
@@ -533,7 +533,7 @@ class Disk:
         """
         return self.__part_table_uuid
 
-    def get_temperature(self) -> float:
+    def get_temperature(self) -> int:
         """Returns the current disk temperature. Important notes about using this function:
 
             - This function relies on Linux kernel HWMON system, and the required functionality is available
@@ -552,10 +552,19 @@ class Disk:
 
         Raises:
               RuntimeError: if HWMON file cannot be found for this disk
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d = Disk("sdc")
+                >>> d.get_temperature()
+                28
+
         """
         if not self.__hwmon_path:
             raise RuntimeError("HWMON file cannot be found for this disk.")
-        return float(int(self._read_file(self.__hwmon_path)) / 1000)
+        return int(int(self._read_file(self.__hwmon_path)) / 1000)
 
     def get_smart_data(self, nocheck: bool = False, sudo: str = None, smartctl_path: str = "/usr/sbin/smartctl"):
         """Returns smart data for the disk. This function will execute `smartctl` command from `smartmontools
@@ -574,13 +583,18 @@ class Disk:
             sudo (str): sudo command should be used. Valid value is the full path for sudo command (e.g.
              `"/usr/bin/sudo"`), default is `None`
             smartctl_path (str): Path for `smartctl` command, default value is `/usr/sbin/smartctl`
+
         Returns:
             DiskSmartData: SMART information of the disk (see more details at
             :class:`~diskinfo.DiskSmartData` class)
+
         Raises:
             FileNotFoundError: if `smartctl` command cannot be found
             ValueError: if invalid parameters passed to `smartctl` command
             RuntimeError: in case of parsing errors of `smartctl` output
+
+        Example:
+
         """
         result: subprocess.CompletedProcess     # result of the executed process
         arguments: List[str] = []               # argument list for execution of `smartctl` command

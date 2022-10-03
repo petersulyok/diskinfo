@@ -320,7 +320,7 @@ class DiskTest(unittest.TestCase):
              patch('builtins.open', mock_open):
             d = Disk(disk_name)
             temp_str = Disk._read_file(my_td.disks[0].hwmon_path)
-            temp_val = float(temp_str) / 1000.0
+            temp_val = int(int(temp_str) / 1000)
             self.assertEqual(d.get_temperature(), temp_val, error)
             del d
         del my_td
@@ -381,7 +381,7 @@ class DiskTest(unittest.TestCase):
         self.pt_gt_p1("sda", DiskType.SSD, "get_temperature 2")
         self.pt_gt_p1("sdb", DiskType.HDD, "get_temperature 3")
 
-        # Test assertino.
+        # Test assertion.
         self.pt_gt_n1("nvme0n1", DiskType.NVME, "get_temperature 4")
         self.pt_gt_n1("sda", DiskType.SSD, "get_temperature 5")
         self.pt_gt_n1("sdb", DiskType.HDD, "get_temperature 6")
