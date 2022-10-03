@@ -12,19 +12,19 @@ from diskinfo.disksmart import DiskSmartData, SmartAttribute, NvmeAttributes
 
 
 class Disk:
-    """The class can be initialized with specifying one of the unique identifiers of the disk:
+    """The class can be initialized with specifying one of the five unique identifiers of the disk:
 
         - a disk name
         - a ``by-id`` name of the disk (from ``"/dev/disk/by-id/..."``  directory)
         - a ``by-path`` name of the disk (from ``"/dev/disk/by-path/..."``  directory)
         - a disk serial number
-        - a disk wwn name
+        - a disk wwn identifier
 
     Based on the input parameter the disk will be indentified and its attributes will be saved. In case of
     missing or invalid disk identifier :py:obj:`ValueError` exception will be raised.
 
     During the class initialization the disk will not be directly accessed, so its power state will not change
-    (e.g. it will not be awakened from a `STANDBY` or `SLEEP` state).
+    (e.g. it will not be awakened from a `STANDBY` state).
 
     Operators (``<``, ``>`` and ``==``) are also implemented for this class to compare class instances, they
     use the disk name for comparision.
@@ -36,7 +36,7 @@ class Disk:
         bypath_name (str): by-path name of the disk (e.g. ``"pci-0000:00:17.0-ata-1"``) located in
                            directory ``/dev/disk/by-path/``.
         serial_number (str): serial number of the disk (e.g. ``"92837A469FF876"``)
-        wwn_name (str): WWN name of the disk (e.g. ``"0x5002638c807270be"``)
+        wwn_name (str): WWN identifier of the disk (e.g. ``"0x5002638c807270be"``)
 
     Raises:
         ValueError: in case of missing or invalid parameters
@@ -74,7 +74,7 @@ class Disk:
 
     def __init__(self, disk_name: str = None, byid_name: str = None, bypath_name: str = None,
                  serial_number: str = None, wwn_name: str = None) -> None:
-        """See class definition."""
+        """See class definition docstring above."""
 
         # Initialize with a disk name.
         if disk_name:
@@ -95,7 +95,7 @@ class Disk:
                     name = file
                     break
             if name == "":
-                raise ValueError("Disk serial number (" + serial_number + ") cannot be found!")
+                raise ValueError(f"Disk serial number ({ serial_number }) cannot be found!")
             self.__name = name
         # Initialize with a disk WWN name.
         elif wwn_name:
@@ -107,19 +107,19 @@ class Disk:
                     name = file
                     break
             if name == "":
-                raise ValueError("Disk WWN  name (" + wwn_name + ") cannot be found!")
+                raise ValueError(f"Disk WWN  name ({ wwn_name }) cannot be found!")
             self.__name = name
         # If none of them was specified.
         else:
-            raise ValueError("Missing initializer parameter, Disk() class cannot be initialized.")
+            raise ValueError("Missing disk identifier parameter, Disk() class cannot be initialized.")
 
         # Check the existence of disk name in /dev and /sys/block folders.
         self.__path = "/dev/" + self.__name
         if not os.path.exists(self.__path):
-            raise ValueError("Disk path (" + self.__path + ") does not exist!")
+            raise ValueError(f"Disk path ({ self.__path }) does not exist!")
         path = "/sys/block/" + self.__name
         if not os.path.exists(path):
-            raise ValueError("Disk path (" + path + ") does not exist!")
+            raise ValueError(f"Disk path ({ self.__path }) does not exist!")
 
         # Determine disk type (HDD, SSD, NVME)
         path = "/sys/block/" + self.__name + "/queue/rotational"
@@ -129,7 +129,7 @@ class Disk:
         elif result == "0":
             self.__type = DiskType.SSD
         else:
-            raise RuntimeError("Disk type cannot be determined based on this value (" + path + "=" + result + ").")
+            raise RuntimeError(f"Disk type cannot be determined based on this value ({ path }={ result }).")
         if "nvme" in self.__name:
             self.__type = DiskType.NVME
 
@@ -152,13 +152,13 @@ class Disk:
         self.__byid_path = self._read_udev_path(True)
         for file_name in self.__byid_path:
             if not os.path.exists(file_name):
-                raise RuntimeError("Disk by-id path (" + file_name + ") does not exist!")
+                raise RuntimeError(f"Disk by-id path ({ file_name }) does not exist!")
 
         # Read `/dev/disk/by-path/` path elements from udev and check their existence.
         self.__bypath_path = self._read_udev_path(False)
         for file_name in self.__bypath_path:
             if not os.path.exists(file_name):
-                raise RuntimeError("Disk by-path path (" + file_name + ") does not exist!")
+                raise RuntimeError(f"Disk by-path path ({ file_name }) does not exist!")
 
         # Find the path for HWMON file of the disk.
         # Step 1: Check typical HWMON path for HDD, SSD disks
@@ -180,58 +180,208 @@ class Disk:
                     self.__hwmon_path = file_names[0]
 
     def get_name(self) -> str:
-        """Returns the disk name."""
+        """Returns the disk name.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk(serial_number="92837A469FF876")
+                >>> d.get_name()
+                'sdc'
+
+        """
         return self.__name
 
     def get_path(self) -> str:
-        """Returns the disk path. Please note this path is not persistent."""
+        """Returns the disk path.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk(serial_number="92837A469FF876")
+                >>> d.get_path()
+                '/dev/sdc'
+
+        .. note::
+
+            Please note this path is not persistent, it might refer different physical disk after a reboot.
+
+        """
         return self.__path
 
     def get_byid_path(self) -> List[str]:
-        """Returns the disk path elements in a persistent ``/dev/disk/by-byid/...`` form.
-        The result could be one or more path elements."""
+        """Returns disk path in a persistent ``/dev/disk/by-byid/...`` form.
+        The result could be one or more path elements in a list.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.get_byid_path()
+                ['/dev/disk/by-id/ata-Samsung_SSD_850_PRO_1TB_92837A469FF876', '/dev/disk/by-id/wwn-0x5002539c417223be']
+
+        """
         return self.__byid_path
 
     def get_bypath_path(self) -> List[str]:
-        """Returns the disk path elements in a persistent ``/dev/disk/by-path/...`` form.
-        The result could be one or more path elements."""
+        """Returns disk path in a persistent ``/dev/disk/by-path/...`` form.
+        The result could be one or more path elements in a list.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.get_bypath_path()
+                ['/dev/disk/by-path/pci-0000:00:17.0-ata-3', '/dev/disk/by-path/pci-0000:00:17.0-ata-3.0']
+
+        """
         return self.__bypath_path
 
     def get_wwn(self) -> str:
-        """Returns the WWN name of the disk. Read more about
-        `WWN names here <https://en.wikipedia.org/wiki/World_Wide_Name>`_."""
+        """Returns the world-wide name (WWN) of the disk. Read more about
+        `WWN here <https://en.wikipedia.org/wiki/World_Wide_Name>`_.
+
+        .. note::
+            This is a unique and persistent identifier of
+            the disk.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.get_wwn()
+                '0x5002539c417223be'
+
+        """
         return self.__wwn
 
     def get_model(self) -> str:
-        """Returns the disk model."""
+        """Returns the disk model string.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.get_model()
+                'Samsung SSD 850 PRO 1TB'
+
+        """
         return self.__model
 
     def get_serial_number(self) -> str:
-        """Returns the disk serial number."""
+        """Returns the disk serial number .
+
+        .. note::
+            This is a unique and persistent identifier of
+            the disk.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.get_serial_number()
+                '92837A469FF876'
+
+        """
         return self.__serial_number
 
     def get_firmware(self) -> str:
-        """Returns the disk firmware."""
+        """Returns the disk firmware string.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.get_firmware()
+                'EXM04B6Q'
+
+        """
         return self.__firmware
 
     def get_type(self) -> int:
-        """Returns the type of the disk. One of the constants in ``DiskType`` class"""
+        """Returns the type of the disk. One of the constants in :class:`~diskinfo.DiskType` class:
+
+            - ``DiskType.HDD`` for hard disks (with spinning platters)
+            - ``DiskType.SSD`` for SDDs on SATA or USB interface
+            - ``DiskType.NVME`` for NVME disks
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.get_type()
+                2
+
+        """
         return self.__type
 
     def is_ssd(self) -> bool:
-        """Returns True if the disk type is SSD, otherwise False."""
+        """Returns `True` if the disk type is SSD, otherwise `False`.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.is_ssd()
+                True
+
+        """
         return bool(self.__type == DiskType.SSD)
 
     def is_nvme(self) -> bool:
-        """Returns True if the disk type is NVME, otherwise False."""
+        """Returns `True` if the disk type is NVME, otherwise `False`.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.is_nvme()
+                False
+
+        """
         return bool(self.__type == DiskType.NVME)
 
     def is_hdd(self) -> bool:
-        """Returns True if the disk type is HDD, otherwise False."""
+        """Returns `True` if the disk type is HDD, otherwise `False`.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.is_hdd()
+                False
+
+        """
         return bool(self.__type == DiskType.HDD)
 
     def get_type_str(self) -> str:
-        """Returns the name of the disk type. See the return values in :class:`~diskinfo.DiskType` class."""
+        """Returns the name of the disk type. See the return values in :class:`~diskinfo.DiskType` class:
+
+            - ``DiskType.HDD_STR`` for hard disks (with spinning platters)
+            - ``DiskType.SSD_STR`` for SDDs on SATA or USB interface
+            - ``DiskType.NVME_STR`` for NVME disks
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> d.get_type_str()
+                'SSD'
+
+        """
         if self.is_nvme():
             return DiskType.NVME_STR
         if self.is_ssd():
@@ -239,7 +389,18 @@ class Disk:
         return DiskType.HDD_STR
 
     def get_size(self) -> int:
-        """Returns the size of the disk in 512-byte units."""
+        """Returns the size of the disk in 512-byte units.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("sdc")
+                >>> s = d.get_size()
+                >>> print(f"Disk size: { s * 512 } bytes.")
+                Disk size: 1024209543168 bytes.
+
+        """
         return self.__size
 
     def get_size_in_hrf(self, units: int = 0) -> Tuple[float, str]:
@@ -258,13 +419,13 @@ class Disk:
             Tuple[float, str]: size of the disk, proper unit
 
         Example:
-            This example showa the basic use of this method::
+            An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d = Disk("sda")
+                >>> d = Disk("sdc")
                 >>> s, u = d.get_size_in_hrf()
                 >>> print(f"{s:.1f} {u}")
-                8.0 TB
+                1.0 TB
 
         """
         metric_units: List[str] = ["B", "kB", "MB", "GB", "TB", "PB", "EB"]
@@ -302,23 +463,74 @@ class Disk:
         return size, unit
 
     def get_device_id(self) -> str:
-        """Returns the disk device id."""
+        """Returns the disk device id in 'major:minor' form.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d = Disk("sdc")
+                >>> d.get_device_id()
+                '8:32'
+
+        """
         return self.__device_id
 
     def get_physical_block_size(self) -> int:
-        """Returns the physical block size of the disk in bytes."""
+        """Returns the physical block size of the disk in bytes. Typically, it is 512 bytes for SSDs and NVMEs, and
+        it could be 4096 bytes for HDDs.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d = Disk("sdc")
+                >>> d.get_physical_block_size()
+                512
+
+        """
         return self.__physical_block_size
 
     def get_logical_block_size(self) -> int:
-        """Returns the logical block size of the disk in bytes."""
+        """Returns the logical block size of the disk in bytes. Typically, it is 512 bytes.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d = Disk("sdc")
+                >>> d.get_logical_block_size()
+                512
+
+        """
         return self.__logical_block_size
 
     def get_partition_table_type(self) -> str:
-        """Returns the type of the partition table on the disk."""
+        """Returns the type of the partition table on the disk. It could be 'mbr or 'gpt'.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d = Disk("sdc")
+                >>> d.get_partition_table_type()
+                'gpt'
+
+        """
         return self.__part_table_type
 
     def get_partition_table_uuid(self) -> str:
-        """Returns the UUID of the partition table on the disk."""
+        """Returns the UUID of the partition table on the disk.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d = Disk("sdc")
+                >>> d.get_partition_table_uuid()
+                'd3f932e0-7107-455e-a569-9acd5b60d204'
+
+        """
         return self.__part_table_uuid
 
     def get_temperature(self) -> float:
@@ -346,7 +558,7 @@ class Disk:
         return float(int(self._read_file(self.__hwmon_path)) / 1000)
 
     def get_smart_data(self, nocheck: bool = False, sudo: str = None, smartctl_path: str = "/usr/sbin/smartctl"):
-        """Returns smart data for the disk. This function will execute `smartctl` command from `smartmontool
+        """Returns smart data for the disk. This function will execute `smartctl` command from `smartmontools
         <https://www.smartmontools.org/>`_ package, so it has to be installed.
 
         .. note::
@@ -441,55 +653,55 @@ class Disk:
                         if mo:
                             na.critical_warning = int(mo.group(), 16)
                         else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     if output_lines[0].startswith("Temperature:"):
                         mo = re.search(r"\d+", output_lines[0])
                         if mo:
                             na.temperature = int(mo.group())
                         else:
-                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     if "Data Units Read" in output_lines[0]:
                         mo = re.search(r"[\d,]+", output_lines[0])
                         if mo:
                             na.data_units_read = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     if "Data Units Written" in output_lines[0]:
                         mo = re.search(r"[\d,]+", output_lines[0])
                         if mo:
                             na.data_units_written = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     if "Power Cycles" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.power_cycles = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     if "Power On Hours" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.power_on_hours = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     if "Unsafe Shutdowns" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.unsafe_shutdowns = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     if "Media and Data Integrity Errors" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.media_and_data_integrity_errors = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     if "Error Information Log Entries" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.error_information_log_entries = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError("Error in processing this line: {output_lines[0]}")
+                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
                     del output_lines[0]
                 value.nvme_attributes = na
 
@@ -532,7 +744,7 @@ class Disk:
             if "STANDBY" in output_lines[0]:
                 value.standby_mode = True
             if "Smartctl open device" in output_lines[0]:
-                raise RuntimeError(output_lines[0])
+                raise RuntimeError(f"Error: { output_lines[0] }")
 
         return value
 

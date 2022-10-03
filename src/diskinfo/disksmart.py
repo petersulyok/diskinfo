@@ -71,24 +71,32 @@ class NvmeAttributes:
     """
     critical_warning: int
     """This attributes indicates critical warnings for the state of the controller."""
+
     temperature: int
     """Contains temperature value of the NVME disk."""
+
     data_units_read: int
     """Contains the number of 512-byte blocks the host has read from the NVME controller. The value reported in
     thousands (i.e. 1 means 1000 units of 512-byte blocks) and rounded up. Value 0 means that this attribute is
     not reported."""
+
     data_units_written: int
     """Contains the number of 512-byte blocks the host has written to the NVME controller. The value reported in
     thousands (i.e. 1 means 1000 units of 512-byte blocks) and rounded up. Value 0 means that this attribute is
     not reported."""
+
     power_cycles: int
     """Contains the number of the power cycles."""
+
     power_on_hours: int
     """Contains the number of power-on hours."""
+
     unsafe_shutdowns: int
     """Contains the number of unsafe shutdowns."""
+
     media_and_data_integrity_errors: int
     """Contains the number of occurrences where the controller detected an unrecovered data integrity error."""
+
     error_information_log_entries: int
     """Contains the number of Error Information log entries over the life of the controller."""
 
@@ -105,6 +113,7 @@ class DiskSmartData:
         - `False`: the disk is reported failed (i.e. overall-health self-assessment test is FAILED).
 
     """
+
     standby_mode: bool
     """Standby flag for disk. Valid only for HDDs:
 
@@ -112,32 +121,39 @@ class DiskSmartData:
             - `False` means the disk is ACTIVE or IDLE
 
     .. note::
-        When a HDD is in standby state then the ``smart_attributes`` field of this class is not updated!
+        When a HDD is in standby state then the :attr:`~diskinfo.DiskSmartData.smart_attributes` field in this class
+        will not be updated!
     """
+
     smart_attributes: List[SmartAttribute]
     """List of the SMART attributes of a disk. Valid only for HDDs and SSDs, in case of NVME disk it will be
     empty. Methods :meth:`~diskinfo.DiskSmartData.find_smart_attribute_by_id()` and
     :meth:`~diskinfo.DiskSmartData.find_smart_attribute_by_name()` will find an item on this list based on an `id`
     or a `name`.
     """
+
     nvme_attributes: NvmeAttributes
     """NVME attributes for a disk. Valid only for NVME disks."""
+
     return_code: int
     """Return code of latest execution of the `smartctl` command."""
+
     raw_output: str
-    """Raw text outputof latest execution of the `smartctl` command."""
+    """Raw text output of latest execution of the `smartctl` command."""
 
     def find_smart_attribute_by_id(self, id_val: int) -> int:
-        """Finds an attribute by id and return with its index.
+        """Finds a SMART attribute by the `id` and returns its index in :attr:`~diskinfo.DiskSmartData.smart_attributes`
+        list, or -1 if not found.
 
         Args:
-            id_val (int): SMART attribute id value
+            id_val (int): SMART attribute `id` value
 
         Returns:
-             int: an index of the found attribute in smart_attributes list or -1 if not found
+             int: an index of the attribute in :attr:`~diskinfo.DiskSmartData.smart_attributes` list, or -1
+             if not found
 
         Example:
-            Simple example how to use this funtion::
+            An example about the use of this function::
 
                 >>> from diskinfo import Disk, DiskSmartData
                 >>> d=Disk("sda")
@@ -152,16 +168,18 @@ class DiskSmartData:
         return -1
 
     def find_smart_attribute_by_name(self, name_val: str) -> int:
-        """Finds an attribute by name and return with its index.
+        """Finds an attribute by `name` and return with its index in :attr:`~diskinfo.DiskSmartData.smart_attributes`
+        list.
 
         Args:
             name_val (int): SMART attribute name value
 
         Returns:
-             int: an index of the found attribute in smart_attributes list or -1 if not found
+             int:  an index of the attribute in :attr:`~diskinfo.DiskSmartData.smart_attributes` list, or -1
+             if not found
 
         Example:
-            Simple example how to use this function::
+            An example about the use of this function::
 
                 >>> from diskinfo import Disk, DiskSmartData
                 >>> d=Disk("sda")
