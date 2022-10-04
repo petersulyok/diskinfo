@@ -68,7 +68,7 @@ the page ignoring browser cache (e.g. CTRL + SHIFT + R).
 The project implemented the following github workflows:
 
 1. **Unit test and lint execution** (`test.yml`). A commit triggers this action:
-   - executes unit test on `ubuntu-latest` OS and on Python versions `3.6`, `3.7`, `3.8`, `3.9`, `3.10`, `3.11.0-rc.2`
+   - executes unit test on `ubuntu-latest` OS and on Python versions `3.7`, `3.8`, `3.9`, `3.10`, `3.11.0-rc.2`
    - executes `flake8` and `pylint`
    - generates coverage data and upload it to [codecov.io](https://codecov.io/)
 2. **Publish Python distribution packages to PypI** (`publish.yml`). A published release triggers this action:
