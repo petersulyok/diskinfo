@@ -20,14 +20,14 @@ class Disk:
         - a disk serial number
         - a disk wwn identifier
 
-    Based on the input parameter the disk will be indentified and its attributes will be saved. In case of
-    missing or invalid disk identifier :py:obj:`ValueError` exception will be raised.
+    Based on the specified input parameter the disk will be indentified and its attributes will be collected and
+    saved. :py:obj:`ValueError` exception will be raised in case of missing or invalid disk identifier.
 
     During the class initialization the disk will not be directly accessed, so its power state will not change
     (e.g. it will not be awakened from a `STANDBY` state).
 
-    Operators (``<``, ``>`` and ``==``) are also implemented for this class to compare class instances, they
-    use the disk name for comparision.
+    Operators (``<``, ``>`` and ``==``) are also implemented for this class to compare different class instances,
+    they use the disk name for comparision.
 
     Args:
         disk_name (str): disk name (e.g. ``"sda"`` or ``"nvmep0n1"``) located in directory ``/dev/``.
@@ -43,7 +43,7 @@ class Disk:
         RuntimeError: in case of any system error
 
     Example:
-        This exampe shows how to create a ``Disk`` class then how to print its path and serial number::
+        This exampe shows how to create a :class:`~diskinfo.Disk` class then how to get its path and serial number::
 
             >>> from diskinfo import Disk
             >>> d = Disk("sda")
@@ -95,7 +95,7 @@ class Disk:
                     name = file
                     break
             if name == "":
-                raise ValueError(f"Disk serial number ({ serial_number }) cannot be found!")
+                raise ValueError(f"Invalid serial number ({ serial_number })!")
             self.__name = name
         # Initialize with a disk WWN name.
         elif wwn_name:
@@ -107,11 +107,11 @@ class Disk:
                     name = file
                     break
             if name == "":
-                raise ValueError(f"Disk WWN  name ({ wwn_name }) cannot be found!")
+                raise ValueError(f"Invalid wwn identifier ({ wwn_name })!")
             self.__name = name
         # If none of them was specified.
         else:
-            raise ValueError("Missing disk identifier parameter, Disk() class cannot be initialized.")
+            raise ValueError("Missing disk identifier, Disk() class cannot be initialized.")
 
         # Check the existence of disk name in /dev and /sys/block folders.
         self.__path = "/dev/" + self.__name
@@ -206,7 +206,7 @@ class Disk:
 
         .. note::
 
-            Please note this path is not persistent, it might refer different physical disk after a reboot.
+            Please note this path is not persistent (i.e. it may refer different physical disk after a reboot).
 
         """
         return self.__path
@@ -463,7 +463,7 @@ class Disk:
         return size, unit
 
     def get_device_id(self) -> str:
-        """Returns the disk device id in 'major:minor' form.
+        """Returns the disk device id in `'major:minor'` form.
 
         Example:
             An example about the use of this function::
