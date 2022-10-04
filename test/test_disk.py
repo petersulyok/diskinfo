@@ -86,7 +86,7 @@ class DiskTest(unittest.TestCase):
                 # Disk class creation with disk wwn name
                 else:  # if i == 4:
                     name = my_td.disks[0].wwn
-                    d = Disk(wwn_name=name)
+                    d = Disk(wwn=name)
 
                 # Check all disk attributes.
                 self.assertEqual(d.get_name(), my_td.disks[0].name, error)
@@ -216,7 +216,7 @@ class DiskTest(unittest.TestCase):
                 if serial:
                     Disk(serial_number=name)
                 else:
-                    Disk(wwn_name=name)
+                    Disk(wwn=name)
             self.assertEqual(type(cm.exception), ValueError, error)
         del my_td
 
