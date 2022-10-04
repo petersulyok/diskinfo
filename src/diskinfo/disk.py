@@ -14,11 +14,12 @@ from diskinfo.disksmart import DiskSmartData, SmartAttribute, NvmeAttributes
 class Disk:
     """The class can be initialized with specifying one of the five unique identifiers of the disk:
 
-        - a disk name
-        - a ``by-id`` name of the disk (from ``"/dev/disk/by-id/..."``  directory)
-        - a ``by-path`` name of the disk (from ``"/dev/disk/by-path/..."``  directory)
-        - a disk serial number
-        - a disk wwn identifier
+        * a disk name (e.g. `sda` or `nvme0n1`) located in `/dev/` directory.
+        * a disk serial number (e.g. `"92837A469FF876"`)
+        * a disk `wwn identifier <https://en.wikipedia.org/wiki/World_Wide_Name>`_ (e.g. `"0x5002638c807270be"`)
+        * a `by-id` name of the disk (e.g. `ata-Samsung_SSD_850_PRO_1TB_92837A469FF876`) located in `/dev/disk/by-id/`
+          directory
+        * a `by-path` name of the disk (e.g. `pci-0000:00:17.0-ata-3`) located in `/dev/disk/by-path/`  directory
 
     Based on the specified input parameter the disk will be indentified and its attributes will be collected and
     saved. :py:obj:`ValueError` exception will be raised in case of missing or invalid disk identifier.
@@ -30,13 +31,11 @@ class Disk:
     they use the disk name for comparision.
 
     Args:
-        disk_name (str): disk name (e.g. ``"sda"`` or ``"nvmep0n1"``) located in directory ``/dev/``.
-        byid_name (str): by-id name of the disk (e.g. ``"ata-WDC_WD320GLAX-68UNT16_A9HM3FTY"``) located in
-                         directory ``/dev/disk/by-id/``.
-        bypath_name (str): by-path name of the disk (e.g. ``"pci-0000:00:17.0-ata-1"``) located in
-                           directory ``/dev/disk/by-path/``.
-        serial_number (str): serial number of the disk (e.g. ``"92837A469FF876"``)
-        wwn_name (str): WWN identifier of the disk (e.g. ``"0x5002638c807270be"``)
+        disk_name (str): disk name located in directory `/dev/`
+        serial_number (str): serial number of the disk
+        wwn (str): wwn identifier of the disk
+        byid_name (str): by-id name of the disk  located in `/dev/disk/by-id/` directory
+        bypath_name (str): by-path name of the disk located in directory `/dev/disk/by-path/`
 
     Raises:
         ValueError: in case of missing or invalid parameters
@@ -51,6 +50,21 @@ class Disk:
             '/dev/sda'
             >>> d.get_serial_number()
             'S3D2NY0J819210S'
+
+        and these are the additional ways how the :class:`~diskinfo.Disk` class can be initialized::
+
+            >>> d=Disk(serial_number="92837A469FF876")
+            >>> d.get_name()
+            'sdc'
+            >>> d=Disk(wwn="0x5002539c417223be")
+            >>> d.get_name()
+            'sdc'
+            >>> d=Disk(byid_name="ata-Samsung_SSD_850_PRO_1TB_92837A469FF876")
+            >>> d.get_name()
+            'sdc'
+            >>> d=Disk(bypath_name="pci-0000:00:17.0-ata-3")
+            >>> d.get_name()
+            'sdc'
 
     """
 
@@ -72,19 +86,13 @@ class Disk:
     __part_table_uuid: str              # Disk partition table UUID
     __hwmon_path: str                   # Path for the HWMON temperature file
 
-    def __init__(self, disk_name: str = None, byid_name: str = None, bypath_name: str = None,
-                 serial_number: str = None, wwn_name: str = None) -> None:
+    def __init__(self, disk_name: str = None, serial_number: str = None, wwn: str = None,
+                 byid_name: str = None, bypath_name: str = None,) -> None:
         """See class definition docstring above."""
 
         # Initialize with a disk name.
         if disk_name:
             self.__name = disk_name
-        # Initialize with a disk `by-id` name.
-        elif byid_name:
-            self.__name = os.path.basename(os.readlink("/dev/disk/by-id/" + byid_name))
-        # Initialize with a disk `by-path` name.
-        elif bypath_name:
-            self.__name = os.path.basename(os.readlink("/dev/disk/by-path/" + bypath_name))
         # Initialize with a disk serial number.
         elif serial_number:
             name = ""
@@ -98,17 +106,23 @@ class Disk:
                 raise ValueError(f"Invalid serial number ({ serial_number })!")
             self.__name = name
         # Initialize with a disk WWN name.
-        elif wwn_name:
+        elif wwn:
             name = ""
             for file in os.listdir("/sys/block/"):
                 self.__device_id = self._read_file("/sys/block/" + file + "/dev")
                 self.__wwn = self._read_udev_property("ID_WWN=")
-                if wwn_name in self.__wwn:
+                if wwn in self.__wwn:
                     name = file
                     break
             if name == "":
-                raise ValueError(f"Invalid wwn identifier ({ wwn_name })!")
+                raise ValueError(f"Invalid wwn identifier ({ wwn })!")
             self.__name = name
+        # Initialize with a disk `by-id` name.
+        elif byid_name:
+            self.__name = os.path.basename(os.readlink("/dev/disk/by-id/" + byid_name))
+        # Initialize with a disk `by-path` name.
+        elif bypath_name:
+            self.__name = os.path.basename(os.readlink("/dev/disk/by-path/" + bypath_name))
         # If none of them was specified.
         else:
             raise ValueError("Missing disk identifier, Disk() class cannot be initialized.")
