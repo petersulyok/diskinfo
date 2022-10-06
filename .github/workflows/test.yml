@@ -34,13 +34,14 @@ jobs:
       - name: Lint with flake8 and pylint
         run: |
           flake8
-          find . -name '*.py' -exec pylint {} \;
+          pylint src test
       - name: Test with pytest
         run: |
-          pytest --cov=src --cov=test
+          pytest
       - name: Generate coverage report
         if: "matrix.coverage"
         run: |
+          pytest --cov=src --cov=test
           python -m coverage xml
       - name: Upload coverage to Codecov
         if: "matrix.coverage"
