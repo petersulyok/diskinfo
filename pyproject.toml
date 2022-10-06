@@ -28,3 +28,43 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/petersulyok/diskinfo"
 "Documentation" = "https://diskinfo.readthedocs.io/en/latest/index.html"
+
+# pytest options
+[tool.pytest.ini_options]
+filterwarnings = [ "default", "ignore::pytest.PytestCollectionWarning"]
+
+# flake8 options
+[tool.flake8]
+exclude = [ "docs", "htmlcov", ".git", "__pycache__", ".pytest_cache", ".vscode", ".idea", ".venv", "build" ]
+max-line-length = 120
+count = true
+show-source = true
+statistics = true
+per-file-ignores = [
+    # undefined name
+    "test_demo.py: F821",
+    # undefined name
+    "test_diskinfo.py: F821",
+    # undefined name
+    "test_disk.py: F821"
+    ]
+
+# coverage options
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "unittest.main()"
+    ]
+omit = [ "src/diskinfo/demo.py" ]
+
+# pylint options
+[tool.pylint.'MASTER']
+init-hook='import sys; sys.path.append("."); sys.path.append("./src"); sys.path.append("./test")'
+
+[tool.pylint.'MESSAGES CONTROL']
+disable= [
+    "protected-access", "line-too-long", "too-many-instance-attributes", "too-many-branches", "invalid-name",
+    "too-few-public-methods", "too-many-statements", "broad-except", "too-many-locals", "too-many-arguments",
+    "missing-module-docstring", "parse-error", "duplicate-code", "too-many-public-methods", "unused-variable"
+    ]
