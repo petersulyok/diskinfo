@@ -31,11 +31,11 @@ class Disk:
     they use the disk name for comparision.
 
     Args:
-        disk_name (str): disk name located in directory `/dev/`
+        disk_name (str): the disk name
         serial_number (str): serial number of the disk
         wwn (str): wwn identifier of the disk
-        byid_name (str): by-id name of the disk  located in `/dev/disk/by-id/` directory
-        bypath_name (str): by-path name of the disk located in directory `/dev/disk/by-path/`
+        byid_name (str): by-id name of the disk
+        bypath_name (str): by-path name of the disk
 
     Raises:
         ValueError: in case of missing or invalid parameters
