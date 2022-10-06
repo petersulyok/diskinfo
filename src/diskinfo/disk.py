@@ -17,9 +17,9 @@ class Disk:
         * a disk name (e.g. `sda` or `nvme0n1`) located in `/dev/` directory.
         * a disk serial number (e.g. `"92837A469FF876"`)
         * a disk `wwn identifier <https://en.wikipedia.org/wiki/World_Wide_Name>`_ (e.g. `"0x5002638c807270be"`)
-        * a `by-id` name of the disk (e.g. `ata-Samsung_SSD_850_PRO_1TB_92837A469FF876`) located in `/dev/disk/by-id/`
+        * a `by-id` name of the disk (e.g. `"ata-Samsung_SSD_850_PRO_1TB_92837A469FF876"`) located in `/dev/disk/by-id/`
           directory
-        * a `by-path` name of the disk (e.g. `pci-0000:00:17.0-ata-3`) located in `/dev/disk/by-path/`  directory
+        * a `by-path` name of the disk (e.g. `"pci-0000:00:17.0-ata-3"`) located in `/dev/disk/by-path/`  directory
 
     Based on the specified input parameter the disk will be indentified and its attributes will be collected and
     saved. :py:obj:`ValueError` exception will be raised in case of missing or invalid disk identifier.
