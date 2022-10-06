@@ -4,9 +4,9 @@ This Python library can assist in collecting disk information on Linux. In more 
 
     - collect information about a specific disk
     - explore existing disks in the system
-    - translate between traditional and persistent device names
-    - read disk temperature from kernel's `HWMON` system
-    - read SMART data of the disk with the help of `smartctl` command
+    - translate between traditional and persistent disk names
+    - read disk temperature
+    - read SMART data of the disk
 
 Installation
 ------------
