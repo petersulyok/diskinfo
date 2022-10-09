@@ -9,7 +9,7 @@ from diskinfo.disk import Disk
 
 
 class DiskInfo:
-    """At class initialization time all existing disks will be discovered in the runtime system. After that,
+    """At class initialization time all existing disks will be explored in the runtime system. After that,
     :meth:`~diskinfo.DiskInfo.get_disk_number()` method will provide the number of identified disk and
     :meth:`~diskinfo.DiskInfo.get_disk_list()` method will return the list of the identified disks.
     In both cases disk type filters can be applied to get only the subset of the discovered disks. The filters are
@@ -51,10 +51,13 @@ class DiskInfo:
         Args:
             included (set): filter set for included disk types
             excluded (set): filter set for excluded disk types
+
         Returns:
             int: number of the (filtered) disks
+
         Raises:
-            ValueError: if there are common disk types on included and excluded filter sets
+            ValueError: if the same disk type is on both included and excluded filter sets
+
         Example:
             A code example about using filters: it counts the number of SSDs excluding NVME disks.
 
@@ -97,10 +100,13 @@ class DiskInfo:
             excluded (set): filter set for excluded disk types
             sorting (bool): disk list will be sorted based on `name` string
             rev_order (bool): sorting in reverse order
+
         Returns:
             List[Disk]: list of the (filtered) disks
+
         Raises:
-            ValueError: if there are common disk types on included and excluded filter sets
+            ValueError: if the same disk type is on both included and excluded filter sets
+
         Example:
             A code example about using filters and sorting: it will list the device path of the sorted list
             of the HDDs:
