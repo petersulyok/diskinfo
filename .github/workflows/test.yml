@@ -42,8 +42,7 @@ jobs:
       - name: Generate coverage report
         if: "matrix.coverage"
         run: |
-          pytest --cov=src --cov=test
-          python -m coverage xml
+          pytest --cov=src --cov=test --cov-report=xml
       - name: Upload coverage to Codecov
         if: "matrix.coverage"
         uses: codecov/codecov-action@v3
