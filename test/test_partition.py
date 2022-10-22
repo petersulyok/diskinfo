@@ -12,7 +12,6 @@ from test_data import TestData, TestPartition
 from diskinfo import DiskType, Partition, size_in_hrf
 
 
-
 class PartitionTest(unittest.TestCase):
     """Unit test for utils module."""
 
