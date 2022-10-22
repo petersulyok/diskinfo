@@ -7,7 +7,9 @@ import os
 import re
 import subprocess
 from typing import List, Tuple
+from diskinfo.utils import _read_file, _read_udev_property, _read_udev_path, size_in_hrf
 from diskinfo.disktype import DiskType
+from diskinfo.partition import Partition
 from diskinfo.disksmart import DiskSmartData, SmartAttribute, NvmeAttributes
 
 
@@ -22,13 +24,13 @@ class Disk:
         * a `by-path` name of the disk (e.g. `"pci-0000:00:17.0-ata-3"`) located in `/dev/disk/by-path/`  directory
 
     Based on the specified input parameter the disk will be indentified and its attributes will be collected and
-    saved. :py:obj:`ValueError` exception will be raised in case of missing or invalid disk identifier.
-
-    During the class initialization the disk will not be directly accessed, so its power state will not change
-    (e.g. it will not be awakened from a `STANDBY` state).
+    stored. A :py:obj:`ValueError` exception will be raised in case of missing or invalid disk identifier.
 
     Operators (``<``, ``>`` and ``==``) are also implemented for this class to compare different class instances,
     they use the disk name for comparision.
+
+    .. note::
+        During the class initialization the disk will not be accessed.
 
     Args:
         disk_name (str): the disk name
@@ -85,6 +87,7 @@ class Disk:
     __part_table_type: str              # Disk partition table type
     __part_table_uuid: str              # Disk partition table UUID
     __hwmon_path: str                   # Path for the HWMON temperature file
+    __partitions: List[Partition]       # List of partitions on the disk
 
     def __init__(self, disk_name: str = None, serial_number: str = None, wwn: str = None,
                  byid_name: str = None, bypath_name: str = None,) -> None:
@@ -97,8 +100,9 @@ class Disk:
         elif serial_number:
             name = ""
             for file in os.listdir("/sys/block/"):
-                self.__device_id = self._read_file("/sys/block/" + file + "/dev")
-                self.__serial_number = self._read_udev_property("ID_SERIAL_SHORT=")
+                self.__device_id = _read_file("/sys/block/" + file + "/dev")
+                dev_path = "/run/udev/data/b" + self.__device_id
+                self.__serial_number = _read_udev_property(dev_path, "ID_SERIAL_SHORT=")
                 if serial_number == self.__serial_number:
                     name = file
                     break
@@ -109,8 +113,9 @@ class Disk:
         elif wwn:
             name = ""
             for file in os.listdir("/sys/block/"):
-                self.__device_id = self._read_file("/sys/block/" + file + "/dev")
-                self.__wwn = self._read_udev_property("ID_WWN=")
+                self.__device_id = _read_file("/sys/block/" + file + "/dev")
+                dev_path = "/run/udev/data/b" + self.__device_id
+                self.__wwn = _read_udev_property(dev_path, "ID_WWN=")
                 if wwn in self.__wwn:
                     name = file
                     break
@@ -137,7 +142,7 @@ class Disk:
 
         # Determine disk type (HDD, SSD, NVME)
         path = "/sys/block/" + self.__name + "/queue/rotational"
-        result = self._read_file(path)
+        result = _read_file(path)
         if result == "1":
             self.__type = DiskType.HDD
         elif result == "0":
@@ -147,29 +152,32 @@ class Disk:
         if "nvme" in self.__name:
             self.__type = DiskType.NVME
 
-        # Read attributes from /sys filesystem and from udev.
-        self.__size = int(self._read_file("/sys/block/" + self.__name + "/size"))
-        self.__model = self._read_file("/sys/block/" + self.__name + "/device/model")
-        self.__device_id = self._read_file("/sys/block/" + self.__name + "/dev")
-        self.__physical_block_size = int(self._read_file("/sys/block/" + self.__name + "/queue/physical_block_size"))
-        self.__logical_block_size = int(self._read_file("/sys/block/" + self.__name + "/queue/logical_block_size"))
-        self.__serial_number = self._read_udev_property("ID_SERIAL_SHORT=")
-        self.__firmware = self._read_udev_property("ID_REVISION=")
-        self.__wwn = self._read_udev_property("ID_WWN=")
-        self.__part_table_type = self._read_udev_property("ID_PART_TABLE_TYPE=")
-        self.__part_table_uuid = self._read_udev_property("ID_PART_TABLE_UUID=")
-        model = self._read_udev_property("ID_MODEL_ENC=")
+        # Read attributes from /sys filesystem.
+        self.__size = int(_read_file("/sys/block/" + self.__name + "/size"))
+        self.__model = _read_file("/sys/block/" + self.__name + "/device/model")
+        self.__device_id = _read_file("/sys/block/" + self.__name + "/dev")
+        self.__physical_block_size = int(_read_file("/sys/block/" + self.__name + "/queue/physical_block_size"))
+        self.__logical_block_size = int(_read_file("/sys/block/" + self.__name + "/queue/logical_block_size"))
+
+        # Read attributes from udev data.
+        dev_path = "/run/udev/data/b" + self.__device_id
+        self.__serial_number = _read_udev_property(dev_path, "ID_SERIAL_SHORT=")
+        self.__firmware = _read_udev_property(dev_path, "ID_REVISION=")
+        self.__wwn = _read_udev_property(dev_path, "ID_WWN=")
+        self.__part_table_type = _read_udev_property(dev_path, "ID_PART_TABLE_TYPE=")
+        self.__part_table_uuid = _read_udev_property(dev_path, "ID_PART_TABLE_UUID=")
+        model = _read_udev_property(dev_path, "ID_MODEL_ENC=")
         if model:
             self.__model = model
 
         # Read `/dev/disk/by-byid/` path elements from udev and check their existence.
-        self.__byid_path = self._read_udev_path(True)
+        self.__byid_path = _read_udev_path(dev_path, 0)
         for file_name in self.__byid_path:
             if not os.path.exists(file_name):
                 raise RuntimeError(f"Disk by-id path ({ file_name }) does not exist!")
 
         # Read `/dev/disk/by-path/` path elements from udev and check their existence.
-        self.__bypath_path = self._read_udev_path(False)
+        self.__bypath_path = _read_udev_path(dev_path, 1)
         for file_name in self.__bypath_path:
             if not os.path.exists(file_name):
                 raise RuntimeError(f"Disk by-path path ({ file_name }) does not exist!")
@@ -442,39 +450,7 @@ class Disk:
                 1.0 TB
 
         """
-        metric_units: List[str] = ["B", "kB", "MB", "GB", "TB", "PB", "EB"]
-        iec_units: List[str] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"]
-        legacy_units: List[str] = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
-        divider: int    # Divider for the specified unit.
-        size: float     # Result size
-        unit: str       # Result unit
-        i: int = 0      # Unit index
-
-        # Set up the proper divider.
-        if units == 0:
-            divider = 1000
-        elif units == 1:
-            divider = 1024
-        else:
-            divider = 1024
-
-        # Calculate the proper disk size.
-        size = self.__size * 512
-        number_of_units = len(metric_units)
-        for i in range(number_of_units):
-            if size < divider:
-                break
-            size /= divider
-
-        # Identify the proper unit for the calculated size.
-        if units == 0:
-            unit = metric_units[i]
-        elif units == 1:
-            unit = iec_units[i]
-        else:
-            unit = legacy_units[i]
-
-        return size, unit
+        return size_in_hrf(self.__size * 512, units)
 
     def get_device_id(self) -> str:
         """Returns the disk device id in `'major:minor'` form.
@@ -520,7 +496,7 @@ class Disk:
         return self.__logical_block_size
 
     def get_partition_table_type(self) -> str:
-        """Returns the type of the partition table on the disk. It could be 'mbr or 'gpt'.
+        """Returns the type of the partition table on the disk (e.g. `mbr` or `gpt`).
 
         Example:
             An example about the use of this function::
@@ -578,11 +554,12 @@ class Disk:
         """
         if not self.__hwmon_path:
             raise RuntimeError("HWMON file cannot be found for this disk.")
-        return int(int(self._read_file(self.__hwmon_path)) / 1000)
+        return int(int(_read_file(self.__hwmon_path)) / 1000)
 
-    def get_smart_data(self, nocheck: bool = False, sudo: str = None, smartctl_path: str = "/usr/sbin/smartctl"):
-        """Returns smart data for the disk. This function will execute `smartctl` command from `smartmontools
-        <https://www.smartmontools.org/>`_ package, so it has to be installed.
+    def get_smart_data(self, nocheck: bool = False, sudo: str = None, smartctl_path: str = "/usr/sbin/smartctl") \
+            -> DiskSmartData:
+        """Returns smart data of the disk. This function will execute `smartctl` command from `smartmontools
+        <https://www.smartmontools.org/>`_ package, it has to be installed.
 
         .. note::
 
@@ -776,89 +753,42 @@ class Disk:
 
         return value
 
-    @staticmethod
-    def _read_file(path) -> str:
-        """Reads the text content of the specified file. The function will hide IOError and FileNotFound exceptions
-         during the file operation. The result string will be decoded (UTF-8) and stripped.
-
-        Args:
-            path (str): file path
+    def get_partition_list(self) -> List[Partition]:
+        """Reads partition information of the disk and returns the list of partitions. See
+        :class:`~diskinfo.Partition` class for more details for a partition entry.
 
         Returns:
-            str: file content text
+            List[Partition]: list of partitions
+
+        Example:
+            >>> from diskinfo import *
+            >>> disk=Disk("nvme0n1")
+            >>> plist=disk.get_partition_list()
+            >>> for item in plist:
+            ...     print(item.get_name())
+            ...
+            nvme0n1p1
+            nvme0n1p2
+            nvme0n1p3
+            nvme0n1p4
+            nvme0n1p5
+            nvme0n1p6
+
         """
-        result: str = ""
-        try:
-            with open(path, "rt", encoding="UTF-8") as file:
-                result = file.read()
-        except (IOError, FileNotFoundError):
-            pass
-        return result.strip()
-
-    def _read_udev_property(self, udev_property: str) -> str:
-        """Reads a property from udev data file belonging to the disk (/run/udev/data/b?:?).
-        It will hide IOError and FileNotFound exceptions during the file operation. The result string
-        will be decoded and stripped.
-
-        Args:
-            udev_property (str): udev property string
-
-        Returns:
-            str: value of the property
-        """
-        file_content: List[str] = []
-        result: str = ""
-
-        # Read proper udev data file.
-        try:
-            path = "/run/udev/data/b" + self.__device_id
-            with open(path, "rt", encoding="unicode_escape") as file:
-                file_content = file.read().splitlines()
-        except (IOError, FileNotFoundError):
-            pass
-
-        # Find the specified udev_property and copy its value.
-        for lines in file_content:
-            pos = lines.find(udev_property)
-            if pos != -1:
-                result = lines[pos+len(udev_property):]
-
-        return result.strip()
-
-    def _read_udev_path(self, byid: bool) -> List[str]:
-        """Reads one or more path elements from udev data file belonging to the disk (/run/udev/data/b?:?).
-        It will hide any IO exception during the file operation.
-
-        Args:
-            byid (bool):
-                True: `by-id` path elements will be loaded
-                False: `by-path` path elements will be loaded
-        Returns:
-            List[str]: path elements
-        """
-        path: str
-        file_content: List[str] = []
-        result: List[str] = []
-        udev_property: str
-
-        # Read proper udev data file.
-        try:
-            path = "/run/udev/data/b" + self.__device_id
-            with open(path, "rt", encoding="UTF-8") as file:
-                file_content = file.read().splitlines()
-        except (IOError, FileNotFoundError):
-            pass
-
-        # Find the specified path elements and collect their value.
-        if byid:
-            udev_property = "disk/by-id/"
-        else:
-            udev_property = "disk/by-path/"
-        for lines in file_content:
-            pos = lines.find(udev_property)
-            if pos != -1:
-                result.append("/dev/" + lines[pos:].strip())
-
+        result: List[Partition] = []
+        index = 1
+        while True:
+            path = "/sys/block/" + self.__name + "/" + self.__name
+            if self.is_nvme():
+                path += "p"
+            path += str(index)
+            # If the partition path exists.
+            if os.path.exists(path):
+                result.append(Partition(os.path.basename(path), _read_file(path + "/dev")))
+            # File does not exist, quit from loop.
+            else:
+                break
+            index += 1
         return result
 
     def __gt__(self, other) -> bool:

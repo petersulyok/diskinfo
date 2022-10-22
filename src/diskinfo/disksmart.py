@@ -102,10 +102,11 @@ class NvmeAttributes:
 
 
 class DiskSmartData:
-    """This class presents all collected SMART data for a disk. This class is created based on the parsed output of
-    the `smartctl` command. There are disk type specific data attributes in this class, they will be used only
-    special cases.
+    """This class presents all collected SMART data for a disk. This class is created by
+    :meth:`~diskinfo.Disk.get_smart_data()` method. There are several disk type specific data attributes in this
+    class, they are available only for a specific disk type(s).
     """
+
     healthy: bool
     """The health status of the disk. Valid for all disk types. Meaning:
 
@@ -120,9 +121,9 @@ class DiskSmartData:
             - `True` means the disk is in STANDBY state
             - `False` means the disk is ACTIVE or IDLE
 
-    .. note::
+    .. warning::
         When a HDD is in standby state then the :attr:`~diskinfo.DiskSmartData.smart_attributes` field in this class
-        will not be updated!
+        cannot be updated, it will be empty!
     """
 
     smart_attributes: List[SmartAttribute]

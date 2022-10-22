@@ -6,11 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "diskinfo"
 description = "Disk information Python library for Linux"
 readme = "README.md"
-version = "1.3.1"
+version = "2.0.0"
 authors = [
     { name = "Peter Sulyok", email = "peter@sulyok.net" }
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 keywords = ["disk", "linux"]
 license = {file = "LICENSE"}
 classifiers = [
@@ -42,11 +42,7 @@ count = true
 show-source = true
 statistics = true
 per-file-ignores = [
-    # undefined name
-    "test_demo.py: F821",
-    # undefined name
     "test_diskinfo.py: F821",
-    # undefined name
     "test_disk.py: F821"
     ]
 

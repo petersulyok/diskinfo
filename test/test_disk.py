@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 from test_data import TestData
 from test_data_smart import TestSmartData
-from diskinfo import Disk, DiskType
+from diskinfo import Disk, DiskType, _read_file
 
 
 class DiskTest(unittest.TestCase):
@@ -319,7 +319,7 @@ class DiskTest(unittest.TestCase):
              patch('os.path.exists', mock_exists), \
              patch('builtins.open', mock_open):
             d = Disk(disk_name)
-            temp_str = Disk._read_file(my_td.disks[0].hwmon_path)
+            temp_str = _read_file(my_td.disks[0].hwmon_path)
             temp_val = int(int(temp_str) / 1000)
             self.assertEqual(d.get_temperature(), temp_val, error)
             del d
@@ -709,17 +709,59 @@ class DiskTest(unittest.TestCase):
         self.pt_gsd_n3(d, 4, "get_smart_data 16")
         self.pt_gsd_n3(d, 5, "get_smart_data 17")
 
-    def test_read_files(self):
-        """Unit test for invalid file names in case of _read_file(), _read_udev_property(), _read_udev_path()."""
+    def pt_gpl_p1(self, disk_name: str, disk_type: int, part_num: int, error: str) -> None:
+        """Primitive positive test function. It contains the following steps:
+            - create TestData class
+            - mock glob.glob(), os.path.exists() and builtins.open() functions
+            - create Disk() class instance
+            - create partitions for Disk() class
+            - call get_partition_list() method
+            - ASSERT: if number of identified partitions are different from the expected number
+            - delete all instances
+        """
+        def mocked_glob(file: str, *args, **kwargs):
+            if file.startswith('/sys/block'):
+                file = my_td.td_dir + file
+            return original_glob(file, *args, **kwargs)
 
-        # Test if the following functions return empty string/list in case of invalid path.
-        d = Disk.__new__(Disk)
-        self.assertEqual(d._read_file("./nonexistent_dir/nonexistent_dir/nonexistent_file"), "", "_read_file 1")
-        d._Disk__device_id = "104567:03490834"
-        self.assertEqual(d._read_udev_property("NONEXISTENT_PROPERTY="), "", "_read_udev_property 1")
-        self.assertEqual(d._read_udev_path(True), [], "_read_udev_path 1")
-        self.assertEqual(d._read_udev_path(False), [], "_read_udev_path 2")
-        del d
+        # Mock function for os.path.exists().
+        def mocked_exists(path: str):
+            if not path.startswith(my_td.td_dir):
+                path = my_td.td_dir + path
+            return original_exists(path)
+
+        # Mock function for builtin.open().
+        def mocked_open(path: str,  *args, **kwargs):
+            if not path.startswith(my_td.td_dir):
+                path = my_td.td_dir + path
+            return original_open(path, *args, **kwargs)
+
+        my_td = TestData()
+        my_td.create_disks([disk_name], [disk_type])
+        my_td.create_partitions(0, part_num)
+        original_glob = glob.glob
+        mock_glob = MagicMock(side_effect=mocked_glob)
+        original_exists = os.path.exists
+        mock_exists = MagicMock(side_effect=mocked_exists)
+        original_open = open
+        mock_open = MagicMock(side_effect=mocked_open)
+        with patch('glob.glob', mock_glob), \
+             patch('os.path.exists', mock_exists), \
+             patch('builtins.open', mock_open):
+            d = Disk(disk_name)
+            plist = d.get_partition_list()
+            self.assertEqual(len(plist), part_num, error)
+            del d
+        del my_td
+
+    def test_get_partition_list(self):
+        """Unit test for get_partition_list() method of Disk class."""
+
+        # Test all disk types.
+        self.pt_gpl_p1("sda", DiskType.HDD, 0, "get_partition_list 1")
+        self.pt_gpl_p1("sda", DiskType.HDD, 2, "get_partition_list 2")
+        self.pt_gpl_p1("sda", DiskType.SSD, 3, "get_partition_list 3")
+        self.pt_gpl_p1("nvme0n1", DiskType.NVME, 6, "get_partition_list 4")
 
     def test_operators(self):
         """Unit test for operators implemented in Disk class"""

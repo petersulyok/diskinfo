@@ -12,6 +12,34 @@ from typing import List
 from diskinfo import DiskType
 
 
+class TestPartition:
+    """Test data for a partition entry."""
+    name: str
+    path: str
+    byid_path: List[str]
+    bypath_path: str
+    bypartuuid_path: str
+    bypartlabel_path: str
+    bylabel_path: str
+    byuuid_path: str
+    part_dev_id: str
+    part_scheme: str
+    part_label: str
+    part_uuid: str
+    part_type: str
+    part_number: int
+    part_offset: int
+    part_size: int
+    fs_label: str
+    fs_uuid: str
+    fs_type: str
+    fs_version: str
+    fs_usage: str
+    fs_free_size: int
+    fs_mounting_point: str
+    df_output: str
+
+
 class TestDisk:
     """Test disk attributes."""
     name: str
@@ -30,6 +58,7 @@ class TestDisk:
     byid_path: List[str]
     bypath_path: List[str]
     hwmon_path: str
+    partitions: List[TestPartition]
 
 
 class TestData:
@@ -161,6 +190,131 @@ class TestData:
             self._create_file(self.td_dir + "/run/udev/data/b" + td.dev_id, udev_content)
 
             self.disks.append(td)
+
+    def create_partitions(self, disk_idx: int, part_num: int) -> None:
+        """Creates partitions for disks."""
+
+        self.disks[disk_idx].partitions = []
+        p_offset = 2048
+        index = 1
+        while index <= part_num:
+            part = TestPartition()
+            part.name = self.disks[disk_idx].name
+            if self.disks[disk_idx].type == DiskType.NVME:
+                part.name += "p"
+            part.name += str(index)
+            os.makedirs(self.td_dir + "/sys/block/" + self.disks[disk_idx].name + "/" + part.name, exist_ok=True)
+            dev_ids = self.disks[disk_idx].dev_id.split(':')
+            part.part_dev_id = dev_ids[0] + ":" + str(int(dev_ids[1]) + index)
+            self._create_file(self.td_dir + "/sys/block/" + self.disks[disk_idx].name + "/" + part.name + "/dev",
+                              part.part_dev_id)
+            part.path = "/dev/" + part.name
+            self._create_file(self.td_dir + part.path, " ")
+
+            part.byid_path = [
+                "/dev/disk/by-id/" + os.path.basename(self.disks[disk_idx].byid_path[0]) + "-part" + str(index),
+                "/dev/disk/by-id/" + os.path.basename(self.disks[disk_idx].byid_path[1]) + "-part" + str(index)
+            ]
+            part.bypath_path = "/dev/disk/by-path/" + os.path.basename(self.disks[disk_idx].bypath_path[0]) + \
+                               "-part" + str(index)
+            part.part_uuid = str(uuid.uuid4())
+            part.bypartuuid_path = "/dev/disk/by-partuuid/" + part.part_uuid
+            part.part_label = random.choice(["EFI system partition", "Microsoft reserved partition",
+                                             "Basic data partition", ""])
+            part_label = part.part_label
+            if " " in part_label:
+                part_label = part_label.replace(" ", "\\x20")
+            if part_label:
+                part.bypartlabel_path = "/dev/disk/by-partlabel/" + part.part_label
+            else:
+                part.bypartlabel_path = ""
+            part.part_scheme = random.choice(["gtp", "mbr"])
+            part.part_type = str(uuid.uuid4())
+            part.part_number = index
+            part.part_offset = p_offset
+            # Partition size is random between 100MiB - 500GiB in 512-byte block
+            part.part_size = random.randint(204800, 1048576000)
+            p_offset += part.part_size
+
+            # If the partition has a filesystem
+            is_fs = random.choice([False, True, True, True])
+            if is_fs:
+                part.fs_uuid = str(uuid.uuid4())
+                part.fs_label = random.choice(["System", "", "Windows", "Recovery tools", "", "Data", "Debian",
+                                               "Arch Linux", ""])
+                fs_label = part.fs_label
+                fs_label_enc = part.fs_label
+                if " " in fs_label:
+                    fs_label = fs_label.replace(" ", "_")
+                    fs_label_enc = fs_label_enc.replace(" ", "\\x20")
+                if fs_label:
+                    part.bylabel_path = "/dev/disk/by-label/" + part.fs_label
+                else:
+                    part.bylabel_path = ""
+                part.fs_uuid = str(uuid.uuid4())
+                part.byuuid_path = "/dev/disk/by-uuid/" + part.fs_uuid
+                part.fs_type = random.choice(["ntfs", "vfat", "ext3", "ext4"])
+                part.fs_version = random.choice(["", "1.0", "FAT32", "500", ""])
+                part.fs_usage = "filesystem"
+                part.fs_mounting_point = random.choice(["", "/", "/mnt/data", "/home", "/mnt/system"])
+                if part.fs_mounting_point:
+                    part.fs_free_size = round(part.part_size * random.random())
+                else:
+                    part.fs_free_size = 0
+            else:
+                fs_label = ""
+                fs_label_enc = ""
+                part.fs_label = ""
+                part.bylabel_path = ""
+                part.fs_uuid = ""
+                part.byuuid_path = ""
+                part.fs_type = ""
+                part.fs_version = ""
+                part.fs_usage = ""
+                part.fs_free_size = 0
+                part.fs_mounting_point = ""
+
+            udev_content = \
+                "S:disk/by-id/" + os.path.basename(part.byid_path[0]) + "\n" \
+                "S:disk/by-id/" + os.path.basename(part.byid_path[1]) + "\n" \
+                "S:disk/by-path/" + os.path.basename(part.bypath_path) + "\n" \
+                "S:disk/by-partuuid/" + part.part_uuid + "\n"
+            if part_label:
+                udev_content += "S:disk/by-partlabel/" + part_label + "\n"
+            if is_fs:
+                udev_content += "S:disk/by-uuid/" + part.fs_uuid + "\n"
+                if fs_label:
+                    udev_content += \
+                        "S:disk/by-label/" + fs_label_enc + "\n" \
+                        "E:ID_FS_LABEL=" + fs_label + "\n" \
+                        "E:ID_FS_LABEL_ENC=" + fs_label_enc + "\n"
+                udev_content += \
+                    "E:ID_FS_UUID=" + part.fs_uuid + "\n" \
+                    "E:ID_FS_UUID_ENC=" + part.fs_uuid + "\n"
+                if part.fs_version:
+                    udev_content += "E:ID_FS_VERSION=" + part.fs_version + "\n"
+                udev_content += \
+                    "E:ID_FS_TYPE=" + part.fs_type + "\n" \
+                    "E:ID_FS_USAGE=" + part.fs_usage + "\n"
+            udev_content += \
+                "E:ID_PART_ENTRY_SCHEME=" + part.part_scheme + "\n"
+            if part_label:
+                udev_content += "E:ID_PART_ENTRY_NAME=" + part.part_label + "\n"
+            udev_content += \
+                "E:ID_PART_ENTRY_UUID=" + part.part_uuid + "\n" \
+                "E:ID_PART_ENTRY_TYPE=" + part.part_type + "\n" \
+                "E:ID_PART_ENTRY_NUMBER=" + str(part.part_number) + "\n" \
+                "E:ID_PART_ENTRY_OFFSET=" + str(part.part_offset) + "\n" \
+                "E:ID_PART_ENTRY_SIZE=" + str(part.part_size) + "\n"
+            self._create_file(self.td_dir + "/run/udev/data/b" + part.part_dev_id, udev_content)
+            part.df_output = \
+                "Filesystem          Avail Mounted on\n" \
+                "udev             65571944 /dev\n" \
+                "tmpfs            13125008 /run\n"
+            if part.fs_mounting_point:
+                part.df_output += part.path + "  " + str(part.fs_free_size) + " " + part.fs_mounting_point + "\n"
+            self.disks[disk_idx].partitions.append(part)
+            index += 1
 
     @staticmethod
     def _get_random_alphanum_str(length: int) -> str:

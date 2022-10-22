@@ -35,7 +35,7 @@ jobs:
       - name: Lint with flake8 and pylint
         run: |
           flake8
-          pylint src test
+          pylint src/diskinfo/*.py test/*.py
       - name: Test with pytest
         run: |
           pytest
