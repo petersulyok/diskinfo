@@ -174,6 +174,10 @@ class Partition:
     def get_path(self) -> str:
         """Returns the path of the partition (e.g. `/dev/sda1` or `/dev/nvme0n1p1`).
 
+        .. note::
+
+            This is not a persistent path!
+
         Example:
             An example about use of the function::
 
