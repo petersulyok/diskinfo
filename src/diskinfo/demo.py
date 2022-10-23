@@ -12,7 +12,7 @@ from diskinfo import DiskType, Disk, DiskInfo, size_in_hrf, time_in_hrf
 
 
 def disklist_demo():
-    """Disk listing demo."""
+    """Disk exploring demo."""
 
     # Explore disks in the system.
     di = DiskInfo()
@@ -50,75 +50,78 @@ def disklist_demo():
 
 
 def disk_demo(name: str):
-    """Disk demo."""
+    """Disk attributes demo."""
 
     d = Disk(name)
 
     panel = Panel(f"[markdown.strong]Standard disk attributes:[/] [bold green]{name}[/]", box=box.MINIMAL, expand=False)
     table = Table(border_style="gray30", box=box.MINIMAL)
-    table.add_column("Attribute", justify="left", style="bold orange1")
-    table.add_column("Value", justify="left", style="bold orchid")
+    table.add_column("Attribute", justify="left", style="steel_blue1")
+    table.add_column("Value", justify="left", style="orchid")
 
-    table.add_row("name", d.get_name())
-    table.add_row("path", "[green]"+d.get_path()+"[/]")
-    table.add_row("by-id path", "[gray54]"+str(d.get_byid_path())+"[/]")
-    table.add_row("by-path path", "[gray54]"+str(d.get_bypath_path())+"[/]")
-    table.add_row("model", str(d.get_model()))
+    table.add_row("name", f"[bold royal_blue1]{d.get_name()}[/]")
+    table.add_row("path", f"[bold chartreuse4]{d.get_path()}[/]")
+    table.add_row("by-id path", f"[gray54]{str(d.get_byid_path())}[/]")
+    table.add_row("by-path path", f"[gray54]{str(d.get_bypath_path())}[/]")
+    table.add_row("model", f"[bold orange3]{str(d.get_model())}[/]")
     s, u = d.get_size_in_hrf(units=0)
-    size_str = f"[bold blue]{s:.1f} {u}[/]"
+    size_str = f"[bold slate_blue1]{s:.1f} {u}[/]"
     table.add_row("size", size_str)
-    table.add_row("serial", d.get_serial_number())
-    table.add_row("firmware", d.get_firmware())
-    table.add_row("wwn id", d.get_wwn())
-    table.add_row("disk type", d.get_type_str())
-    table.add_row("device id", d.get_device_id())
-    temp_str = f"{d.get_temperature()} C"
+    table.add_row("serial", f"[bold light_salmon1]{d.get_serial_number()}[/]")
+    table.add_row("firmware", f"[bold light_coral]{d.get_firmware()}[/]")
+    table.add_row("wwn id", f"[bold sky_blue3]{d.get_wwn()}[/]")
+    table.add_row("disk type", f"[bold sea_green2]{d.get_type_str()}[/]")
+    table.add_row("device id", f"[bold blue1]{d.get_device_id()}[/]")
+    temp_str = f"[bold bright_magenta]{d.get_temperature()} C[/]"
     table.add_row("temperature", temp_str)
-    table.add_row("physical block size", str(d.get_physical_block_size()))
-    table.add_row("logical block size", str(d.get_logical_block_size()))
-    table.add_row("partition table type", d.get_partition_table_type())
-    table.add_row("partition table uuid", d.get_partition_table_uuid())
+    table.add_row("physical block size", f"[bold wheat4]{str(d.get_physical_block_size())} bytes [/]")
+    table.add_row("logical block size", f"[bold wheat4]{str(d.get_logical_block_size())} bytes[/]")
+    table.add_row("partition table type", f"[bold gray62]{d.get_partition_table_type()}[/]")
+    table.add_row("partition table uuid", f"[bold green3]{d.get_partition_table_uuid()}[/]")
     try:
         sd = d.get_smart_data(sudo="/usr/bin/sudo")
         panel2 = Panel("[markdown.strong]SMART attributes[/]", box=box.MINIMAL, expand=False)
         table2 = Table(border_style="gray30", box=box.MINIMAL)
-        table2.add_column("Attribute", justify="left", style="bold orange1")
+        table2.add_column("Attribute", justify="left", style="steel_blue1")
         table2.add_column("Value", justify="left", style="bold orchid")
         if sd.healthy:
             hstate = "[bold green]HEALTHY[/]"
         else:
             hstate = "[bold red]FAILED[/]"
-        table2.add_row("health report", hstate)
+        table2.add_row("health status", hstate)
         if d.is_nvme():
-            table2.add_row("critical warning", str(sd.nvme_attributes.critical_warning))
+            table2.add_row("critical warning", f"[bold blue_violet]{str(sd.nvme_attributes.critical_warning)}[/]")
             t, u = time_in_hrf(sd.nvme_attributes.power_on_hours, 2)
-            poh = f"{t:.1f} {u}"
+            poh = f"[bold medium_purple3]{t:.1f} {u}[/]"
             table2.add_row("power on time", poh)
-            table2.add_row("power cycles", str(sd.nvme_attributes.power_cycles))
+            table2.add_row("power cycles", f"[bold orange4]{str(sd.nvme_attributes.power_cycles)}[/]")
             s, u = size_in_hrf(sd.nvme_attributes.data_units_read * 1000 * 512)
-            size_str = f"{s:.1f} {u}"
+            size_str = f"[bold wheat4]{s:.1f} {u}[/]"
             table2.add_row("data units read", size_str)
             s, u = size_in_hrf(sd.nvme_attributes.data_units_written * 1000 * 512)
-            size_str = f"{s:.1f} {u}"
+            size_str = f"[bold wheat4]{s:.1f} {u}[/]"
             table2.add_row("data units written", size_str)
-            table2.add_row("error information log entries", str(sd.nvme_attributes.error_information_log_entries))
-            table2.add_row("media and data integrity errors", str(sd.nvme_attributes.media_and_data_integrity_errors))
-            table2.add_row("unsafe shutdowns", str(sd.nvme_attributes.unsafe_shutdowns))
+            table2.add_row("error information log entries",
+                           f"[bold blue]{str(sd.nvme_attributes.error_information_log_entries)}[/]")
+            table2.add_row("media and data integrity errors",
+                           f"[bold blue]{str(sd.nvme_attributes.media_and_data_integrity_errors)}[/]")
+            table2.add_row("unsafe shutdowns",
+                           f"[bold indian_red1]{str(sd.nvme_attributes.unsafe_shutdowns)}[/]")
         else:
             index = sd.find_smart_attribute_by_name("Power_On_Hours")
             if index != -1:
                 t, u = time_in_hrf(sd.smart_attributes[index].raw_value, 2)
-                poh = f"{t:.1f} {u}"
+                poh = f"[bold medium_purple3]{t:.1f} {u}[/]"
                 table2.add_row("power on time", poh)
             index = sd.find_smart_attribute_by_name("Power_Cycle_Count")
             if index != -1:
                 pcc = str(sd.smart_attributes[index].raw_value)
-                table2.add_row("power cycles", pcc)
+                table2.add_row("power cycles", f"[bold orange4]{pcc}[/]")
             index = sd.find_smart_attribute_by_name("LBAs_Written")
             if index != -1:
                 lbaw = sd.smart_attributes[index].raw_value
                 s, u = size_in_hrf(lbaw * 512)
-                size_str = f"{s:.1f} {u}"
+                size_str = f"[bold medium_violet_red]{s:.1f} {u}[/]"
                 table2.add_row("total LBAs written", size_str)
     except RuntimeError:
         panel2 = Panel("[markdown.strong]SMART attributes cannot be read[/]", box=box.MINIMAL, expand=False)
