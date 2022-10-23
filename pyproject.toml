@@ -36,7 +36,7 @@ filterwarnings = [ "default", "ignore::pytest.PytestCollectionWarning"]
 
 # flake8 options
 [tool.flake8]
-exclude = [ "docs", "htmlcov", ".git", "__pycache__", ".pytest_cache", ".vscode", ".idea", ".venv", "build" ]
+exclude = [ "docs", "htmlcov", ".git", "__pycache__", ".pytest_cache", ".vscode", ".idea", "venv*", ".venv*", "build" ]
 max-line-length = 120
 count = true
 show-source = true
