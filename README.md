@@ -25,7 +25,8 @@ The package requires Python version >= `3.7`.
 
 Demo
 ----
-The library contains multiple demo screens ([`rich`](https://pypi.org/project/rich) needs to be installed):
+The library contains a demo application with multiple screens ([`rich`](https://pypi.org/project/rich)
+needs to be installed):
 
     pip install rich
     python -m diskinfo.demo
