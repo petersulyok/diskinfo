@@ -122,8 +122,7 @@ class DiskSmartData:
             - `False` means the disk is ACTIVE or IDLE
 
     .. warning::
-        When a HDD is in standby state then the :attr:`~diskinfo.DiskSmartData.smart_attributes` field in this class
-        cannot be updated, it will be empty!
+        When a HDD is in STANDBY state (i.e. this flag is `True`) then other SMART attributes will not be updated!
     """
 
     smart_attributes: List[SmartAttribute]
@@ -134,7 +133,8 @@ class DiskSmartData:
     """
 
     nvme_attributes: NvmeAttributes
-    """NVME attributes for a disk. Valid only for NVME disks."""
+    """NVME attributes for a disk. Valid only for NVME disks. See more details in
+    :class:`~diskinfo.NvmeAttributes` class."""
 
     return_code: int
     """Return code of latest execution of the `smartctl` command."""

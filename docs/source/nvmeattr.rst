@@ -1,6 +1,6 @@
 .. py:currentmodule:: diskinfo
 
-``NvmeAttributes`` class
+`NvmeAttributes` class
 ------------------------
 .. autoclass:: NvmeAttributes
     :members:

@@ -1,6 +1,6 @@
 .. py:currentmodule:: diskinfo
 
-``DiskSmartData`` class
+`DiskSmartData` class
 -----------------------
 .. autoclass:: DiskSmartData
     :members:

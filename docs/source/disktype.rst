@@ -1,6 +1,6 @@
 .. py:currentmodule:: diskinfo
 
-``DiskType`` class
+`DiskType` class
 ------------------
 .. autoclass:: DiskType
     :members:

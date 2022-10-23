@@ -11,12 +11,13 @@ Disk information Python library can assist in collecting disk information on Lin
 - collect information about a specific disk
 - explore existing disks in the system
 - translate between traditional and persistent disk names
-- read disk temperature
-- read SMART data of the disk
+- read current disk temperature
+- read SMART data of a disk
+- read partition list of a disk 
 
 Installation
 ------------
-Standard installation from [pypi.org](https://pypi.irg):
+Standard installation from [pypi.org](https://pypi.org):
 
     pip install diskinfo
 
@@ -24,13 +25,14 @@ The package requires Python version >= `3.7`.
 
 Demo
 ----
-The library contains a simple demo, it can be executed in the following way:
+The library contains multiple demo screens ([`rich`](https://pypi.org/project/rich) needs to be installed):
 
+    pip install rich
     python -m diskinfo.demo
 
-<img src="https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png" align="left">
+![Demo screen](https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo.png)
 
-Please note that [rich](https://pypi.org/project/rich/) Python library needs to be installed for this colorful demo.
+See more demo screens in the [documentation](https://diskinfo.readthedocs.io/en/latest/intro.html#demo).
 
 API documentation
 -----------------

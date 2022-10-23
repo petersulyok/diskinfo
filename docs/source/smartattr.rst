@@ -1,6 +1,6 @@
 .. py:currentmodule:: diskinfo
 
-``SmartAttribute`` class
+`SmartAttribute` class
 ------------------------
 .. autoclass:: SmartAttribute
     :members:
