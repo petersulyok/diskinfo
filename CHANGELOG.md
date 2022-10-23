@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.0.0] - 2022-10-23
+
+### Added
+- New `Partition` class added to hold partition data
+- `get_partition_list()` method of `Disk` class returns the list of partitions
+- New utility functions are available,`size_in_hrf()` and `time_in_hrf()`, to display size and time in human-readable
+  form
+- Demo has been extended with two additional screens (disk attributes, partition data)
+- Documentation has been improved and updated for the new functionality
+- Unit tests has been extended to cover the new functionality
+
+### Changed
+- Demo cannot be executed without [`rich`](https://pypi.org/project/rich/) Python library
+
+
 ## [1.3.1] - 2022-10-06
 
 ### Fixed
