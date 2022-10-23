@@ -53,7 +53,7 @@ class Disk:
             >>> d.get_serial_number()
             'S3D2NY0J819210S'
 
-        and these are the additional ways how the :class:`~diskinfo.Disk` class can be initialized::
+        and here are additional ways how the :class:`~diskinfo.Disk` class can be initialized::
 
             >>> d=Disk(serial_number="92837A469FF876")
             >>> d.get_name()
@@ -87,7 +87,6 @@ class Disk:
     __part_table_type: str              # Disk partition table type
     __part_table_uuid: str              # Disk partition table UUID
     __hwmon_path: str                   # Path for the HWMON temperature file
-    __partitions: List[Partition]       # List of partitions on the disk
 
     def __init__(self, disk_name: str = None, serial_number: str = None, wwn: str = None,
                  byid_name: str = None, bypath_name: str = None,) -> None:
@@ -585,6 +584,40 @@ class Disk:
             RuntimeError: in case of parsing errors of `smartctl` output
 
         Example:
+            The example show the use of the function::
+
+                >>> from diskinfo import Disk, DiskSmartData
+                >>> d = Disk("sda")
+                >>> sd = d.get_smart_data()
+
+            In case of SSDs and HDDs the traditional SMART attributes can be accessed via
+            :attr:`~diskinfo.DiskSmartData.smart_attributes` list::
+
+                >>> for item in sd.smart_attributes:
+                ...     print(f"{item.id:>3d} {item.attribute_name}: {item.raw_value}")
+                ...
+                  5 Reallocated_Sector_Ct: 0
+                  9 Power_On_Hours: 6356
+                 12 Power_Cycle_Count: 2308
+                177 Wear_Leveling_Count: 2
+                179 Used_Rsvd_Blk_Cnt_Tot: 0
+                181 Program_Fail_Cnt_Total: 0
+                182 Erase_Fail_Count_Total: 0
+                183 Runtime_Bad_Block: 0
+                187 Uncorrectable_Error_Cnt: 0
+                190 Airflow_Temperature_Cel: 28
+                195 ECC_Error_Rate: 0
+                199 CRC_Error_Count: 0
+                235 POR_Recovery_Count: 67
+                241 Total_LBAs_Written: 9869978356
+
+            In case of NVME disks they have their own SMART data in :attr:`~diskinfo.DiskSmartData.nvme_attributes`
+            field::
+
+                >>> if d.is_nvme():
+                ...     print(f"Power on hours: {sd.nvme_attributes.power_on_hours} h")
+                ...
+                Power on hours: 1565 h
 
         """
         result: subprocess.CompletedProcess     # result of the executed process
