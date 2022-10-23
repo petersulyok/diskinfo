@@ -29,7 +29,7 @@ The package is checked with `flake8` and `pylint` as well. They can be executed 
     flake8
     pylint src test
 
-The project provides configuration files for both lint tools. 
+Their configuration options can be found `pyproject.toml` file. 
 
 ## PyPI package
 The `setuptools` is used to create Python distribution package to PyPI. All package parameters are specified in 
@@ -51,7 +51,7 @@ For local development this package can be installed locally:
 ## Documentation
 This project is using `sphinx` to generate documentation on [readthedocs.io](https://readthedocs.io/). The
 github repository is connected to [readthedocs.io](https://readthedocs.io/) and when a new commit is
-created in github it will trigger documentation update on  [readthedocs.io](https://readthedocs.io/) side.
+created in github, it will trigger documentation update on  [readthedocs.io](https://readthedocs.io/) side.
 
 The documentation can be built and tested locally:
 
@@ -71,6 +71,7 @@ The project implemented the following github workflows:
    - executes unit test on `ubuntu-latest` OS and on Python versions `3.7`, `3.8`, `3.9`, `3.10`, `3.11.0-rc.2`
    - executes `flake8` and `pylint`
    - generates coverage data and upload it to [codecov.io](https://codecov.io/)
+
 2. **Publish Python distribution packages to PypI** (`publish.yml`). A published release triggers this action:
    - build distribution package on Python `3.10`
    - upload the new package to PyPI
@@ -83,6 +84,7 @@ Follow these steps to create a new release:
 3. Generate documentation locally and check it
 4. Change the version number in `pyproject.toml`
 5. Update `CHANGELOG.md` with the new release information
-6. Commit all changes again
-7. Create a new release on github with the same version number and the new package will be published on PyPI
+6. Update the version number in  `docs/source/conf.py` 
+7. Commit all changes and test again
+8. Create a new release on github with the same version number and the new package will be published on PyPI
    automatically
