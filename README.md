@@ -21,7 +21,8 @@ Standard installation from [pypi.org](https://pypi.org):
 
     pip install diskinfo
 
-The package requires Python version >= `3.7`. 
+See the complete list of dependencies and requirements in the 
+[documentation](https://diskinfo.readthedocs.io/en/latest/intro.html#installation). 
 
 Demo
 ----
