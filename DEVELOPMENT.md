@@ -27,7 +27,7 @@ The HTML report will be generated at `./htmlcov` directory.
 The package is checked with `flake8` and `pylint` as well. They can be executed manually:
 
     flake8
-    pylint src test
+    pylint src/diskinfo/*.py test/*.py
 
 Their configuration options can be found `pyproject.toml` file. 
 
@@ -43,7 +43,7 @@ The new package can be uploaded to PyPI with `twine`:
 
 NOTE: The distribution package will be built and published to PyPI automatically when a new github release created!
 
-For local development this package can be installed locally:
+During the development this package can be installed locally:
 
     pip install -e .
 
@@ -61,7 +61,7 @@ The documentation can be built and tested locally:
 
 The HTML documentation will be created in `./docs/build/html` folder.
 
-NOTE: Many times the browsers do not display new version of documentation (because of caching). You may try to reload
+NOTE: Many times the browsers do not display new version of documentation (because of caching?). You may try to reload
 the page ignoring browser cache (e.g. CTRL + SHIFT + R).
 
 ## Github workflows
