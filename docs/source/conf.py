@@ -7,9 +7,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'diskinfo'
-copyright = '2022, Peter Sulyok'
+copyright = '2022-2024, Peter Sulyok'
 author = 'Peter Sulyok'
-release = '2.0.0'
+release = '2.1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
