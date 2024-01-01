@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2024-01-01
+
+### Added
+- Support for Python 3.11 and 3.12
+- A [new bash script](https://github.com/petersulyok/diskinfo/blob/main/bin/create_python_env.sh) added to create a virtual Python environment and install all dependencies.
+- Documentation is updated
+
+### Changed
+- Dependency management: requirement files for `pip` are using maximal version numbers 
+- Flake8 removed
+
+### Fixed
+- In case of loop disks, `Disk.get_temperature()` method did not work and the demo stopped. Better error handling added while loop devices will be fully supported.
+
 
 ## [2.0.0] - 2022-10-23
 
