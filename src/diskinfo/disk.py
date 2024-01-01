@@ -106,7 +106,7 @@ class Disk:
                     name = file
                     break
             if name == "":
-                raise ValueError(f"Invalid serial number ({ serial_number })!")
+                raise ValueError(f"Invalid serial number ({serial_number})!")
             self.__name = name
         # Initialize with a disk WWN name.
         elif wwn:
@@ -119,7 +119,7 @@ class Disk:
                     name = file
                     break
             if name == "":
-                raise ValueError(f"Invalid wwn identifier ({ wwn })!")
+                raise ValueError(f"Invalid wwn identifier ({wwn})!")
             self.__name = name
         # Initialize with a disk `by-id` name.
         elif byid_name:
@@ -134,10 +134,10 @@ class Disk:
         # Check the existence of disk name in /dev and /sys/block folders.
         self.__path = "/dev/" + self.__name
         if not os.path.exists(self.__path):
-            raise ValueError(f"Disk path ({ self.__path }) does not exist!")
+            raise ValueError(f"Disk path ({self.__path}) does not exist!")
         path = "/sys/block/" + self.__name
         if not os.path.exists(path):
-            raise ValueError(f"Disk path ({ self.__path }) does not exist!")
+            raise ValueError(f"Disk path ({self.__path}) does not exist!")
 
         # Determine disk type (HDD, SSD, NVME)
         path = "/sys/block/" + self.__name + "/queue/rotational"
@@ -147,7 +147,7 @@ class Disk:
         elif result == "0":
             self.__type = DiskType.SSD
         else:
-            raise RuntimeError(f"Disk type cannot be determined based on this value ({ path }={ result }).")
+            raise RuntimeError(f"Disk type cannot be determined based on this value ({path}={result}).")
         if "nvme" in self.__name:
             self.__type = DiskType.NVME
 
@@ -173,13 +173,13 @@ class Disk:
         self.__byid_path = _read_udev_path(dev_path, 0)
         for file_name in self.__byid_path:
             if not os.path.exists(file_name):
-                raise RuntimeError(f"Disk by-id path ({ file_name }) does not exist!")
+                raise RuntimeError(f"Disk by-id path ({file_name}) does not exist!")
 
         # Read `/dev/disk/by-path/` path elements from udev and check their existence.
         self.__bypath_path = _read_udev_path(dev_path, 1)
         for file_name in self.__bypath_path:
             if not os.path.exists(file_name):
-                raise RuntimeError(f"Disk by-path path ({ file_name }) does not exist!")
+                raise RuntimeError(f"Disk by-path path ({file_name}) does not exist!")
 
         # Find the path for HWMON file of the disk.
         # Step 1: Check typical HWMON path for HDD, SSD disks
@@ -691,55 +691,55 @@ class Disk:
                         if mo:
                             na.critical_warning = int(mo.group(), 16)
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     if output_lines[0].startswith("Temperature:"):
                         mo = re.search(r"\d+", output_lines[0])
                         if mo:
                             na.temperature = int(mo.group())
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     if "Data Units Read" in output_lines[0]:
                         mo = re.search(r"[\d,]+", output_lines[0])
                         if mo:
                             na.data_units_read = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     if "Data Units Written" in output_lines[0]:
                         mo = re.search(r"[\d,]+", output_lines[0])
                         if mo:
                             na.data_units_written = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     if "Power Cycles" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.power_cycles = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     if "Power On Hours" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.power_on_hours = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     if "Unsafe Shutdowns" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.unsafe_shutdowns = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     if "Media and Data Integrity Errors" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.media_and_data_integrity_errors = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     if "Error Information Log Entries" in output_lines[0]:
                         mo = re.search(r"[\d,]+$", output_lines[0])
                         if mo:
                             na.error_information_log_entries = int(re.sub(",", "", mo.group()))
                         else:
-                            raise RuntimeError(f"Error in processing this line: { output_lines[0] }")
+                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
                     del output_lines[0]
                 value.nvme_attributes = na
 
@@ -782,7 +782,7 @@ class Disk:
             if "STANDBY" in output_lines[0]:
                 value.standby_mode = True
             if "Smartctl open device" in output_lines[0]:
-                raise RuntimeError(f"Error: { output_lines[0] }")
+                raise RuntimeError(f"Error: {output_lines[0]}")
 
         return value
 
@@ -838,20 +838,20 @@ class Disk:
 
     def __repr__(self):
         """String representation of the Disk class."""
-        return f"Disk(name={self.__name}, " \
-               f"path={self.__path}, " \
-               f"byid_path={self.__byid_path}, " \
-               f"by_path={self.__bypath_path}, " \
-               f"wwn={self.__wwn}, " \
-               f"model={self.__model}, " \
-               f"serial={self.__serial_number}, " \
-               f"firmware={self.__firmware}, " \
-               f"type={self.get_type_str()}, " \
-               f"size={self.__size}, " \
-               f"device_id={self.__device_id}, " \
-               f"physical_block_size={self.__physical_block_size}, " \
-               f"logical_block_size={self.__logical_block_size}" \
-               f"partition_table_type={self.__part_table_type}, " \
-               f"partition_table_uuid={self.__part_table_uuid})"
+        return (f"Disk(name={self.__name}, "
+                f"path={self.__path}, "
+                f"byid_path={self.__byid_path}, "
+                f"by_path={self.__bypath_path}, "
+                f"wwn={self.__wwn}, "
+                f"model={self.__model}, "
+                f"serial={self.__serial_number}, "
+                f"firmware={self.__firmware}, "
+                f"type={self.get_type_str()}, "
+                f"size={self.__size}, "
+                f"device_id={self.__device_id}, "
+                f"physical_block_size={self.__physical_block_size}, "
+                f"logical_block_size={self.__logical_block_size}"
+                f"partition_table_type={self.__part_table_type}, "
+                f"partition_table_uuid={self.__part_table_uuid})")
 
 # End.

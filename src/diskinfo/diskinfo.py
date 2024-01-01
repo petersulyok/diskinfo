@@ -156,7 +156,6 @@ class DiskInfo:
 
     def __repr__(self):
         """String representation of the DiskInfo class."""
-        return f"DiskInfo(number_of_disks={len(self.__disk_list)}, " \
-               f"list_of_disks={self.__disk_list})"
+        return f"DiskInfo(number_of_disks={len(self.__disk_list)}, list_of_disks={self.__disk_list})"
 
 # End
