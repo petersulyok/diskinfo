@@ -555,7 +555,7 @@ class Disk:
             if not self.__hwmon_path or not os.path.exists(self.__hwmon_path):
                 raise RuntimeError(f"ERROR: File does not exists (hwmon={self.__hwmon_path})")
             try:
-                temp = (float(_read_file(self.__hwmon_path)) / 1000.0)
+                temp = float(_read_file(self.__hwmon_path)) / 1000.0
             except ValueError as e:
                 raise e
         return temp
