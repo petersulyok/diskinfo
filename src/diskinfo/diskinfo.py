@@ -1,6 +1,6 @@
 #
 #    Module `diskinfo`: implements class `DiskInfo`.
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 import os
 from typing import List

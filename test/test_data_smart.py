@@ -1,6 +1,6 @@
 #
 #    Test data generation for SMART.
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 from typing import List
 from diskinfo import DiskType, DiskSmartData, SmartAttribute, NvmeAttributes

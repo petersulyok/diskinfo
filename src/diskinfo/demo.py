@@ -1,6 +1,6 @@
 #
 #    Module `demo`: implements demos for `diskinfo` package.
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 import sys
 from rich import print as rprint

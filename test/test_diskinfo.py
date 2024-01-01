@@ -1,6 +1,6 @@
 #
 #    Unitest for `diskinfo` module
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 import os
 import unittest

@@ -1,6 +1,6 @@
 #
 #    Module `disktype`: implements `DiskType` class.
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 
 class DiskType:

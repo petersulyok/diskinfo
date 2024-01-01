@@ -1,6 +1,6 @@
 #
 #    Module `disk`: implements classes `DiskType` and `Disk`.
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 import glob
 import os

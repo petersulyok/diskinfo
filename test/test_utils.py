@@ -1,6 +1,6 @@
 #
 #    Unitest for `utils` module
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 import unittest
 from test_data import TestData

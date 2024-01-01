@@ -1,6 +1,6 @@
 #
 #    Module `partition`: implements `Partition` class.
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 import os.path
 import subprocess

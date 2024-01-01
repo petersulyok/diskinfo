@@ -1,6 +1,6 @@
 #
 #    Module `utils`: implements utility functions.
-#    Peter Sulyok (C) 2022.
+#    Peter Sulyok (C) 2022-2024.
 #
 from typing import List, Tuple
 
