@@ -365,6 +365,10 @@ class DiskTest(unittest.TestCase):
              patch('os.path.exists', mock_exists), \
              patch('builtins.open', mock_open):
             d = Disk(disk_name)
+            os.system("echo 'something' > " + my_td.disks[0].hwmon_path)
+            with self.assertRaises(Exception) as cm:
+                d.get_temperature()
+            self.assertEqual(type(cm.exception), ValueError, error)
             d._Disk__hwmon_path = None
             with self.assertRaises(Exception) as cm:
                 d.get_temperature()
@@ -377,14 +381,14 @@ class DiskTest(unittest.TestCase):
 
         # Test valid functionality.
         for i in range(20):
-            self.pt_gt_p1("nvme0n1", DiskType.NVME, "get_temperature 1")
-        self.pt_gt_p1("sda", DiskType.SSD, "get_temperature 2")
-        self.pt_gt_p1("sdb", DiskType.HDD, "get_temperature 3")
+            self.pt_gt_p1("nvme0n1", DiskType.NVME, f"get_temperature {i}")
+        self.pt_gt_p1("sda", DiskType.SSD, "get_temperature 21")
+        self.pt_gt_p1("sdb", DiskType.HDD, "get_temperature 22")
 
-        # Test assertion.
-        self.pt_gt_n1("nvme0n1", DiskType.NVME, "get_temperature 4")
-        self.pt_gt_n1("sda", DiskType.SSD, "get_temperature 5")
-        self.pt_gt_n1("sdb", DiskType.HDD, "get_temperature 6")
+        # Test Runtime assertion.
+        self.pt_gt_n1("nvme0n1", DiskType.NVME, "get_temperature 23")
+        self.pt_gt_n1("sda", DiskType.SSD, "get_temperature 24")
+        self.pt_gt_n1("sdb", DiskType.HDD, "get_temperature 25")
 
     def pt_gsd_p1(self, disk: Disk, nocheck: bool, sudo: str, smartctrl_path: str, error: str) -> None:
         """Primitive positive test function. It contains the following steps:
