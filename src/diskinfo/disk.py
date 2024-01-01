@@ -522,25 +522,22 @@ class Disk:
         """
         return self.__part_table_uuid
 
-    def get_temperature(self) -> int:
+    def get_temperature(self) -> float:
         """Returns the current disk temperature. Important notes about using this function:
 
-            - This function relies on Linux kernel HWMON system, and the required functionality is available
-              from Linux kernel version ``5.6``.
-            - NVME disks do not require to load any kernel driver (this is a built-in functionality).
-            - SATA SSDs and HDDs require to load ``drivetemp`` kernel module! Without this the HWMON system
-              will not provide the temperature information.
-            - :py:obj:`RuntimeError` exception will be raised if the HWMON file cannot be found
+            - NVME disks do not require any Linux kernel module
+            - SATA SSDs and HDDs require ``drivetemp`` kernel module to be loaded (available from Linux kernel version
+             ``5.6+``). Without this the HWMON system will not provide the temperature information.
 
         .. note::
 
             This function will not access the disk and will not change its power state.
 
         Returns:
-            float: temperature in C degree
+            float: disk temperature in C degree
 
         Raises:
-              RuntimeError: if HWMON file cannot be found for this disk
+              RuntimeError: if HWMON file cannot be found for this disk (typically drivetemp module is not loaded)
 
         Example:
             An example about the use of this function::
@@ -548,12 +545,20 @@ class Disk:
                 >>> from diskinfo import Disk
                 >>> d = Disk("sdc")
                 >>> d.get_temperature()
-                28
+                28.5
 
         """
-        if not self.__hwmon_path:
-            raise RuntimeError("HWMON file cannot be found for this disk.")
-        return int(int(_read_file(self.__hwmon_path)) / 1000)
+        temp: int
+
+        temp = -1.0
+        if hasattr(self, '_Disk__hwmon_path'):
+            if not self.__hwmon_path or not os.path.exists(self.__hwmon_path):
+                raise RuntimeError(f"ERROR: File does not exists (hwmon={self.__hwmon_path})")
+            try:
+                temp = ((_read_file(self.__hwmon_path)) / 1000.0)
+            except ValueError as e:
+                raise e
+        return temp
 
     def get_smart_data(self, nocheck: bool = False, sudo: str = None, smartctl_path: str = "/usr/sbin/smartctl") \
             -> DiskSmartData:
