@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "diskinfo"
 description = "Disk information Python library for Linux"
 readme = "README.md"
-version = "2.0.0"
+version = "2.1.0"
 authors = [
     { name = "Peter Sulyok", email = "peter@sulyok.net" }
 ]
@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Topic :: System :: Hardware",
@@ -33,18 +34,6 @@ classifiers = [
 [tool.pytest.ini_options]
 pythonpath = "src"
 filterwarnings = [ "default", "ignore::pytest.PytestCollectionWarning"]
-
-# flake8 options
-[tool.flake8]
-exclude = [ "docs", "htmlcov", ".git", "__pycache__", ".pytest_cache", ".vscode", ".idea", "venv*", ".venv*", "build" ]
-max-line-length = 120
-count = true
-show-source = true
-statistics = true
-per-file-ignores = [
-    "test_diskinfo.py: F821",
-    "test_disk.py: F821"
-    ]
 
 # coverage options
 [tool.coverage.report]
