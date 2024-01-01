@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#   create_python_env.sh (C) 2023, Peter Sulyok
+#   create_python_env.sh (C) 2024, Peter Sulyok
 #   This script will install python in a virtual environment with project dependencies.
 #
 
