@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2024-01-01
+
+### Added
+- New chapter for explaining the use of `create_python_env.sh`
+
+### Fixed
+- `create_python_env.sh`: better error handling for non-exiting Python version
+
+
 ## [2.1.1] - 2024-01-01
 
 ### Changed
