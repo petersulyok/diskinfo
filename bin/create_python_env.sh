@@ -1,14 +1,14 @@
 #!/bin/bash
 #
 #   create_python_env.sh (C) 2024, Peter Sulyok
-#   This script will install python in a virtual environment with project dependencies.
+#   This script will install a new virtual Python environment with dependencies.
 #
 
 # Check the first command-line parameter.
 if [ "$1" = "" ];
 then
-    echo "Use: "$(basename "$0")" 3.12.1"
-    exit -1
+    echo "Use: $(basename $0) 3.12.1"
+    exit 1
 fi
 
 # Install the specified python version if it hasn't been already installed.
@@ -16,22 +16,28 @@ python_version=$(pyenv version --bare|grep $1)
 if [[ "$python_version" = "" || "$?" = "1" ]];
 then
     pyenv install $1
+    if [[ "$?" -ne "0" ]];
+    then
+        echo "Error: pyenv cannot install Python $1."
+        exit 1
+    fi
 fi
 python_version=$1
 
 # Select the python version locally.
 pyenv local $python_version
 
-# Create and activate a virtual environment.
+# Create and activate a virtual environment (activation scope is only this script).
 python -m venv .venv-$python_version
-. .venv-$python_version/bin/activate
+source .venv-$python_version/bin/activate
 
 # Upgrade pip and install required python modules.
 pip install --upgrade pip
 pip install -r requirements-dev.txt
 pip install -r docs/requirements-docs.txt
 
-# Notify user about required activation.
+# Notify user about required action.
 echo ""
-echo "Do not forget to activate the new Python virtual environment:"
+echo "Activate your new virtual Python environment!"
 echo "-> source .venv-$python_version/bin/activate"
+exit 0
