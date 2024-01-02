@@ -56,28 +56,28 @@ The third demo screen will display the list of partitions on a specified disk::
 
 Persistent disk names
 ---------------------
-Please note that the traditional disk names in Linux::
+Please note that the traditional disk names in Linux are not persistent::
 
      /dev/sda
      /dev/sdb
 
-are not persistent. It means they can refer a different physical disk after a reboot.
+It means they can refer a different physical disk after a reboot. Read more about this topic
+at `Arch Linux wiki: Persistent block device naming
+<https://wiki.archlinux.org/title/persistent_block_device_naming>`_.
 
-In addition, there are persistent disk or block device names in Linux:
+On the other hand, there are real persistent ways to refer disk or block devices in Linux:
 
-    1. `by-id` path: it can be found in `/dev/disk/by-id` directory, for example::
+    1. `by-id` path: it can be found in `/dev/disk/by-id` directory and it is constructed with disk serial numbers::
 
             /dev/disk/by-id/ata-Samsung_SSD_850_PRO_1TB_92837A469FF876
             /dev/disk/by-id/wwn-0x5002539c417223be
 
-    2. `by-path` path: it can be found in `/dev/disk/by-path` directory, for example::
+    2. `by-path` path: it can be found in `/dev/disk/by-path` directory and it is constructed with a physical path
+       to the disk::
 
             /dev/disk/by-path/pci-0000:00:17.0-ata-3
 
-There are similar persistent constructions for partitions with labels and UUIDs.
-
-Read more about this topic at `Arch Linux wiki: Persistent block device naming
-<https://wiki.archlinux.org/title/persistent_block_device_naming>`_.
+There are similar persistent constructions for disk partitions, too.
 
 
 How to use
