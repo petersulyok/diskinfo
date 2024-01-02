@@ -6,15 +6,28 @@ This is short summary about how to setup the development environment
 1. Install [`pyenv`](https://github.com/pyenv/pyenv) and install your preferred Python version
 2. Install and activate virtual environment in your working directory
 
-        python -m venv .venv
-        source .venv/bin/activate
 
-   Take a look on [create_python_env.sh](https://github.com/petersulyok/diskinfo/blob/main/bin/create_python_env.sh)
-helper script.
+    python -m venv .venv
+    source .venv/bin/activate
+   
 3. Update `pip` and install required Python tools defined in `requirements-dev.txt`:
 
-        python -m pip install --upgrade pip
-        pip install -r requirements-dev.txt
+
+    python -m pip install --upgrade pip
+    pip install -r requirements-dev.txt
+
+## Automatic creation of a new virtual Python environment
+The previous installation steps can be executed with the help of [this script](https://github.com/petersulyok/diskinfo/blob/main/bin/create_python_env.sh).
+The script can be used in the following way:
+
+    $ ./bin/create_python_env.sh 3.10.13
+    $ source .venv-3.10.13/bin/activate
+    (.venv-3.10.13) $
+
+Please note:
+   - `pyenv` and `pip` are required for the script
+   - All dependencies will be installed (both for developement and for documentation)
+   - After installation, the new virtual Python environment should be activated in the user shell as well
 
 ## Unit tests and linting
 The unit tests can be executed with `pytest`:
@@ -31,6 +44,7 @@ The package is checked with `pylint` in the following way:
     pylint src/diskinfo/*.py test/*.py
 
 Its configuration options can be found `pyproject.toml` file. 
+
 
 ## PyPI package
 The `setuptools` is used to create Python distribution package to PyPI. All package parameters are specified in 
@@ -64,6 +78,7 @@ The HTML documentation will be created in `./docs/build/html` folder.
 
 NOTE: Many times the browsers do not display new version of documentation (because of caching?). You may try to reload
 the page ignoring browser cache (e.g. CTRL + SHIFT + R).
+
 
 ## GitHub workflows
 The project implemented the following GitHub workflows:
