@@ -77,7 +77,7 @@ class TestData:
         shutil.rmtree(self.td_dir)
 
     def create_disks(self, disk_names: List[str], disks_types: List[int]) -> None:
-        """Creates data for disks."""
+        """Creates test data for disks."""
 
         # Create high-level disk folders.
         random.seed(time.monotonic())
@@ -100,14 +100,14 @@ class TestData:
             td.size = int((1099511627776 * tb) / 512)
             td.part_table_type = random.choice(["mbr", "gtp"])
             td.part_table_uuid = str(uuid.uuid4())
+            rotational = 0
 
-            # Create an NVME type disk attributes
+            # Create disk attributes for NVME type.
             if dt == DiskType.NVME:
                 td.model = "DPEKNW010T8"
                 td.wwn = "eui." + self._get_random_alphanum_str(20).lower()
                 td.dev_id = "259:" + str(index * 8)
                 td.type = DiskType.NVME
-                rotational = 0
                 td.phys_bs = 512
                 td.log_bs = 512
                 td.byid_path = [self.td_dir + "/dev/disk/by-id/nvme-" + td.model.replace(" ", "_") +
@@ -118,13 +118,12 @@ class TestData:
                                                self.td_dir + "/sys/block/" + td.name + "/device/hwmon" +
                                                str(random.randint(0, 20))])
 
-            # Create an SSD type disk attributes
+            # Create disk attributes for SSD type.
             elif dt == DiskType.SSD:
                 td.model = "Samsung SSD 8" + str(random.randint(5, 9)) + "0 EVO " + str(tb) + "TB"
                 td.wwn = "0x500" + self._get_random_alphanum_str(8).lower()
                 td.dev_id = "8:" + str(index * 16)
                 td.type = DiskType.SSD
-                rotational = 0
                 td.phys_bs = 512
                 td.log_bs = 512
                 td.byid_path = [self.td_dir + "/dev/disk/by-id/ata-" + td.model.replace(" ", "_") +
@@ -134,8 +133,8 @@ class TestData:
                 td.hwmon_path = self.td_dir + "/sys/block/" + td.name + "/device/hwmon/hwmon" + \
                     str(random.randint(0, 20))
 
-            # Create an HDD type disk attributes
-            else:  # if dt == DiskType.HDD:
+            # Create disk attributes for HDD type.
+            elif dt == DiskType.HDD:
                 td.model = "WDC WD100SLAX-69VNTN1"
                 td.wwn = "0x500" + self._get_random_alphanum_str(8)
                 td.dev_id = "8:" + str(index * 16)
@@ -150,45 +149,59 @@ class TestData:
                 td.hwmon_path = self.td_dir + "/sys/block/" + td.name + "/device/hwmon/hwmon" + \
                     str(random.randint(0, 20))
 
+            # Create disk attributes for LOOP type.
+            else:  # if dt == DiskType.LOOP:
+                td.dev_id = "7:" + str(index)
+                td.type = DiskType.LOOP
+                td.phys_bs = 512
+                td.log_bs = 512
+
             # Create further disk name based folders.
             os.makedirs(self.td_dir + "/sys/block/" + td.name + "/queue", exist_ok=True)
             os.makedirs(self.td_dir + "/sys/block/" + td.name + "/device", exist_ok=True)
 
             # Create data files for the disk.
             self._create_file(td.path)
-            self._create_file(self.td_dir + "/sys/block/" + td.name + "/queue/rotational", str(rotational))
             self._create_file(self.td_dir + "/sys/block/" + td.name + "/size", str(td.size))
-            self._create_file(self.td_dir + "/sys/block/" + td.name + "/device/model", td.model.replace(" ", "_"))
+            if not td.type == DiskType.LOOP:
+                self._create_file(self.td_dir + "/sys/block/" + td.name + "/queue/rotational", str(rotational))
+                self._create_file(self.td_dir + "/sys/block/" + td.name + "/device/model", td.model.replace(" ", "_"))
             self._create_file(self.td_dir + "/sys/block/" + td.name + "/dev", td.dev_id)
             self._create_file(self.td_dir + "/sys/block/" + td.name + "/queue/physical_block_size", str(td.phys_bs))
             self._create_file(self.td_dir + "/sys/block/" + td.name + "/queue/logical_block_size", str(td.log_bs))
-            for item in td.byid_path:
-                self._create_link(item, "../../" + td.name)
-            for item in td.bypath_path:
-                self._create_link(item, "../../" + td.name)
-            os.makedirs(td.hwmon_path, exist_ok=True)
-            td.hwmon_path += "/temp1_input"
-            self._create_file(td.hwmon_path, str(random.randint(30, 65)*1000))
+            if not td.type == DiskType.LOOP:
+                for item in td.byid_path:
+                    self._create_link(item, "../../" + td.name)
+            if not td.type == DiskType.LOOP:
+                for item in td.bypath_path:
+                    self._create_link(item, "../../" + td.name)
+            if not td.type == DiskType.LOOP:
+                os.makedirs(td.hwmon_path, exist_ok=True)
+                td.hwmon_path += "/temp1_input"
+                self._create_file(td.hwmon_path, str(random.randint(30, 65)*1000))
 
             # Create /run/udev/data/b"device:id" file.
-            udev_content = \
-                "S:disk/by-id/" + os.path.basename(td.byid_path[0]) + "\n" \
-                "S:disk/by-path/" + os.path.basename(td.bypath_path[0]) + "\n" \
-                "S:disk/by-id/" + os.path.basename(td.byid_path[1]) + "\n"
-            if len(td.bypath_path) > 1:
-                udev_content += "S:disk/by-path/" + os.path.basename(td.bypath_path[1]) + "\n"
-            model_str = td.model
-            if " " in model_str:
-                model_str = model_str.replace(" ", "\\x20") + "\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20"
-            udev_content += "E:ID_MODEL_ENC=" + model_str + "\n"
+            udev_content = ""
+            if not td.type == DiskType.LOOP:
+                udev_content = \
+                    "S:disk/by-id/" + os.path.basename(td.byid_path[0]) + "\n" \
+                    "S:disk/by-path/" + os.path.basename(td.bypath_path[0]) + "\n" \
+                    "S:disk/by-id/" + os.path.basename(td.byid_path[1]) + "\n"
+                if len(td.bypath_path) > 1:
+                    udev_content += "S:disk/by-path/" + os.path.basename(td.bypath_path[1]) + "\n"
+                model_str = td.model
+                if " " in model_str:
+                    model_str = model_str.replace(" ", "\\x20") + "\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20"
+                udev_content += "E:ID_MODEL_ENC=" + model_str + "\n"
+                udev_content += \
+                    "E:ID_SERIAL_SHORT=" + td.serial + "\n" \
+                    "E:ID_REVISION=" + td.firmware + "\n" \
+                    "E:ID_WWN=" + td.wwn + "\n" \
+
             udev_content += \
-                "E:ID_SERIAL_SHORT=" + td.serial + "\n" \
-                "E:ID_REVISION=" + td.firmware + "\n" \
-                "E:ID_WWN=" + td.wwn + "\n" \
                 "E:ID_PART_TABLE_TYPE=" + td.part_table_type + "\n" \
                 "E:ID_PART_TABLE_UUID=" + td.part_table_uuid + "\n"
             self._create_file(self.td_dir + "/run/udev/data/b" + td.dev_id, udev_content)
-
             self.disks.append(td)
 
     def create_partitions(self, disk_idx: int, part_num: int) -> None:

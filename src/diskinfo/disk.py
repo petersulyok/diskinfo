@@ -14,7 +14,8 @@ from diskinfo.disksmart import DiskSmartData, SmartAttribute, NvmeAttributes
 
 
 class Disk:
-    """The class can be initialized with specifying one of the five unique identifiers of the disk:
+    """The Disk class contains all disk related information. The class can be initialized with specifying one of the
+    five unique identifiers of the disk:
 
         * a disk name (e.g. `sda` or `nvme0n1`) located in `/dev/` directory.
         * a disk serial number (e.g. `"92837A469FF876"`)
@@ -30,7 +31,7 @@ class Disk:
     they use the disk name for comparision.
 
     .. note::
-        During the class initialization the disk will not be accessed.
+        During the class initialization the disk will not be physically accessed.
 
     Args:
         disk_name (str): the disk name
@@ -47,7 +48,7 @@ class Disk:
         This exampe shows how to create a :class:`~diskinfo.Disk` class then how to get its path and serial number::
 
             >>> from diskinfo import Disk
-            >>> d = Disk("sda")
+            >>> d=Disk("sda")
             >>> d.get_path()
             '/dev/sda'
             >>> d.get_serial_number()
@@ -86,16 +87,17 @@ class Disk:
     __logical_block_size: int           # Disk logical block size
     __part_table_type: str              # Disk partition table type
     __part_table_uuid: str              # Disk partition table UUID
-    __hwmon_path: str                   # Path for the HWMON temperature file
+    __hwmon_path: str                   # Path for the /sys/HWMON temperature file
 
     def __init__(self, disk_name: str = None, serial_number: str = None, wwn: str = None,
                  byid_name: str = None, bypath_name: str = None,) -> None:
         """See class definition docstring above."""
 
-        # Initialize with a disk name.
+        # Initialization 1: disk name.
         if disk_name:
             self.__name = disk_name
-        # Initialize with a disk serial number.
+
+        # Initialization 2: disk serial number.
         elif serial_number:
             name = ""
             for file in os.listdir("/sys/block/"):
@@ -108,7 +110,8 @@ class Disk:
             if name == "":
                 raise ValueError(f"Invalid serial number ({serial_number})!")
             self.__name = name
-        # Initialize with a disk WWN name.
+
+        # Initialization 3: disk WWN name.
         elif wwn:
             name = ""
             for file in os.listdir("/sys/block/"):
@@ -121,13 +124,16 @@ class Disk:
             if name == "":
                 raise ValueError(f"Invalid wwn identifier ({wwn})!")
             self.__name = name
-        # Initialize with a disk `by-id` name.
+
+        # Initialization 4: disk `by-id` name.
         elif byid_name:
             self.__name = os.path.basename(os.readlink("/dev/disk/by-id/" + byid_name))
-        # Initialize with a disk `by-path` name.
+
+        # Initialization 5: disk `by-path` name.
         elif bypath_name:
             self.__name = os.path.basename(os.readlink("/dev/disk/by-path/" + bypath_name))
-        # If none of them was specified.
+
+        # Initialization error (none of them was specified).
         else:
             raise ValueError("Missing disk identifier, Disk() class cannot be initialized.")
 
@@ -139,24 +145,32 @@ class Disk:
         if not os.path.exists(path):
             raise ValueError(f"Disk path ({self.__path}) does not exist!")
 
-        # Determine disk type (HDD, SSD, NVME)
-        path = "/sys/block/" + self.__name + "/queue/rotational"
-        result = _read_file(path)
-        if result == "1":
-            self.__type = DiskType.HDD
-        elif result == "0":
-            self.__type = DiskType.SSD
-        else:
-            raise RuntimeError(f"Disk type cannot be determined based on this value ({path}={result}).")
-        if "nvme" in self.__name:
-            self.__type = DiskType.NVME
-
-        # Read attributes from /sys filesystem.
+        # Read disk attributes from /sys filesystem.
         self.__size = int(_read_file("/sys/block/" + self.__name + "/size"))
         self.__model = _read_file("/sys/block/" + self.__name + "/device/model")
         self.__device_id = _read_file("/sys/block/" + self.__name + "/dev")
         self.__physical_block_size = int(_read_file("/sys/block/" + self.__name + "/queue/physical_block_size"))
         self.__logical_block_size = int(_read_file("/sys/block/" + self.__name + "/queue/logical_block_size"))
+
+        # Determination of the disk type (HDD, SSD, NVME or LOOP)
+        # Type: LOOP
+        if re.match(r'^7:', self.__device_id):
+            self.__type = DiskType.LOOP
+
+        # Type: NVME
+        elif "nvme" in self.__name:
+            self.__type = DiskType.NVME
+
+        # Type: SSD or HDD
+        else:
+            path = "/sys/block/" + self.__name + "/queue/rotational"
+            result = _read_file(path)
+            if result == "1":
+                self.__type = DiskType.HDD
+            elif result == "0":
+                self.__type = DiskType.SSD
+            else:
+                raise RuntimeError(f"Disk type cannot be determined based on this value ({path}={result}).")
 
         # Read attributes from udev data.
         dev_path = "/run/udev/data/b" + self.__device_id
@@ -333,6 +347,7 @@ class Disk:
             - ``DiskType.HDD`` for hard disks (with spinning platters)
             - ``DiskType.SSD`` for SDDs on SATA or USB interface
             - ``DiskType.NVME`` for NVME disks
+            - ``DiskType.LOOP`` for LOOP disks
 
         Example:
             An example about the use of this function::
@@ -387,12 +402,30 @@ class Disk:
         """
         return bool(self.__type == DiskType.HDD)
 
+    def is_loop(self) -> bool:
+        """Returns `True` if the disk type is LOOP, otherwise `False`.
+
+        Example:
+            An example about the use of this function::
+
+                >>> from diskinfo import Disk
+                >>> d=Disk("loop0")
+                >>> d.is_loop()
+                True
+
+        """
+        return bool(self.__type == DiskType.LOOP)
+
     def get_type_str(self) -> str:
         """Returns the name of the disk type. See the return values in :class:`~diskinfo.DiskType` class:
 
             - ``DiskType.HDD_STR`` for hard disks (with spinning platters)
             - ``DiskType.SSD_STR`` for SDDs on SATA or USB interface
             - ``DiskType.NVME_STR`` for NVME disks
+            - ``DiskType.LOOP_STR`` for LOOP disks
+
+        Raises:
+            RuntimeError: in case of unknown disk type.
 
         Example:
             An example about the use of this function::
@@ -407,7 +440,11 @@ class Disk:
             return DiskType.NVME_STR
         if self.is_ssd():
             return DiskType.SSD_STR
-        return DiskType.HDD_STR
+        if self.is_hdd():
+            return DiskType.HDD_STR
+        if self.is_loop():
+            return DiskType.LOOP_STR
+        raise RuntimeError(f'Unknown disk type (type={self.__type})')
 
     def get_size(self) -> int:
         """Returns the size of the disk in 512-byte units.
@@ -417,7 +454,7 @@ class Disk:
 
                 >>> from diskinfo import Disk
                 >>> d=Disk("sdc")
-                >>> s = d.get_size()
+                >>> s=d.get_size()
                 >>> print(f"Disk size: { s * 512 } bytes.")
                 Disk size: 1024209543168 bytes.
 
@@ -443,8 +480,8 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d = Disk("sdc")
-                >>> s, u = d.get_size_in_hrf()
+                >>> d=Disk("sdc")
+                >>> s,u=d.get_size_in_hrf()
                 >>> print(f"{s:.1f} {u}")
                 1.0 TB
 
@@ -458,7 +495,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d = Disk("sdc")
+                >>> d=Disk("sdc")
                 >>> d.get_device_id()
                 '8:32'
 
@@ -473,7 +510,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d = Disk("sdc")
+                >>> d=Disk("sdc")
                 >>> d.get_physical_block_size()
                 512
 
@@ -487,7 +524,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d = Disk("sdc")
+                >>> d=Disk("sdc")
                 >>> d.get_logical_block_size()
                 512
 
@@ -501,7 +538,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d = Disk("sdc")
+                >>> d=Disk("sdc")
                 >>> d.get_partition_table_type()
                 'gpt'
 
@@ -515,7 +552,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d = Disk("sdc")
+                >>> d=Disk("sdc")
                 >>> d.get_partition_table_uuid()
                 'd3f932e0-7107-455e-a569-9acd5b60d204'
 
@@ -525,9 +562,8 @@ class Disk:
     def get_temperature(self) -> float:
         """Returns the current disk temperature. Important notes about using this function:
 
+            - SATA SSDs and HDDs require ``drivetemp`` kernel module to be loaded (available from Linux kernel version ``5.6+``). Without this the HWMON system will not provide the temperature information.
             - NVME disks do not require any Linux kernel module
-            - SATA SSDs and HDDs require ``drivetemp`` kernel module to be loaded (available from Linux kernel version
-             ``5.6+``). Without this the HWMON system will not provide the temperature information.
 
         .. note::
 
@@ -543,14 +579,14 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d = Disk("sdc")
+                >>> d=Disk("sdc")
                 >>> d.get_temperature()
                 28.5
 
         """
-        temp: int
+        temp: float
 
-        temp = -1.0
+        temp = 0.0
         if hasattr(self, '_Disk__hwmon_path'):
             if not self.__hwmon_path or not os.path.exists(self.__hwmon_path):
                 raise RuntimeError(f"ERROR: File does not exists (hwmon={self.__hwmon_path})")
@@ -592,7 +628,7 @@ class Disk:
             The example show the use of the function::
 
                 >>> from diskinfo import Disk, DiskSmartData
-                >>> d = Disk("sda")
+                >>> d=Disk("sda")
                 >>> sd = d.get_smart_data()
 
             In case of SSDs and HDDs the traditional SMART attributes can be accessed via
@@ -820,12 +856,9 @@ class Disk:
             if self.is_nvme():
                 path += "p"
             path += str(index)
-            # If the partition path exists.
-            if os.path.exists(path):
-                result.append(Partition(os.path.basename(path), _read_file(path + "/dev")))
-            # File does not exist, quit from loop.
-            else:
-                break
+            if not os.path.exists(path):
+                break   # If partition path dos not exists.
+            result.append(Partition(os.path.basename(path), _read_file(path + "/dev")))
             index += 1
         return result
 
@@ -855,7 +888,7 @@ class Disk:
                 f"size={self.__size}, "
                 f"device_id={self.__device_id}, "
                 f"physical_block_size={self.__physical_block_size}, "
-                f"logical_block_size={self.__logical_block_size}"
+                f"logical_block_size={self.__logical_block_size}, "
                 f"partition_table_type={self.__part_table_type}, "
                 f"partition_table_uuid={self.__part_table_uuid})")
 

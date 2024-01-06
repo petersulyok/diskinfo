@@ -68,35 +68,41 @@ class DiskTest(unittest.TestCase):
              patch('builtins.open', mock_open):
 
             for i in range(5):
+                d = None
+
                 # Disk class creation with disk name
                 if i == 0:
                     d = Disk(disk_name)
                 # Disk class creation with disk by-id name
-                elif i == 1:
+                elif not disk_type == DiskType.LOOP and i == 1:
                     name = os.path.basename(random.choice(my_td.disks[0].byid_path))
                     d = Disk(byid_name=name)
                 # Disk class creation with disk by-path name
-                elif i == 2:
+                elif not disk_type == DiskType.LOOP and i == 2:
                     name = os.path.basename(random.choice(my_td.disks[0].bypath_path))
                     d = Disk(bypath_name=name)
                 # Disk class creation with disk serial number
-                elif i == 3:
+                elif not disk_type == DiskType.LOOP and i == 3:
                     name = my_td.disks[0].serial
                     d = Disk(serial_number=name)
                 # Disk class creation with disk wwn name
-                else:  # if i == 4:
+                elif not disk_type == DiskType.LOOP and i == 4:
                     name = my_td.disks[0].wwn
                     d = Disk(wwn=name)
+
+                if not d:
+                    continue
 
                 # Check all disk attributes.
                 self.assertEqual(d.get_name(), my_td.disks[0].name, error)
                 self.assertEqual(d.get_path(), my_td.disks[0].path.replace(my_td.td_dir, ""), error)
-                self.assertEqual(d.get_serial_number(), my_td.disks[0].serial, error)
-                self.assertEqual(d.get_firmware(), my_td.disks[0].firmware, error)
-                self.assertEqual(d.get_model(), my_td.disks[0].model, error)
-                self.assertEqual(d.get_wwn(), my_td.disks[0].wwn, error)
-                self.assertEqual(d.get_size(), my_td.disks[0].size, error)
+                if not disk_type == DiskType.LOOP:
+                    self.assertEqual(d.get_serial_number(), my_td.disks[0].serial, error)
+                    self.assertEqual(d.get_firmware(), my_td.disks[0].firmware, error)
+                    self.assertEqual(d.get_model(), my_td.disks[0].model, error)
+                    self.assertEqual(d.get_wwn(), my_td.disks[0].wwn, error)
                 self.assertEqual(d.get_device_id(), my_td.disks[0].dev_id, error)
+                self.assertEqual(d.get_size(), my_td.disks[0].size, error)
                 self.assertEqual(d.get_logical_block_size(), my_td.disks[0].log_bs, error)
                 self.assertEqual(d.get_physical_block_size(), my_td.disks[0].phys_bs, error)
                 self.assertEqual(d.get_partition_table_type(), my_td.disks[0].part_table_type, error)
@@ -111,17 +117,26 @@ class DiskTest(unittest.TestCase):
                     self.assertTrue(d.is_nvme(), error)
                     self.assertFalse(d.is_ssd(), error)
                     self.assertFalse(d.is_hdd(), error)
+                    self.assertFalse(d.is_loop(), error)
                     self.assertEqual(d.get_type_str(), DiskType.NVME_STR, error)
                 elif disk_type == DiskType.SSD:
                     self.assertTrue(d.is_ssd(), error)
                     self.assertFalse(d.is_nvme(), error)
                     self.assertFalse(d.is_hdd(), error)
+                    self.assertFalse(d.is_loop(), error)
                     self.assertEqual(d.get_type_str(), DiskType.SSD_STR, error)
                 if disk_type == DiskType.HDD:
+                    self.assertTrue(d.is_hdd(), error)
                     self.assertFalse(d.is_nvme(), error)
                     self.assertFalse(d.is_ssd(), error)
-                    self.assertTrue(d.is_hdd(), error)
+                    self.assertFalse(d.is_loop(), error)
                     self.assertEqual(d.get_type_str(), DiskType.HDD_STR, error)
+                if disk_type == DiskType.LOOP:
+                    self.assertTrue(d.is_loop(), error)
+                    self.assertFalse(d.is_nvme(), error)
+                    self.assertFalse(d.is_ssd(), error)
+                    self.assertFalse(d.is_hdd(), error)
+                    self.assertEqual(d.get_type_str(), DiskType.LOOP_STR, error)
                 del d
         del my_td
 
@@ -152,36 +167,39 @@ class DiskTest(unittest.TestCase):
              patch('builtins.open', mock_open):
 
             # Exception 1: missing by-path path
-            os.unlink(my_td.disks[0].bypath_path[0])
-            with self.assertRaises(Exception) as cm:
-                Disk(disk_name)
-            self.assertEqual(type(cm.exception), RuntimeError, error)
+            if not disk_type == DiskType.LOOP:
+                os.unlink(my_td.disks[0].bypath_path[0])
+                with self.assertRaises(Exception) as cm:
+                    Disk(disk_name)
+                self.assertEqual(type(cm.exception), RuntimeError, error)
 
             # Exception 2: missing by-id path
-            os.unlink(my_td.disks[0].byid_path[0])
-            with self.assertRaises(Exception) as cm:
-                Disk(disk_name)
-            self.assertEqual(type(cm.exception), RuntimeError, error)
+            if not disk_type == DiskType.LOOP:
+                os.unlink(my_td.disks[0].byid_path[0])
+                with self.assertRaises(Exception) as cm:
+                    Disk(disk_name)
+                self.assertEqual(type(cm.exception), RuntimeError, error)
 
             # Exception 3: missing file `/sys/block/name/queue/rotational`
-            os.remove(my_td.td_dir + "/sys/block/" + my_td.disks[0].name + "/queue/rotational")
-            with self.assertRaises(Exception) as cm:
-                Disk(disk_name)
-            self.assertEqual(type(cm.exception), RuntimeError, error)
+            if not disk_type == DiskType.LOOP:
+                os.remove(my_td.td_dir + "/sys/block/" + my_td.disks[0].name + "/queue/rotational")
+                with self.assertRaises(Exception) as cm:
+                    Disk(disk_name)
+                self.assertEqual(type(cm.exception), RuntimeError, error)
 
-            # Exception 3: missing file `/sys/block/name/queue/rotational`
+            # Exception 4: missing file `/sys/block/name`
             shutil.rmtree(my_td.td_dir + "/sys/block/" + my_td.disks[0].name)
             with self.assertRaises(Exception) as cm:
                 Disk(disk_name)
             self.assertEqual(type(cm.exception), ValueError, error)
 
-            # Exception 4: missing file `/dev/name`
+            # Exception 5: missing file `/dev/name`
             os.remove(my_td.td_dir + "/dev/" + my_td.disks[0].name)
             with self.assertRaises(Exception) as cm:
                 Disk(disk_name)
             self.assertEqual(type(cm.exception), ValueError, error)
 
-            # Exception 5: missing initialization paramaters
+            # Exception 6: missing initialization parameters
             with self.assertRaises(Exception) as cm:
                 Disk()
             self.assertEqual(type(cm.exception), ValueError, error)
@@ -227,15 +245,43 @@ class DiskTest(unittest.TestCase):
         self.pt_init_p1("nvmep0n1", DiskType.NVME, "disk_init 1")
         self.pt_init_p1("sda", DiskType.SSD, "disk_init 2")
         self.pt_init_p1("sda", DiskType.HDD, "disk_init 3")
+        self.pt_init_p1("loop0", DiskType.LOOP, "disk_init 4")
 
         # Test of asserts in __init__() in case of missing files.
-        self.pt_init_n1("nvmep0n1", DiskType.NVME, "disk_init 4")
-        self.pt_init_n1("sda", DiskType.SSD, "disk_init 5")
-        self.pt_init_n1("sda", DiskType.HDD, "disk_init 6")
+        self.pt_init_n1("nvmep0n1", DiskType.NVME, "disk_init 5")
+        self.pt_init_n1("sda", DiskType.SSD, "disk_init 6")
+        self.pt_init_n1("sda", DiskType.HDD, "disk_init 7")
+        self.pt_init_n1("loop0", DiskType.LOOP, "disk_init 8")
 
         # Test of asserts in __init__() in case of invalid serial number and wwn name.
-        self.pt_init_n2("nonexisting_serial_0923409283408", True, "disk_init 7")
-        self.pt_init_n2("nonexisting_wwn_0923409283408", False,  "disk_init 8")
+        self.pt_init_n2("nonexisting_serial_0923409283408", True, "disk_init 9")
+        self.pt_init_n2("nonexisting_wwn_0923409283408", False,  "disk_init 10")
+
+    def test_get_type(self):
+        """Unit test for function Disk.get_type and Disk.get_type_str."""
+        d = Disk.__new__(Disk)
+        d._Disk__type = DiskType.SSD
+        self.assertTrue(d.get_type() == DiskType.SSD, "get_type 1")
+        self.assertTrue(d.is_ssd(), "get_type 2")
+        self.assertTrue(d.get_type_str() == DiskType.SSD_STR, "get_type 3")
+        d._Disk__type = DiskType.HDD
+        self.assertTrue(d.get_type() == DiskType.HDD, "get_type 4")
+        self.assertTrue(d.is_hdd(), "get_type 5")
+        self.assertTrue(d.get_type_str() == DiskType.HDD_STR, "get_type 6")
+        d._Disk__type = DiskType.NVME
+        self.assertTrue(d.get_type() == DiskType.NVME, "get_type 7")
+        self.assertTrue(d.is_nvme(), "get_type 8")
+        self.assertTrue(d.get_type_str() == DiskType.NVME_STR, "get_type 9")
+        d._Disk__type = DiskType.LOOP
+        self.assertTrue(d.get_type() == DiskType.LOOP, "get_type 10")
+        self.assertTrue(d.is_loop(), "get_type 11")
+        self.assertTrue(d.get_type_str() == DiskType.LOOP_STR, "get_type 12")
+
+        d._Disk__type = 10345
+        with self.assertRaises(Exception) as cm:
+            d.get_type_str()
+        self.assertEqual(type(cm.exception), RuntimeError, "get_type 13")
+
 
     def pt_gsih_p1(self, size_in_512: int, calc_size: float, calc_unit: str, metric: int, error: str) -> None:
         """Primitive positive test function. It contains the following steps:
@@ -320,7 +366,7 @@ class DiskTest(unittest.TestCase):
              patch('builtins.open', mock_open):
             d = Disk(disk_name)
             temp_str = _read_file(my_td.disks[0].hwmon_path)
-            temp_val = int(int(temp_str) / 1000)
+            temp_val = float(temp_str) / 1000
             self.assertEqual(d.get_temperature(), temp_val, error)
             del d
         del my_td
@@ -381,14 +427,14 @@ class DiskTest(unittest.TestCase):
 
         # Test valid functionality.
         for i in range(20):
-            self.pt_gt_p1("nvme0n1", DiskType.NVME, f"get_temperature {i}")
-        self.pt_gt_p1("sda", DiskType.SSD, "get_temperature 21")
-        self.pt_gt_p1("sdb", DiskType.HDD, "get_temperature 22")
+            self.pt_gt_p1("nvme0n1", DiskType.NVME, "get_temperature 1")
+        self.pt_gt_p1("sda", DiskType.SSD, "get_temperature 2")
+        self.pt_gt_p1("sdb", DiskType.HDD, "get_temperature 3")
 
-        # Test Runtime assertion.
-        self.pt_gt_n1("nvme0n1", DiskType.NVME, "get_temperature 23")
-        self.pt_gt_n1("sda", DiskType.SSD, "get_temperature 24")
-        self.pt_gt_n1("sdb", DiskType.HDD, "get_temperature 25")
+        # Test assertion.
+        self.pt_gt_n1("nvme0n1", DiskType.NVME, "get_temperature 4")
+        self.pt_gt_n1("sda", DiskType.SSD, "get_temperature 5")
+        self.pt_gt_n1("sdb", DiskType.HDD, "get_temperature 6")
 
     def pt_gsd_p1(self, disk: Disk, nocheck: bool, sudo: str, smartctrl_path: str, error: str) -> None:
         """Primitive positive test function. It contains the following steps:
