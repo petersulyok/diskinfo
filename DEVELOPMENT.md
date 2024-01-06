@@ -86,7 +86,7 @@ The project implemented the following GitHub workflows:
    - executes `pylint`
    - generates coverage data and upload it to [codecov.io](https://codecov.io/)
 
-2. **Publish Python distribution packages to PypI** (`publish.yml`). A published release triggers this action:
+2. **Publish Python distribution packages to PyPI** (`publish.yml`). A published release triggers this action:
    - build distribution package on Python `3.10`
    - upload the new package to PyPI
 

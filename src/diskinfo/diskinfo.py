@@ -17,7 +17,7 @@ class DiskInfo:
     set of :class:`~diskinfo.DiskType` values.
 
     Operator ``in`` is also implemented for this class. Caller can check if a :class:`~diskinfo.Disk` class instance
-    can be found on the list of the dicovered disks.
+    can be found on the list of the discovered disks.
 
     Example:
         A code example about the basic use of the class and the use of the ``in`` operator.
@@ -46,8 +46,8 @@ class DiskInfo:
             self.__disk_list.append(new_disk)
 
     def get_disk_number(self, included: set = None, excluded: set = None) -> int:
-        """Returns the number of the disks. The caller can specify inclusive and exclusice filters for disk types.
-        If no filters are specified then the default behaviour is to include all disk types and to exclude nothing.
+        """Returns the number of the disks. The caller can specify inclusive and exclusive filters for disk types.
+        If no filters are specified then the default behavior is to include all disk types and to exclude nothing.
 
         Args:
             included (set): filter set for included disk types
@@ -91,8 +91,8 @@ class DiskInfo:
 
     def get_disk_list(self, included: set = None, excluded: set = None, sorting: bool = False,
                       rev_order: bool = False) -> List[Disk]:
-        """Returns the list of identified disks. The caller can specify inclusive and exclusice filters for disk types.
-        If no filters are specified the default behaviour is to include all disk types and to exclude nothing.
+        """Returns the list of identified disks. The caller can specify inclusive and exclusive filters for disk types.
+        If no filters are specified the default behavior is to include all disk types and to exclude nothing.
         The list can be sorted based on the disk `name` in alphabetical order. Caller can also request sorting
         in reverse order.
 

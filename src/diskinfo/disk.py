@@ -24,11 +24,11 @@ class Disk:
           directory
         * a `by-path` name of the disk (e.g. `"pci-0000:00:17.0-ata-3"`) located in `/dev/disk/by-path/`  directory
 
-    Based on the specified input parameter the disk will be indentified and its attributes will be collected and
+    Based on the specified input parameter the disk will be identified and its attributes will be collected and
     stored. A :py:obj:`ValueError` exception will be raised in case of missing or invalid disk identifier.
 
     Operators (``<``, ``>`` and ``==``) are also implemented for this class to compare different class instances,
-    they use the disk name for comparision.
+    they use the disk name for comparison.
 
     .. note::
         During the class initialization the disk will not be physically accessed.
@@ -45,7 +45,7 @@ class Disk:
         RuntimeError: in case of any system error
 
     Example:
-        This exampe shows how to create a :class:`~diskinfo.Disk` class then how to get its path and serial number::
+        This example shows how to create a :class:`~diskinfo.Disk` class then how to get its path and serial number::
 
             >>> from diskinfo import Disk
             >>> d=Disk("sda")
@@ -573,7 +573,7 @@ class Disk:
             float: disk temperature in C degree
 
         Raises:
-              RuntimeError: if HWMON file cannot be found for this disk (typically drivetemp module is not loaded)
+              RuntimeError: if HWMON file cannot be found for this disk (typically ``drivetemp`` module is not loaded)
 
         Example:
             An example about the use of this function::
