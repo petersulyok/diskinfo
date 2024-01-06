@@ -562,8 +562,9 @@ class Disk:
     def get_temperature(self) -> float:
         """Returns the current disk temperature. Important notes about using this function:
 
-            - SATA SSDs and HDDs require ``drivetemp`` kernel module to be loaded (available from Linux kernel version ``5.6+``). Without this the HWMON system will not provide the temperature information.
-            - NVME disks do not require any Linux kernel module
+            - SATA SSDs and HDDs require ``drivetemp`` kernel module to be loaded (available from Linux kernel
+              version ``5.6+``). Without this the HWMON system will not provide the temperature information.
+            - NVME disks do not require any Linux kernel module.
 
         .. note::
 
