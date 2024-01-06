@@ -10,14 +10,14 @@ from diskinfo.disk import Disk
 
 class DiskInfo:
     """This class implements disk exploration functionality. At class initialization time all existing disks
-    will be explored automatically. In a next step, :meth:`~diskinfo.DiskInfo.get_disk_number()` method will
-    provide the number of identified disk and :meth:`~diskinfo.DiskInfo.get_disk_list()` method will return
-    the list of the identified disks.
+    will be explored automatically (empty loop devices will be skipped). In a next step,
+    :meth:`~diskinfo.DiskInfo.get_disk_number()` method will provide the number of identified disk and
+    :meth:`~diskinfo.DiskInfo.get_disk_list()` method will return the list of the identified disks.
     In both cases disk type filters can be applied to get only a subset of the discovered disks. The filters are
     set of :class:`~diskinfo.DiskType` values.
 
     Operator ``in`` is also implemented for this class. Caller can check if a :class:`~diskinfo.Disk` class instance
-    can be found on the list of the discovered disks.
+    can be found on the list of the identified disks.
 
     Example:
         A code example about the basic use of the class and the use of the ``in`` operator.
@@ -43,7 +43,9 @@ class DiskInfo:
         # Iterate on list of block devices.
         for file_name in os.listdir('/sys/block'):
             new_disk = Disk(disk_name=file_name)
-            self.__disk_list.append(new_disk)
+            # Empty loop devices are skipped
+            if not (new_disk.is_loop() and new_disk.get_size() == 0):
+                self.__disk_list.append(new_disk)
 
     def get_disk_number(self, included: set = None, excluded: set = None) -> int:
         """Returns the number of the disks. The caller can specify inclusive and exclusive filters for disk types.
