@@ -563,7 +563,7 @@ class Partition:
                 nvme0n1p6 - 107.4 GB
 
         """
-        return size_in_hrf(self.__part_size*512, units)
+        return size_in_hrf(self.__part_size * 512, units)
 
     def get_fs_label(self) -> str:
         """Returns the label of the file system. The result could be empty if the file system does not have a label.
@@ -736,7 +736,7 @@ class Partition:
                 nvme0n1p6 - 58.6 GB
 
         """
-        return size_in_hrf(self.__fs_free_size*512, units)
+        return size_in_hrf(self.__fs_free_size * 512, units)
 
     def get_fs_mounting_point(self) -> str:
         """Returns the mounting point of the file system. The result could be empty if the partition does not
