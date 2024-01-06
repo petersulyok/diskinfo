@@ -282,7 +282,6 @@ class DiskTest(unittest.TestCase):
             d.get_type_str()
         self.assertEqual(type(cm.exception), RuntimeError, "get_type 13")
 
-
     def pt_gsih_p1(self, size_in_512: int, calc_size: float, calc_unit: str, metric: int, error: str) -> None:
         """Primitive positive test function. It contains the following steps:
             - create an empty Disk() class
