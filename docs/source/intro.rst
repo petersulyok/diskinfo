@@ -18,10 +18,24 @@ Standard installation from `pypi <https://pypi.org>`_::
 
 The library has the following run-time requirements:
 
-    - Python version >= `3.7`
-    - Linux kernel `5.6+` for reading temperature with :meth:`~diskinfo.Disk.get_temperature()` method. Please note
-      `drivetemp` kernel module has to be also loaded for SSDs and HDDs (and not required for NVMEs).
-    - `smartmontools` has to be installed for :meth:`~diskinfo.Disk.get_smart_data()` method.
+    - Python version >= `3.8`
+    - reading SMART data with :meth:`~diskinfo.Disk.get_smart_data()` method the `smartmontools` has to be
+      installed
+    - reading disk temperature with :meth:`~diskinfo.Disk.get_temperature()` method the following
+      requirements has to be considered:
+
+        .. list-table::
+            :header-rows: 1
+
+            *   - Disk type
+                - Requirement
+            *   - SATA HDD/SSD
+                - `drivetemp` kernel module (Linux kernel version `5.6+`) has to be loaded
+            *   - SCSI/ATA HDD
+                - `smartmontools` has to be installed
+            *   - NVME
+                - none
+
     - `df` command for :meth:`~diskinfo.Disk.get_partition_list()` method.
     - optionally, `Rich Python library <https://pypi.org/project/rich/>`_ for the demo
 
@@ -33,7 +47,6 @@ must be installed for the running the demo::
 
      pip install rich
 
-
 The first demo screen will list the explored disks::
 
      python -m diskinfo.demo
@@ -42,12 +55,18 @@ The first demo screen will list the explored disks::
 
 The second demo screen will display the attributes of a specified disk::
 
-     python -m diskinfo.demo sda
-
+     python -m diskinfo.demo sdb
 
 .. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo_2.png
 
-The third demo screen will display the list of partitions on a specified disk::
+The third demo screen will display the SMART attributes of a specified disk::
+
+     python -m diskinfo.demo nvme0n1 -s
+
+.. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo_4.png
+
+
+The fourth demo screen will display the list of partitions on a specified disk::
 
      python -m diskinfo.demo nvme0n1 -p
 
@@ -112,36 +131,52 @@ The :class:`~diskinfo.Disk` class contains the following disk attributes:
 
     *   - Attribute
         - Description
+        - Sample value
     *   - name
-        - Disk name (e.g. `sda` or `nvme0n1`)
+        - Disk name
+        - `sda` or `nvme0n1`)
     *   - path
-        - Disk path (e.g. `/dev/sda` or `/dev/nvme0n1`)
+        - Disk path
+        - `/dev/sda` or `/dev/nvme0n1`
     *   - `by-id` path
         - Persistent disk path in `/dev/disk/by-id` directory
+        -
     *   - `by-path` path
         - Persistent disk path in `/dev/disk/by-path` directory
+        -
     *   - wwn
-        - `World Wide Name <https://en.wikipedia.org/wiki/World_Wide_Name>`_ (e.g. `0x5002538c307370ec`)
+        - `World Wide Name <https://en.wikipedia.org/wiki/World_Wide_Name>`_
+        - `0x5002538c307370ec`
     *   - model
-        - Disk model (e.g. `Samsung SSD 850 PRO 1TB`)
+        - Disk model
+        - `Samsung SSD 850 PRO 1TB`
     *   - serial number
-        - Disk serial number (e.g. `S3E2NY0J723218R`)
+        - Disk serial number
+        - `S3E2NY0J723218R`
     *   - firmware
-        - Disk firmware (e.g. `EXM04B6Q`)
+        - Disk firmware
+        - `EXM04B6Q`
     *   - type
-        - Disk type (e.g. `HDD`, `SSD` or `NVME`)
+        - Disk type
+        - `HDD`, `SSD` or `NVME`
     *   - size
         - Disk size in 512-byte blocks
+        -
     *   - device id
-        - Disk device id, in `'major:minor'` form (e.g. `8:0`)
+        - Disk device id, in `'major:minor'` form
+        - `8:0`
     *   - physical block size
-        - Disk physical block size in bytes (e.g. `512` or `4096`)
+        - Disk physical block size in bytes
+        - `512` or `4096`
     *   - logical block size
-        - Disk logical block size in bytes (e.g. `512`)
+        - Disk logical block size in bytes
+        - `512`
     *   - partition table type
-        - Type of the partition table on disk (e.g. `gpt` or `mbr`)
+        - Type of the partition table on disk
+        - `gpt` or `mbr`
     *   - partition table uuid
         - UUID of the partition table on disk
+        -
 
 Use case 2: explore disks
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -294,8 +329,8 @@ The return value is a list of :class:`~diskinfo.Partition` classes. This class p
 the partition attributes::
 
     >>> from diskinfo import Disk
-    >>> disk=Disk("nvme0n1")
-    >>> plist=disk.get_partition_list()
+    >>> disk = Disk("nvme0n1")
+    >>> plist = disk.get_partition_list()
     >>> for item in plist:
     ...     Disk(item.get_name())
     ...
@@ -313,49 +348,73 @@ The :class:`~diskinfo.Partition` class contains the following partition attribut
 
     *   - Attribute
         - Description
+        - Sample value
     *   - name
-        - Partition name (e.g. `sda1` or `nvme0n1p1`)
+        - Partition name
+        - `sda1` or `nvme0n1p1`
     *   - Path
-        - Partition path (e.g. `/dev/sda1` or `/dev/nvme0n1p1`)
+        - Partition path
+        - `/dev/sda1` or `/dev/nvme0n1p1`
     *   - `by-id` path
         - Persistent path in `/dev/disk/by-id` directory
+        -
     *   - `by-path` path
         - Persistent path in `/dev/disk/by-path` directory
+        -
     *   - `by-partuuid` path
         - Persistent path in `/dev/disk/by-partuuid` directory
+        -
     *   - `by-partlabel` path
         - Persistent path in `/dev/disk/by-partlabel` directory
+        -
     *   - `by-uuid` path
         - Persistent path in `/dev/disk/by-uuid` directory
+        -
     *   - `by-label` path
         - Persistent path in `/dev/disk/by-label` directory
+        -
     *   - Device id
-        - Partition device id (e.g. `8:1`)
+        - Partition device id
+        - `8:1`
     *   - Partition scheme
-        - Partition scheme (e.g. `gtp` or `mbr`)
+        - Partition scheme
+        - `gtp` or `mbr`
     *   - Partition label
-        - Partition label (e.g. `Basic data partition`)
+        - Partition label
+        - `Basic data partition`
     *   - Partition UUID
-        - Partition UUID (e.g. `acb8374d-fb60-4cb0-8ac4-273417c6f847`)
+        - Partition UUID
+        - `acb8374d-fb60-4cb0-8ac4-273417c6f847`
     *   - Partition type
         - Partition `type UUID <https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs>`_
+        -
     *   - Partition number
         - Partition number in the partition table
+        -
     *   - Partition offset
         - Partition starting offset in 512-byte blocks
+        -
     *   - Partition size
         - Partition size in 512-byte blocks
+        -
     *   - File system label
         - File system label
+        -
     *   - File system UUID
         - File system UUID
+        -
     *   - File system type
-        - File system type (e.g. `ntfs` or `ext4`)
+        - File system type
+        - `ntfs` or `ext4`)
     *   - File system version
-        - File system version (e.g. `1.0` in case of `ext4`)
+        - File system version
+        - `1.0` in case of `ext4`)
     *   - File system usage
-        - File system usage (e.g. `filesystem` or `other`)
+        - File system usage
+        - `filesystem` or `other`
     *   - File system free size
         - File system free size in 512-byte blocks
+        -
     *   - File system mounting point
-        - File system mounting point (e.g. `/` or `/home`)
+        - File system mounting point
+        - `/` or `/home`
