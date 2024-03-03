@@ -108,24 +108,19 @@ def smart_demo(name: str):
         table = Table(border_style="gray30", box=box.MINIMAL)
         table.add_column("Attribute", justify="left", style="steel_blue1")
         table.add_column("Value", justify="left", style="bold orchid")
-        table.add_row("SMART enabled", "yes" if sd.smart_enabled else "no")
-        table.add_row("SMART capable", "yes" if sd.smart_capable else "no")
-        if sd.healthy:
-            hstate = "[bold green]PASS[/]"
-        else:
-            hstate = "[bold red]FAIL[/]"
-        table.add_row("health assessment", hstate)
+        table.add_row("SMART enabled", "[bold green]yes[/]" if sd.smart_enabled else "[bold red]no[/]")
+        table.add_row("SMART capable", "[bold green]yes[/]" if sd.smart_capable else "[bold red]no[/]")
+        table.add_row("health assessment", "[bold green]PASS[/]" if sd.healthy else "[bold red]FAIL[/]")
         if d.is_nvme():
             if hasattr(sd.nvme_attributes, "critical_warning"):
-                if sd.nvme_attributes.critical_warning == 0:
-                    cw_str = f"[bold green]{str(sd.nvme_attributes.critical_warning)}[/]"
-                else:
-                    cw_str = f"[bold red]{str(sd.nvme_attributes.critical_warning)}[/]"
-                table.add_row("critical warning", cw_str)
+                table.add_row("critical warning",
+                              f"[bold green]{str(sd.nvme_attributes.critical_warning)}[/]"
+                              if sd.nvme_attributes.critical_warning == 0 else
+                              f"[bold red]{str(sd.nvme_attributes.critical_warning)}[/]")
             if hasattr(sd.nvme_attributes, "temperature"):
-                table.add_row("temperature", f"[bold wheat4]{sd.nvme_attributes.temperature} C[/]")
+                table.add_row("temperature", f"[bold blue]{sd.nvme_attributes.temperature} C[/]")
             if hasattr(sd.nvme_attributes, "percentage_used"):
-                table.add_row("percentage used", f"[bold wheat4]{sd.nvme_attributes.percentage_used}%[/]")
+                table.add_row("percentage used", f"[bold orange3]{sd.nvme_attributes.percentage_used}%[/]")
             if hasattr(sd.nvme_attributes, "data_units_read"):
                 s, u = size_in_hrf(sd.nvme_attributes.data_units_read * 1000 * 512)
                 size_str = f"[bold wheat4]{s:.1f} {u}[/]"
@@ -145,10 +140,10 @@ def smart_demo(name: str):
                               f"[bold indian_red1]{str(sd.nvme_attributes.unsafe_shutdowns)}[/]")
             if hasattr(sd.nvme_attributes, "error_information_log_entries"):
                 table.add_row("error information log entries",
-                              f"[bold blue]{str(sd.nvme_attributes.error_information_log_entries)}[/]")
+                              f"[bold wheat4]{str(sd.nvme_attributes.error_information_log_entries)}[/]")
             if hasattr(sd.nvme_attributes, "media_and_data_integrity_errors"):
                 table.add_row("media and data integrity errors",
-                              f"[bold blue]{str(sd.nvme_attributes.media_and_data_integrity_errors)}[/]")
+                              f"[bold wheat4]{str(sd.nvme_attributes.media_and_data_integrity_errors)}[/]")
 
         else:
             if hasattr(sd, "smart_attributes"):
