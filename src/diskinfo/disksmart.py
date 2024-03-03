@@ -32,7 +32,7 @@ class SmartAttribute:
     """ID of the SMART attribute (`1-255`)."""
     attribute_name: str
     """Name of the SMART attribute."""
-    flag: str
+    flag: int
     """SMART attribute handling flag."""
     value: int
     """Normalized value of SMART attribute (`0-255`). Notes:
@@ -56,9 +56,23 @@ class SmartAttribute:
     updated: str
     """Indicator when the SMART attribute is updated (values are `Always` or `Offline`)."""
     when_failed: str
-    """Usually it is blank or it contains the last operational hour when this SMART attribute failed."""
+    """Usually it is blank, or it contains the last operational hour when this SMART attribute failed."""
     raw_value: int
     """The raw value for the SMART attribute, defined by the manufacturer."""
+
+    def __init__(self, _id: int, attribute_name: str, flag: int, value: int, worst: int, thresh: int, _type: str,
+                 updated: str, when_failed: str, raw_value: int):
+        """Initialize class properties."""
+        self.id = _id
+        self.attribute_name = attribute_name
+        self.flag = flag
+        self.value = value
+        self.worst = worst
+        self.thresh = thresh
+        self.type = _type
+        self.updated = updated
+        self.when_failed = when_failed
+        self.raw_value = raw_value
 
 
 class NvmeAttributes:
@@ -73,7 +87,19 @@ class NvmeAttributes:
     """This attributes indicates critical warnings for the state of the controller."""
 
     temperature: int
-    """Contains temperature value of the NVME disk."""
+    """Contains the current composite temperature value of the NVME disk."""
+
+    available_spare: int
+    """Contains a normalized percentage (0% to 100%) of the remaining spare capacity available."""
+
+    available_spare_threshold: int
+    """When the Available Spare falls below the threshold indicated in this field, an asynchronous event
+    completion may occur. The value is indicated as a normalized percentage (0% to 100%)."""
+
+    percentage_used: int
+    """Contains a vendor specific estimate of the percentage of NVM subsystem life used based on the actual usage
+    and the manufacturer’s prediction of NVM life. A value of 100 indicates that the estimated endurance of the
+    NVM in the NVM subsystem has been consumed, but may not indicate an NVM subsystem failure."""
 
     data_units_read: int
     """Contains the number of 512-byte blocks the host has read from the NVME controller. The value reported in
@@ -84,6 +110,15 @@ class NvmeAttributes:
     """Contains the number of 512-byte blocks the host has written to the NVME controller. The value reported in
     thousands (i.e. 1 means 1000 units of 512-byte blocks) and rounded up. Value 0 means that this attribute is
     not reported."""
+
+    host_read_commands: int
+    """Contains the number of read commands completed by the controller."""
+
+    host_write_commands: int
+    """Contains the number of write commands completed by the controller."""
+
+    controller_busy_time: int
+    """Contains the amount of time (in minutes) the controller is busy with I/O commands."""
 
     power_cycles: int
     """Contains the number of the power cycles."""
@@ -100,12 +135,52 @@ class NvmeAttributes:
     error_information_log_entries: int
     """Contains the number of Error Information log entries over the life of the controller."""
 
+    warning_composite_temperature_time: int
+    """Contains the amount of time in minutes that the controller is operational and the Composite Temperature
+    is greater than or equal to the Warning Composite Temperature Threshold."""
+
+    critical_composite_temperature_time: int
+    """Contains the amount of time in minutes that the controller is operational and the Composite Temperature
+    is greater than or equal to the Critical Composite Temperature Threshold."""
+
+    def __init__(self, critical_warning: int, temperature: int, available_spare: int,
+                 available_spare_threshold: int, percentage_used: int, data_units_read: int,
+                 data_units_written: int, host_read_commands: int, host_write_commands: int,
+                 controller_busy_time: int, power_cycles: int, power_on_hours: int,
+                 unsafe_shutdowns: int, media_and_data_integrity_errors: int,
+                 error_information_log_entries: int, warning_composite_temperature_time: int,
+                 critical_composite_temperature_time: int):
+        """Initialize class properties."""
+        self.critical_warning = critical_warning
+        self.temperature = temperature
+        self.available_spare = available_spare
+        self.available_spare_threshold = available_spare_threshold
+        self.percentage_used = percentage_used
+        self.data_units_read = data_units_read
+        self.data_units_written = data_units_written
+        self.host_read_commands = host_read_commands
+        self.host_write_commands = host_write_commands
+        self.controller_busy_time = controller_busy_time
+        self.power_cycles = power_cycles
+        self.power_on_hours = power_on_hours
+        self.unsafe_shutdowns = unsafe_shutdowns
+        self.media_and_data_integrity_errors = media_and_data_integrity_errors
+        self.error_information_log_entries = error_information_log_entries
+        self.warning_composite_temperature_time = warning_composite_temperature_time
+        self.critical_composite_temperature_time = critical_composite_temperature_time
+
 
 class DiskSmartData:
     """This class presents all collected SMART data for a disk. This class is created by
     :meth:`~diskinfo.Disk.get_smart_data()` method. There are several disk type specific data attributes in this
     class, they are available only for a specific disk type(s).
     """
+
+    smart_enabled: bool
+    """SMART is enabled for the disk."""
+
+    smart_capable: bool
+    """The disk is SMART capable."""
 
     healthy: bool
     """The health status of the disk. Valid for all disk types. Meaning:
@@ -122,7 +197,7 @@ class DiskSmartData:
             - `False` means the disk is ACTIVE or IDLE
 
     .. warning::
-        When a HDD is in STANDBY state (i.e. this flag is `True`) then other SMART attributes will not be updated!
+        When an HDD is in STANDBY state (i.e. this flag is `True`) then other SMART attributes will not be updated!
     """
 
     smart_attributes: List[SmartAttribute]
@@ -136,12 +211,6 @@ class DiskSmartData:
     """NVME attributes for a disk. Valid only for NVME disks. See more details in
     :class:`~diskinfo.NvmeAttributes` class."""
 
-    return_code: int
-    """Return code of latest execution of the `smartctl` command."""
-
-    raw_output: str
-    """Raw text output of latest execution of the `smartctl` command."""
-
     def find_smart_attribute_by_id(self, id_val: int) -> int:
         """Finds a SMART attribute by the `id` and returns its index in :attr:`~diskinfo.DiskSmartData.smart_attributes`
         list, or -1 if not found.
@@ -150,15 +219,15 @@ class DiskSmartData:
             id_val (int): SMART attribute `id` value
 
         Returns:
-             int: an index of the attribute in :attr:`~diskinfo.DiskSmartData.smart_attributes` list, or -1
-             if not found
+            int: an index of the attribute in :attr:`~diskinfo.DiskSmartData.smart_attributes` list, or -1
+            if not found
 
         Example:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk, DiskSmartData
-                >>> d=Disk("sda")
-                >>> sd = d.get_smart_data(sudo="/usr/bin/sudo")
+                >>> d = Disk("sda")
+                >>> sd = d.get_smart_data(sudo=True)
                 >>> sd.find_smart_attribute_by_id(5)
                 0
 
@@ -176,15 +245,15 @@ class DiskSmartData:
             name_val (int): SMART attribute name value
 
         Returns:
-             int:  an index of the attribute in :attr:`~diskinfo.DiskSmartData.smart_attributes` list, or -1
-             if not found
+            int:  an index of the attribute in :attr:`~diskinfo.DiskSmartData.smart_attributes` list, or -1
+            if not found
 
         Example:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk, DiskSmartData
-                >>> d=Disk("sda")
-                >>> sd = d.get_smart_data(sudo="/usr/bin/sudo")
+                >>> d = Disk("sda")
+                >>> sd = d.get_smart_data(sudo=True)
                 >>> sd.find_smart_attribute_by_name("Power_On_Hours")
                 1
 
