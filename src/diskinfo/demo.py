@@ -43,8 +43,13 @@ def disklist_demo():
     disks = di.get_disk_list(sorting=True)
     for d in disks:
         s, u = d.get_size_in_hrf()
+        temp = d.get_temperature(sudo=True)
+        if temp:
+            temp_str = f"{temp:.1f} C"
+        else:
+            temp_str = ""
         table.add_row(d.get_name(), d.get_type_str(), d.get_model(), d.get_path(),
-                      f"{d.get_temperature(sudo=True):.1f} C", d.get_serial_number(), d.get_firmware(),
+                      temp_str, d.get_serial_number(), d.get_firmware(),
                       f"{s:.1f} {u}")
     group = Group(panel, table)
     rprint(Panel(group, title="diskinfo demo: disks", title_align="left", border_style="gray30", expand=False))
