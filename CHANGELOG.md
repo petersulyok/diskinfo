@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2024-03-03
+
+### Added
+- [pySMART](https://pypi.org/project/pySMART/) library used in the refactored Disk.get_temperate() and
+  Disk.get_smart_data() methods
+- New attributed added for NvmeAttributes() class
+- New attributed added for DiskSmartData() class
+
+### Changed
+- support of Python 3.7 removed
+
+### Fixed
+- LOOP disks handled without problems
+- Disk.get_smart_data() can be executed wider range of hard disks and SSDS without problems
+
+
 ## [2.1.2] - 2024-01-02
 
 ### Added
