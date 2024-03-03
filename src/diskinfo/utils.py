@@ -245,11 +245,11 @@ def time_in_hrf(time: int, unit: int = 0, short_format: bool = False) -> Tuple[f
         An example about the use of the function::
 
             >>> from diskinfo import *
-            >>> hours=6517
+            >>> hours = 6517
             >>> t, u = time_in_hrf(hours, unit=2)
             >>> print(f"{t:.1f} {u}")
             271.5 day
-            >>> days=2401
+            >>> days = 2401
             >>> t, u = time_in_hrf(hours, unit=3, short_format=True)
             >>> print(f"{t:.1f} {u}")
             6.6 yr
