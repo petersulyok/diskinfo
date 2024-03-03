@@ -12,7 +12,7 @@ from diskinfo import DiskType, Disk, DiskInfo, size_in_hrf, time_in_hrf
 
 
 def disklist_demo():
-    """Disk exploring demo."""
+    """Disk exploration demo."""
 
     # Explore disks in the system.
     di = DiskInfo()
@@ -43,8 +43,9 @@ def disklist_demo():
     disks = di.get_disk_list(sorting=True)
     for d in disks:
         s, u = d.get_size_in_hrf()
-        table.add_row(d.get_name(), d.get_type_str(), d.get_model(), d.get_path(), f"{d.get_temperature():.1f} C",
-                      d.get_serial_number(), d.get_firmware(), f"{s:.1f} {u}")
+        table.add_row(d.get_name(), d.get_type_str(), d.get_model(), d.get_path(),
+                      f"{d.get_temperature(sudo=True):.1f} C", d.get_serial_number(), d.get_firmware(),
+                      f"{s:.1f} {u}")
     group = Group(panel, table)
     rprint(Panel(group, title="diskinfo demo: disks", title_align="left", border_style="gray30", expand=False))
 
@@ -53,8 +54,8 @@ def disk_demo(name: str):
     """Disk attributes demo."""
 
     d = Disk(name)
-
-    panel = Panel(f"[markdown.strong]Standard disk attributes:[/] [bold green]{name}[/]", box=box.MINIMAL, expand=False)
+    panel = Panel(f"[markdown.strong]Standard disk attributes of:[/] [bold green]{name}[/]",
+                  box=box.MINIMAL, expand=False)
     table = Table(border_style="gray30", box=box.MINIMAL)
     table.add_column("Attribute", justify="left", style="steel_blue1")
     table.add_column("Value", justify="left", style="orchid")
@@ -72,62 +73,125 @@ def disk_demo(name: str):
     table.add_row("wwn id", f"[bold sky_blue3]{d.get_wwn()}[/]")
     table.add_row("disk type", f"[bold sea_green2]{d.get_type_str()}[/]")
     table.add_row("device id", f"[bold blue1]{d.get_device_id()}[/]")
-    temp_str = f"[bold bright_magenta]{d.get_temperature()} C[/]"
+    temp = d.get_temperature(sudo=True)
+    if temp:
+        temp_str = f"[bold bright_magenta]{d.get_temperature(sudo=True)} C[/]"
+    else:
+        temp_str = "[bold bright_magenta]-[/]"
     table.add_row("temperature", temp_str)
     table.add_row("physical block size", f"[bold wheat4]{str(d.get_physical_block_size())} bytes [/]")
     table.add_row("logical block size", f"[bold wheat4]{str(d.get_logical_block_size())} bytes[/]")
     table.add_row("partition table type", f"[bold gray62]{d.get_partition_table_type()}[/]")
     table.add_row("partition table uuid", f"[bold green3]{d.get_partition_table_uuid()}[/]")
-    try:
-        sd = d.get_smart_data(sudo="/usr/bin/sudo")
-        panel2 = Panel("[markdown.strong]SMART attributes[/]", box=box.MINIMAL, expand=False)
-        table2 = Table(border_style="gray30", box=box.MINIMAL)
-        table2.add_column("Attribute", justify="left", style="steel_blue1")
-        table2.add_column("Value", justify="left", style="bold orchid")
-        if sd.healthy:
-            hstate = "[bold green]HEALTHY[/]"
-        else:
-            hstate = "[bold red]FAILED[/]"
-        table2.add_row("health status", hstate)
-        if d.is_nvme():
-            table2.add_row("critical warning", f"[bold blue_violet]{str(sd.nvme_attributes.critical_warning)}[/]")
-            t, u = time_in_hrf(sd.nvme_attributes.power_on_hours, 2)
-            poh = f"[bold medium_purple3]{t:.1f} {u}[/]"
-            table2.add_row("power on time", poh)
-            table2.add_row("power cycles", f"[bold orange4]{str(sd.nvme_attributes.power_cycles)}[/]")
-            s, u = size_in_hrf(sd.nvme_attributes.data_units_read * 1000 * 512)
-            size_str = f"[bold wheat4]{s:.1f} {u}[/]"
-            table2.add_row("data units read", size_str)
-            s, u = size_in_hrf(sd.nvme_attributes.data_units_written * 1000 * 512)
-            size_str = f"[bold wheat4]{s:.1f} {u}[/]"
-            table2.add_row("data units written", size_str)
-            table2.add_row("error information log entries",
-                           f"[bold blue]{str(sd.nvme_attributes.error_information_log_entries)}[/]")
-            table2.add_row("media and data integrity errors",
-                           f"[bold blue]{str(sd.nvme_attributes.media_and_data_integrity_errors)}[/]")
-            table2.add_row("unsafe shutdowns",
-                           f"[bold indian_red1]{str(sd.nvme_attributes.unsafe_shutdowns)}[/]")
-        else:
-            index = sd.find_smart_attribute_by_name("Power_On_Hours")
-            if index != -1:
-                t, u = time_in_hrf(sd.smart_attributes[index].raw_value, 2)
-                poh = f"[bold medium_purple3]{t:.1f} {u}[/]"
-                table2.add_row("power on time", poh)
-            index = sd.find_smart_attribute_by_name("Power_Cycle_Count")
-            if index != -1:
-                pcc = str(sd.smart_attributes[index].raw_value)
-                table2.add_row("power cycles", f"[bold orange4]{pcc}[/]")
-            index = sd.find_smart_attribute_by_name("LBAs_Written")
-            if index != -1:
-                lbaw = sd.smart_attributes[index].raw_value
-                s, u = size_in_hrf(lbaw * 512)
-                size_str = f"[bold medium_violet_red]{s:.1f} {u}[/]"
-                table2.add_row("total LBAs written", size_str)
-    except RuntimeError:
-        panel2 = Panel("[markdown.strong]SMART attributes cannot be read[/]", box=box.MINIMAL, expand=False)
-        table2 = None
-    group = Group(panel, table, panel2, table2)
+
+    group = Group(panel, table)
     rprint(Panel(group, title="diskinfo demo: disk attributes", title_align="left", border_style="gray30",
+                 expand=False))
+
+
+def smart_demo(name: str):
+    """SMART attributes demo."""
+
+    d = Disk(name)
+    sd = d.get_smart_data(sudo=True)
+    if not sd:
+        panel = Panel(f"[markdown.strong]SMART attributes of:[/] [bold green]{name}[/]\n"
+                      "\n"
+                      "[bold red]Device is not identified/supported[/]\n"
+                      "[bold red]or 'smartctl' command cannot be executed![/]",
+                      box=box.MINIMAL, expand=False)
+        group = Group(panel)
+
+    else:
+        panel = Panel(f"[markdown.strong]SMART attributes of:[/] [bold green]{name}[/]",
+                      box=box.MINIMAL, expand=False)
+        table = Table(border_style="gray30", box=box.MINIMAL)
+        table.add_column("Attribute", justify="left", style="steel_blue1")
+        table.add_column("Value", justify="left", style="bold orchid")
+        table.add_row("SMART enabled", "yes" if sd.smart_enabled else "no")
+        table.add_row("SMART capable", "yes" if sd.smart_capable else "no")
+        if sd.healthy:
+            hstate = "[bold green]PASS[/]"
+        else:
+            hstate = "[bold red]FAIL[/]"
+        table.add_row("health assessment", hstate)
+        if d.is_nvme():
+            if hasattr(sd.nvme_attributes, "critical_warning"):
+                if sd.nvme_attributes.critical_warning == 0:
+                    cw_str = f"[bold green]{str(sd.nvme_attributes.critical_warning)}[/]"
+                else:
+                    cw_str = f"[bold red]{str(sd.nvme_attributes.critical_warning)}[/]"
+                table.add_row("critical warning", cw_str)
+            if hasattr(sd.nvme_attributes, "temperature"):
+                table.add_row("temperature", f"[bold wheat4]{sd.nvme_attributes.temperature} C[/]")
+            if hasattr(sd.nvme_attributes, "percentage_used"):
+                table.add_row("percentage used", f"[bold wheat4]{sd.nvme_attributes.percentage_used}%[/]")
+            if hasattr(sd.nvme_attributes, "data_units_read"):
+                s, u = size_in_hrf(sd.nvme_attributes.data_units_read * 1000 * 512)
+                size_str = f"[bold wheat4]{s:.1f} {u}[/]"
+                table.add_row("data units read", size_str)
+            if hasattr(sd.nvme_attributes, "data_units_written"):
+                s, u = size_in_hrf(sd.nvme_attributes.data_units_written * 1000 * 512)
+                size_str = f"[bold wheat4]{s:.1f} {u}[/]"
+                table.add_row("data units written", size_str)
+            if hasattr(sd.nvme_attributes, "power_on_hours"):
+                t, u = time_in_hrf(sd.nvme_attributes.power_on_hours, 2)
+                poh = f"[bold medium_purple3]{t:.1f} {u}[/]"
+                table.add_row("power on time", poh)
+            if hasattr(sd.nvme_attributes, "power_cycles"):
+                table.add_row("power cycles", f"[bold orange4]{str(sd.nvme_attributes.power_cycles)}[/]")
+            if hasattr(sd.nvme_attributes, "unsafe_shutdowns"):
+                table.add_row("unsafe shutdowns",
+                              f"[bold indian_red1]{str(sd.nvme_attributes.unsafe_shutdowns)}[/]")
+            if hasattr(sd.nvme_attributes, "error_information_log_entries"):
+                table.add_row("error information log entries",
+                              f"[bold blue]{str(sd.nvme_attributes.error_information_log_entries)}[/]")
+            if hasattr(sd.nvme_attributes, "media_and_data_integrity_errors"):
+                table.add_row("media and data integrity errors",
+                              f"[bold blue]{str(sd.nvme_attributes.media_and_data_integrity_errors)}[/]")
+
+        else:
+            if hasattr(sd, "smart_attributes"):
+                index = sd.find_smart_attribute_by_name("Reallocated_Sector_Ct")
+                if index != -1:
+                    c = f"[gray54]{sd.smart_attributes[index].raw_value}[/]"
+                    table.add_row("reallocated sector count", c)
+                index = sd.find_smart_attribute_by_name("Airflow_Temperature")
+                if index != -1:
+                    temp = sd.smart_attributes[index].raw_value
+                    temp_str = f"[bold medium_purple3]{temp} C[/]"
+                    table.add_row("airflow temperature", temp_str)
+                index = sd.find_smart_attribute_by_name("Power_On_Hours")
+                if index != -1:
+                    t, u = time_in_hrf(sd.smart_attributes[index].raw_value, 2)
+                    poh = f"[bold medium_purple3]{t:.1f} {u}[/]"
+                    table.add_row("power on time", poh)
+                index = sd.find_smart_attribute_by_name("Power_Cycle_Count")
+                if index != -1:
+                    pcc = str(sd.smart_attributes[index].raw_value)
+                    table.add_row("power cycles", f"[bold orange4]{pcc}[/]")
+                index = sd.find_smart_attribute_by_name("Wear_Leveling_Count")
+                if index != -1:
+                    c = f"[gray54]{sd.smart_attributes[index].raw_value}[/]"
+                    table.add_row("wear leveling count", c)
+                index = sd.find_smart_attribute_by_name("Uncorrectable_Error_Cnt")
+                if index != -1:
+                    c = f"[gray54]{sd.smart_attributes[index].raw_value}[/]"
+                    table.add_row("uncorrectable error count", c)
+                index = sd.find_smart_attribute_by_name("CRC_Error_Count")
+                if index != -1:
+                    c = f"[gray54]{sd.smart_attributes[index].raw_value}[/]"
+                    table.add_row("CRC error count", c)
+                index = sd.find_smart_attribute_by_name("LBAs_Written")
+                if index != -1:
+                    lbaw = sd.smart_attributes[index].raw_value
+                    s, u = size_in_hrf(lbaw * 512)
+                    size_str = f"[bold medium_violet_red]{s:.1f} {u}[/]"
+                    table.add_row("total LBAs written", size_str)
+
+        group = Group(panel, table)
+
+    rprint(Panel(group, title="diskinfo demo: SMART attributes", title_align="left", border_style="gray30",
                  expand=False))
 
 
@@ -159,11 +223,12 @@ def partition_demo(name: str):
 
 def usage():
     """Prints usage help text."""
-    print("Usage: python -m diskinfo.demo [device] [-p]\n"
+    print("Usage: python -m diskinfo.demo [device] [-s][-p]\n"
           "Examples:\n"
-          "\tpython -m diskinfo.demo\n"
-          "\tpython -m diskinfo.demo sda\n"
-          "\tpython -m diskinfo.demo sda -p\n")
+          "\tpython -m diskinfo.demo            - displays all disks\n"
+          "\tpython -m diskinfo.demo sda        - displays sda disk attributes\n"
+          "\tpython -m diskinfo.demo sda -s     - displays sda SMART attributes\n"
+          "\tpython -m diskinfo.demo sda -p     - displays sda partitions\n")
 
 
 def main():
@@ -177,6 +242,8 @@ def main():
         disk_demo(sys.argv[1])
     elif len(sys.argv) == 3 and sys.argv[2] == "-p":
         partition_demo(sys.argv[1])
+    elif len(sys.argv) == 3 and sys.argv[2] == "-s":
+        smart_demo(sys.argv[1])
     else:
         usage()
 
