@@ -5,8 +5,8 @@
 import glob
 import os
 import re
-import subprocess
-from typing import List, Tuple
+from typing import List, Tuple, Union
+from pySMART import Device, SMARTCTL
 from diskinfo.utils import _read_file, _read_udev_property, _read_udev_path, size_in_hrf
 from diskinfo.disktype import DiskType
 from diskinfo.partition import Partition
@@ -48,7 +48,7 @@ class Disk:
         This example shows how to create a :class:`~diskinfo.Disk` class then how to get its path and serial number::
 
             >>> from diskinfo import Disk
-            >>> d=Disk("sda")
+            >>> d = Disk("sda")
             >>> d.get_path()
             '/dev/sda'
             >>> d.get_serial_number()
@@ -56,16 +56,16 @@ class Disk:
 
         and here are additional ways how the :class:`~diskinfo.Disk` class can be initialized::
 
-            >>> d=Disk(serial_number="92837A469FF876")
+            >>> d = Disk(serial_number="92837A469FF876")
             >>> d.get_name()
             'sdc'
-            >>> d=Disk(wwn="0x5002539c417223be")
+            >>> d = Disk(wwn="0x5002539c417223be")
             >>> d.get_name()
             'sdc'
-            >>> d=Disk(byid_name="ata-Samsung_SSD_850_PRO_1TB_92837A469FF876")
+            >>> d = Disk(byid_name="ata-Samsung_SSD_850_PRO_1TB_92837A469FF876")
             >>> d.get_name()
             'sdc'
-            >>> d=Disk(bypath_name="pci-0000:00:17.0-ata-3")
+            >>> d = Disk(bypath_name="pci-0000:00:17.0-ata-3")
             >>> d.get_name()
             'sdc'
 
@@ -221,7 +221,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk(serial_number="92837A469FF876")
+                >>> d = Disk(serial_number="92837A469FF876")
                 >>> d.get_name()
                 'sdc'
 
@@ -235,7 +235,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk(serial_number="92837A469FF876")
+                >>> d = Disk(serial_number="92837A469FF876")
                 >>> d.get_path()
                 '/dev/sdc'
 
@@ -254,7 +254,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_byid_path()
                 ['/dev/disk/by-id/ata-Samsung_SSD_850_PRO_1TB_92837A469FF876', '/dev/disk/by-id/wwn-0x5002539c417223be']
 
@@ -269,7 +269,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_bypath_path()
                 ['/dev/disk/by-path/pci-0000:00:17.0-ata-3', '/dev/disk/by-path/pci-0000:00:17.0-ata-3.0']
 
@@ -288,7 +288,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_wwn()
                 '0x5002539c417223be'
 
@@ -302,7 +302,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_model()
                 'Samsung SSD 850 PRO 1TB'
 
@@ -320,7 +320,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_serial_number()
                 '92837A469FF876'
 
@@ -334,7 +334,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_firmware()
                 'EXM04B6Q'
 
@@ -353,7 +353,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_type()
                 2
 
@@ -367,7 +367,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.is_ssd()
                 True
 
@@ -381,7 +381,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.is_nvme()
                 False
 
@@ -395,7 +395,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.is_hdd()
                 False
 
@@ -409,7 +409,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("loop0")
+                >>> d = Disk("loop0")
                 >>> d.is_loop()
                 True
 
@@ -431,7 +431,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_type_str()
                 'SSD'
 
@@ -453,8 +453,8 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
-                >>> s=d.get_size()
+                >>> d = Disk("sdc")
+                >>> s = d.get_size()
                 >>> print(f"Disk size: { s * 512 } bytes.")
                 Disk size: 1024209543168 bytes.
 
@@ -480,8 +480,8 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
-                >>> s,u=d.get_size_in_hrf()
+                >>> d = Disk("sdc")
+                >>> s,u = d.get_size_in_hrf()
                 >>> print(f"{s:.1f} {u}")
                 1.0 TB
 
@@ -495,7 +495,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_device_id()
                 '8:32'
 
@@ -510,7 +510,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_physical_block_size()
                 512
 
@@ -524,7 +524,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_logical_block_size()
                 512
 
@@ -538,7 +538,7 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_partition_table_type()
                 'gpt'
 
@@ -552,90 +552,109 @@ class Disk:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
+                >>> d = Disk("sdc")
                 >>> d.get_partition_table_uuid()
                 'd3f932e0-7107-455e-a569-9acd5b60d204'
 
         """
         return self.__part_table_uuid
 
-    def get_temperature(self) -> float:
-        """Returns the current disk temperature. Important notes about using this function:
+    def get_temperature(self, sudo: bool = False, smartctl_path: str = "/usr/sbin/smartctl") -> Union[float, None]:
+        """Returns the current disk temperature. The method will try to read disk temperature from the Linux kernel
+        HWMON interface first then will try to execure the `smartctl` command. The method has the following
+        requirements:
 
-            - SATA SSDs and HDDs require ``drivetemp`` kernel module to be loaded (available from Linux kernel
-              version ``5.6+``). Without this the HWMON system will not provide the temperature information.
-            - NVME disks do not require any Linux kernel module.
+            .. list-table::
+                :header-rows: 1
+
+                *   - Disk type
+                    - Requirement
+                *   - SATA HDD/SSD
+                    - `drivetemp` kernel module (Linux kernel version `5.6+`) has to be loaded
+                *   - SCSI/ATA HDD
+                    - `smartmontools` has to be installed
+                *   - NVME
+                    - none
 
         .. note::
+            Please note that reading disk temperature from HWMON kernel interface will not access the disk and
+            will not change its power state (e.g. HDD can be in STANDBY state) but reading disk temperature with
+            `smartctl` will do.
 
-            This function will not access the disk and will not change its power state.
+        Args:
+            sudo (bool): ``sudo`` command should be used for ``smartctl``, default value is ``False``
+            smartctl_path (str): Path for ``smartctl`` command, default value is ``/usr/sbin/smartctl``
 
         Returns:
-            float: disk temperature in C degree
-
-        Raises:
-              RuntimeError: if HWMON file cannot be found for this disk (typically ``drivetemp`` module is not loaded)
+            float: disk temperature in C degree or None if the temperature cannot be determined
 
         Example:
             An example about the use of this function::
 
                 >>> from diskinfo import Disk
-                >>> d=Disk("sdc")
-                >>> d.get_temperature()
+                >>> d = Disk("sdc")
+                >>> d.get_temperature(sudo=True)
                 28.5
 
         """
-        temp: float
+        temp:   float
+        sd:     Device
 
-        temp = 0.0
-        if hasattr(self, '_Disk__hwmon_path'):
-            if not self.__hwmon_path or not os.path.exists(self.__hwmon_path):
-                raise RuntimeError(f"ERROR: File does not exists (hwmon={self.__hwmon_path})")
+        # Read disk temperature from HWMON system of the Linux kernel.
+        if hasattr(self, '_Disk__hwmon_path') and \
+           self.__hwmon_path and \
+           os.path.exists(self.__hwmon_path):
             try:
-                temp = float(_read_file(self.__hwmon_path)) / 1000.0
-            except ValueError as e:
-                raise e
-        return temp
+                return float(_read_file(self.__hwmon_path)) / 1000.0
+            except ValueError:
+                pass
 
-    def get_smart_data(self, nocheck: bool = False, sudo: str = None, smartctl_path: str = "/usr/sbin/smartctl") \
-            -> DiskSmartData:
-        """Returns smart data of the disk. This function will execute `smartctl` command from `smartmontools
-        <https://www.smartmontools.org/>`_ package, it has to be installed.
+        # Read disk temperature from `smartctl` command.
+        SMARTCTL.options = []
+        SMARTCTL.smartctl_path = smartctl_path
+        if sudo:
+            SMARTCTL.sudo = True
+        else:
+            SMARTCTL.sudo = False
+        sd = Device(self.__path)
+        temp = sd.temperature
+        if not temp:
+            return None
+        return float(temp)
+
+    def get_smart_data(self, nocheck: bool = False, sudo: bool = False, smartctl_path: str = "/usr/sbin/smartctl") \
+            -> Union[DiskSmartData, None]:
+        """Returns SMART data of the disk. This function will execute ``smartctl`` command from `smartmontools
+        <https://www.smartmontools.org/>`_ package, it needs to be installed.
 
         .. note::
 
-            `smartctl` command needs special access right for reading device smart attributes. This function has
-            to be used as `root` user or call with `sudo=` parameter.
+            ``smartctl`` command needs root priviledge for reading device SMART attributes. This function has
+            to be used as `root` user or called with ``sudo=True`` parameter.
 
-            In case of HDDs, the `smartctl` command will access the disk directly and the HDD can wake up. If
-            the `nocheck=True` parameter is used then the disk will preserve its current power state.
+            In case of HDDs, the ``smartctl`` command will access the disk directly and the HDD could be woken up. If
+            the ``nocheck=True`` parameter is used then the current power state of the disk will be preserved.
 
         Args:
-            nocheck (bool):  No check should be applied for a HDDs (`"-n standby"` argument will be used)
-            sudo (str): sudo command should be used. Valid value is the full path for sudo command (e.g.
-             `"/usr/bin/sudo"`), default is `None`
-            smartctl_path (str): Path for `smartctl` command, default value is `/usr/sbin/smartctl`
+            nocheck (bool):  No check should be applied for a HDDs (``"-n standby"`` argument will be used)
+            sudo (bool): ``sudo`` command should be used, default value is ``False``
+            smartctl_path (str): Path for ``smartctl`` command, default value is ``/usr/sbin/smartctl``
 
         Returns:
             DiskSmartData: SMART information of the disk (see more details at
-            :class:`~diskinfo.DiskSmartData` class)
-
-        Raises:
-            FileNotFoundError: if `smartctl` command cannot be found
-            ValueError: if invalid parameters passed to `smartctl` command
-            RuntimeError: in case of parsing errors of `smartctl` output
+            :class:`~diskinfo.DiskSmartData` class) or None if `smartctl` cannot be executed
 
         Example:
             The example show the use of the function::
 
                 >>> from diskinfo import Disk, DiskSmartData
-                >>> d=Disk("sda")
-                >>> sd = d.get_smart_data()
+                >>> d = Disk("sda")
+                >>> d = d.get_smart_data()
 
             In case of SSDs and HDDs the traditional SMART attributes can be accessed via
             :attr:`~diskinfo.DiskSmartData.smart_attributes` list::
 
-                >>> for item in sd.smart_attributes:
+                >>> for item in d.smart_attributes:
                 ...     print(f"{item.id:>3d} {item.attribute_name}: {item.raw_value}")
                 ...
                   5 Reallocated_Sector_Ct: 0
@@ -657,176 +676,112 @@ class Disk:
             field::
 
                 >>> if d.is_nvme():
-                ...     print(f"Power on hours: {sd.nvme_attributes.power_on_hours} h")
+                ...     print(f"Power on hours: {d.nvme_attributes.power_on_hours} h")
                 ...
                 Power on hours: 1565 h
 
         """
-        result: subprocess.CompletedProcess     # result of the executed process
-        arguments: List[str] = []               # argument list for execution of `smartctl` command
+        sd: Device          # Device class created by pySMART
+        rv: DiskSmartData   # return value
 
-        # If sudo command should be used.
+        # Ignore loop disks.
+        if self.is_loop():
+            return None
+
+        rv = DiskSmartData()
+        rv.standby_mode = False
+        SMARTCTL.options = []
+        SMARTCTL.smartctl_path = smartctl_path
+
+        # If sudo command should be used
         if sudo:
-            arguments.append(sudo)
-
-        # Path for `smartctl`
-        arguments.append(smartctl_path)
+            SMARTCTL.sudo = True
+        else:
+            SMARTCTL.sudo = False
 
         # If no check should be applied in standby power mode of an HDD
         if nocheck:
-            arguments.append("-n")
-            arguments.append("standby")
+            SMARTCTL.add_options(["-n", "standby"])
 
-        # The standards arguments.
-        arguments.append("-H")
-        arguments.append("-A")
-        arguments.append(self.__path)
+        # Check if `smartctl` can be executed.
+        output = SMARTCTL.info(self.__path)
+        if not output:
+            return None
 
-        # Execute `smartctl` command.
-        try:
-            result = subprocess.run(arguments, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        except (FileNotFoundError, ValueError) as e:
-            raise e
+        # Check if the disk is in STANDBY mode
+        if "Device is in STANDBY mode" in output[3]:
+            rv.standby_mode = True
+            return rv
 
-        value = DiskSmartData()
-        value.raw_output = result.stdout
-        value.return_code = result.returncode
-        value.standby_mode = False
+        # Get SMART data from pySMART.
+        sd = Device(self.__path)
 
-        output_lines = str(result.stdout).splitlines()
-        # Remove first three lines (copyright and an empty line), e.g.:
-        # smartctl 7.2 2020-12-30 r5155 [x86_64-linux-5.10.0-14-amd64] (local build)
-        # Copyright (C) 2002-20, Bruce Allen, Christian Franke, www.smartmontools.org
-        #
-        del output_lines[0:3]
+        # Check if the device interface was not identified (i.e. unknown device).
+        if not sd.interface:
+            return None
 
-        # Processing of normal smart attributes
-        if output_lines[0].startswith("==="):
+        # Save SMART flags.
+        rv.smart_enabled = sd.smart_enabled
+        rv.smart_capable = sd.smart_capable
 
-            # Remove next line, e.g.:
-            # === START OF SMART DATA SECTION ===
-            del output_lines[0]
-
-            # Find overall-health status e.g.:
-            # SMART overall-health self-assessment test result: PASSED
-            if "PASSED" in output_lines[0]:
-                value.healthy = True
-            else:
-                value.healthy = False
-
-            # Read and store of NVME attributes
-            if self.is_nvme():
-
-                # Remove three or more lines, e.g.:
-                # SMART overall-health self-assessment test result: PASSED
-                #
-                # SMART/Health Information (NVMe Log 0x02)
-                while not output_lines[0].startswith("Critical Warning"):
-                    del output_lines[0]
-
-                # Save all NVME attributes.
-                na = NvmeAttributes()
-                while output_lines[0]:
-
-                    if "Critical Warning" in output_lines[0]:
-                        mo = re.search(r"[\dxX]+$", output_lines[0])
-                        if mo:
-                            na.critical_warning = int(mo.group(), 16)
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    if output_lines[0].startswith("Temperature:"):
-                        mo = re.search(r"\d+", output_lines[0])
-                        if mo:
-                            na.temperature = int(mo.group())
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    if "Data Units Read" in output_lines[0]:
-                        mo = re.search(r"[\d,]+", output_lines[0])
-                        if mo:
-                            na.data_units_read = int(re.sub(",", "", mo.group()))
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    if "Data Units Written" in output_lines[0]:
-                        mo = re.search(r"[\d,]+", output_lines[0])
-                        if mo:
-                            na.data_units_written = int(re.sub(",", "", mo.group()))
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    if "Power Cycles" in output_lines[0]:
-                        mo = re.search(r"[\d,]+$", output_lines[0])
-                        if mo:
-                            na.power_cycles = int(re.sub(",", "", mo.group()))
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    if "Power On Hours" in output_lines[0]:
-                        mo = re.search(r"[\d,]+$", output_lines[0])
-                        if mo:
-                            na.power_on_hours = int(re.sub(",", "", mo.group()))
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    if "Unsafe Shutdowns" in output_lines[0]:
-                        mo = re.search(r"[\d,]+$", output_lines[0])
-                        if mo:
-                            na.unsafe_shutdowns = int(re.sub(",", "", mo.group()))
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    if "Media and Data Integrity Errors" in output_lines[0]:
-                        mo = re.search(r"[\d,]+$", output_lines[0])
-                        if mo:
-                            na.media_and_data_integrity_errors = int(re.sub(",", "", mo.group()))
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    if "Error Information Log Entries" in output_lines[0]:
-                        mo = re.search(r"[\d,]+$", output_lines[0])
-                        if mo:
-                            na.error_information_log_entries = int(re.sub(",", "", mo.group()))
-                        else:
-                            raise RuntimeError(f"Error in processing this line: {output_lines[0]}")
-                    del output_lines[0]
-                value.nvme_attributes = na
-
-            # Read and store of SMART attributes of HDDs and SDDs
-            else:
-
-                # Remove lines until we reach the header of the SMART attributes, e.g.:
-                # SMART overall-health self-assessment test result: PASSED
-                #
-                # SMART Attributes Data Structure revision number: 1
-                # Vendor Specific SMART Attributes with Thresholds:
-                # ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
-                while not output_lines[0].startswith("ID#"):
-                    del output_lines[0]
-                del output_lines[0]
-
-                # Save all SMART attributes.
-                value.smart_attributes = []
-                while output_lines[0]:
-                    # Normalize multiple spaces then split the line.
-                    split = re.sub(" +", " ", output_lines[0]).split()
-                    # Store all ten values of a SMART attribute
-                    sa = SmartAttribute()
-                    sa.id = int(split[0])
-                    sa.attribute_name = split[1]
-                    sa.flag = split[2]
-                    sa.value = int(split[3])
-                    sa.worst = int(split[4])
-                    sa.thresh = int(split[5])
-                    sa.type = split[6]
-                    sa.updated = split[7]
-                    sa.when_failed = split[8]
-                    sa.raw_value = int(split[9])
-                    value.smart_attributes.append(sa)
-                    # Remove the actual line.
-                    del output_lines[0]
-
-        # Process error messages or standby state.
+        # Find overall-health status
+        if sd.assessment == "PASS":
+            rv.healthy = True
         else:
-            if "STANDBY" in output_lines[0]:
-                value.standby_mode = True
-            if "Smartctl open device" in output_lines[0]:
-                raise RuntimeError(f"Error: {output_lines[0]}")
+            rv.healthy = False
 
-        return value
+        # Read and store of NVME attributes
+        if self.is_nvme():
+            if hasattr(sd, "if_attributes"):
+                rv.nvme_attributes = NvmeAttributes(
+                    sd.if_attributes.criticalWarning
+                    if hasattr(sd.if_attributes, "criticalWarning") else None,
+                    sd.if_attributes._temperature
+                    if hasattr(sd.if_attributes, "_temperature") else None,
+                    sd.if_attributes.availableSpare
+                    if hasattr(sd.if_attributes, "availableSpare") else None,
+                    sd.if_attributes.availableSpareThreshold
+                    if hasattr(sd.if_attributes, "availableSpareThreshold") else None,
+                    sd.if_attributes.percentageUsed
+                    if hasattr(sd.if_attributes, "percentageUsed") else None,
+                    sd.if_attributes.dataUnitsRead
+                    if hasattr(sd.if_attributes, "dataUnitsRead") else None,
+                    sd.if_attributes.dataUnitsWritten
+                    if hasattr(sd.if_attributes, "dataUnitsWritten") else None,
+                    sd.if_attributes.hostReadCommands
+                    if hasattr(sd.if_attributes, "hostReadCommands") else None,
+                    sd.if_attributes.hostWriteCommands
+                    if hasattr(sd.if_attributes, "hostWriteCommands") else None,
+                    sd.if_attributes.controllerBusyTime
+                    if hasattr(sd.if_attributes, "controllerBusyTime") else None,
+                    sd.if_attributes.powerCycles
+                    if hasattr(sd.if_attributes, "powerCycles") else None,
+                    sd.if_attributes.powerOnHours
+                    if hasattr(sd.if_attributes, "powerOnHours") else None,
+                    sd.if_attributes.unsafeShutdowns
+                    if hasattr(sd.if_attributes, "unsafeShutdowns") else None,
+                    sd.if_attributes.integrityErrors
+                    if hasattr(sd.if_attributes, "integrityErrors") else None,
+                    sd.if_attributes.errorEntries
+                    if hasattr(sd.if_attributes, "errorEntries") else None,
+                    sd.if_attributes.warningTemperatureTime
+                    if hasattr(sd.if_attributes, "warningTemperatureTime") else None,
+                    sd.if_attributes.criticalTemperatureTime
+                    if hasattr(sd.if_attributes, "criticalTemperatureTime") else None
+                )
+
+        # Read and save SATA attributes
+        else:
+            if hasattr(sd, "if_attributes") and hasattr(sd.if_attributes, "legacyAttributes"):
+                rv.smart_attributes = []
+                for i in sd.if_attributes.legacyAttributes:
+                    if i:
+                        rv.smart_attributes.append(SmartAttribute(
+                            i.num, i.name, i.flags, i.value_int, i.worst, i.thresh, i.type, i.updated,
+                            i.when_failed, i.raw_int)
+                        )
+
+        return rv
 
     def get_partition_list(self) -> List[Partition]:
         """Reads partition information of the disk and returns the list of partitions. See
