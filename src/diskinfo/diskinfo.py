@@ -11,8 +11,8 @@ from diskinfo.disk import Disk
 class DiskInfo:
     """This class implements disk exploration functionality. At class initialization time all existing disks
     will be explored automatically (empty loop devices will be skipped). In a next step,
-    :meth:`~diskinfo.DiskInfo.get_disk_number()` method will provide the number of identified disk and
-    :meth:`~diskinfo.DiskInfo.get_disk_list()` method will return the list of the identified disks.
+    :meth:`~diskinfo.DiskInfo.get_disk_number()` method can return the number of identified disk and
+    :meth:`~diskinfo.DiskInfo.get_disk_list()` method can return the list of the identified disks.
     In both cases disk type filters can be applied to get only a subset of the discovered disks. The filters are
     set of :class:`~diskinfo.DiskType` values.
 
@@ -23,11 +23,11 @@ class DiskInfo:
         A code example about the basic use of the class and the use of the ``in`` operator.
 
             >>> from diskinfo import Disk, DiskType, DiskInfo
-            >>> di=DiskInfo()
-            >>> n=di.get_disk_number(included={DiskType.SSD}, excluded={DiskType.HDD})
+            >>> di = DiskInfo()
+            >>> n = di.get_disk_number(included={DiskType.SSD}, excluded={DiskType.HDD})
             >>> print(f"Number of SSDs: {n}")
             Number of SSDs: 3
-            >>> d=Disk("sda")
+            >>> d = Disk("sda")
             >>> print(d in di)
             True
         """
@@ -65,8 +65,8 @@ class DiskInfo:
             A code example about using filters: it counts the number of SSDs excluding NVME disks.
 
             >>> from diskinfo import DiskType, DiskInfo
-            >>> di=DiskInfo()
-            >>> n=di.get_disk_number(included={DiskType.SSD}, excluded={DiskType.HDD})
+            >>> di = DiskInfo()
+            >>> n = di.get_disk_number(included={DiskType.SSD}, excluded={DiskType.HDD})
             >>> print(f"Number of SSDs: {n}")
             Number of SSDs: 3
         """
@@ -115,8 +115,8 @@ class DiskInfo:
             of the HDDs:
 
             >>> from diskinfo import DiskType, DiskInfo
-            >>> di=DiskInfo()
-            >>> disks=di.get_disk_list(included={DiskType.HDD}, sorting=True)
+            >>> di = DiskInfo()
+            >>> disks = di.get_disk_list(included={DiskType.HDD}, sorting=True)
             >>> for d in disks:
             ...     print(d.get_path())
             ...
