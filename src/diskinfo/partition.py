@@ -32,8 +32,8 @@ class Partition:
         This example shows the basic use of the class::
 
             >>> from diskinfo import Disk
-            >>> disk=Disk("nvme0n1")
-            >>> plist=disk.get_partition_list()
+            >>> disk = Disk("nvme0n1")
+            >>> plist = disk.get_partition_list()
             >>> for item in plist:
             ...     print(item.get_name())
             ...
@@ -156,8 +156,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name())
                 ...
@@ -182,8 +182,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_path())
                 ...
@@ -204,8 +204,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_byid_path())
                 ...
@@ -232,8 +232,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_bypath_path())
                 ...
@@ -257,8 +257,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_bypartuuid_path())
                 ...
@@ -283,8 +283,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_bypartlabel_path())
                 ...
@@ -306,8 +306,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_bylabel_path())
                 ...
@@ -329,8 +329,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_byuuid_path())
                 ...
@@ -351,8 +351,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_part_device_id())
                 ...
@@ -373,8 +373,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_part_scheme())
                 ...
@@ -398,8 +398,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_part_label())
                 ...
@@ -423,8 +423,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_part_uuid())
                 ...
@@ -449,8 +449,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_part_type())
                 ...
@@ -471,8 +471,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_part_number())
                 ...
@@ -493,8 +493,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_part_offset())
                 ...
@@ -515,8 +515,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import *
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_part_size())
                 ...
@@ -549,8 +549,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import *
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     s, u = item.get_part_size_in_hrf()
                 ...     print(item.get_name(), "-", "{s:.1f} {u}")
@@ -572,8 +572,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_fs_label())
                 ...
@@ -595,8 +595,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_fs_uuid())
                 ...
@@ -618,8 +618,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_fs_type())
                 ...
@@ -641,8 +641,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_fs_version())
                 ...
@@ -664,8 +664,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_fs_usage())
                 ...
@@ -687,8 +687,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_fs_free_size())
                 ...
@@ -722,8 +722,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     s, u = size_in_hrf(item.get_fs_free_size()*512)
                 ...     print(item.get_name(), "-", f"{s:.1f} {u}")
@@ -746,8 +746,8 @@ class Partition:
             An example about use of the function::
 
                 >>> from diskinfo import Disk
-                >>> disk=Disk("nvme0n1")
-                >>> plist=disk.get_partition_list()
+                >>> disk = Disk("nvme0n1")
+                >>> plist = disk.get_partition_list()
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_fs_mounting_point())
                 ...
