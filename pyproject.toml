@@ -6,15 +6,18 @@ build-backend = "setuptools.build_meta"
 name = "diskinfo"
 description = "Disk information Python library for Linux"
 readme = "README.md"
-version = "2.1.2"
+version = "3.0.0"
 authors = [
     { name = "Peter Sulyok", email = "peter@sulyok.net" }
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = ["disk", "linux"]
 license = {file = "LICENSE"}
+dependencies = [
+    "pySMART>=1.3.0",
+    "rich>=13.7.0"
+]
 classifiers = [
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -33,7 +36,11 @@ classifiers = [
 # pytest options
 [tool.pytest.ini_options]
 pythonpath = "src"
-filterwarnings = [ "default", "ignore::pytest.PytestCollectionWarning"]
+filterwarnings = [
+    "default",
+    "ignore::UserWarning",
+    "ignore::pytest.PytestCollectionWarning"
+]
 
 # coverage options
 [tool.coverage.report]
@@ -47,10 +54,22 @@ omit = [ "src/diskinfo/demo.py" ]
 # pylint options
 [tool.pylint.'MASTER']
 init-hook='import sys; sys.path.append("."); sys.path.append("./src"); sys.path.append("./test")'
+max-line-length=240
 
 [tool.pylint.'MESSAGES CONTROL']
 disable= [
-    "protected-access", "line-too-long", "too-many-instance-attributes", "too-many-branches", "invalid-name",
-    "too-few-public-methods", "too-many-statements", "broad-except", "too-many-locals", "too-many-arguments",
-    "missing-module-docstring", "parse-error", "duplicate-code", "too-many-public-methods", "unused-variable"
+    "line-too-long", "missing-module-docstring", "too-many-locals", "too-many-branches", "too-many-arguments",
+    "too-many-statements", "invalid-name", "protected-access", "too-many-instance-attributes",
+    "too-many-public-methods", "too-few-public-methods", "duplicate-code"
+    ]
+
+[tool.flake8]
+exclude = [ "docs", "htmlcov", ".git", "__pycache__", ".pytest_cache", ".vscode", ".idea", "venv*", ".venv*", "build" ]
+max-line-length = 120
+count = true
+show-source = true
+statistics = true
+per-file-ignores = [
+    "test_diskinfo.py: F821",
+    "test_disk.py: F821"
     ]
