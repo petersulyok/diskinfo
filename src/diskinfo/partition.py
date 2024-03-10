@@ -143,7 +143,7 @@ class Partition:
         # Parse output: find free size and mounting point
         output_lines = result.stdout.splitlines()
         for line in output_lines:
-            items = re.sub(r"\s+", " ", line).split()
+            items = re.sub(r"\s+", " ", line).split(maxsplit=2)
             if items[0] == self.__path:
                 self.__fs_free_size = int(items[1])
                 self.__fs_mounting_point = items[2]
