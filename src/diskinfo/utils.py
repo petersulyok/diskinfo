@@ -5,12 +5,14 @@
 from typing import List, Tuple
 
 
-def _read_file(path) -> str:
+def _read_file(path, encoding: str = "utf-8") -> str:
     """Reads the text content of the specified file. The function will hide :py:obj:`IOError` and
-    :py:obj:`FileNotFound` exceptions during the file operations. The result string will be decoded and stripped.
+    :py:obj:`FileNotFound` exceptions during the file operations. The result bytes will be read with the specified
+    encoding and stripped.
 
     Args:
         path (str): file path
+        encoding (str): encoding (default is `utf-8`)
 
     Returns:
         str: file content text
@@ -25,20 +27,21 @@ def _read_file(path) -> str:
     """
     result: str = ""
     try:
-        with open(path, "rt", encoding="UTF-8") as file:
-            result = file.read()
+        with open(path, "rt", encoding=encoding) as file:
+            result = file.read().strip()
     except (IOError, FileNotFoundError):
         pass
-    return result.strip()
+    return result
 
 
-def _read_udev_property(path: str, udev_property: str) -> str:
+def _read_udev_property(path: str, udev_property: str, encoding: str = "utf-8") -> str:
     """Reads a property from an `udev` data file. The function will hide :py:obj:`IOError` and py:obj:`FileNotFound`
     exceptions during the file operations. The result string will be decoded and stripped.
 
     Args:
         path (str): path of the udev data file (e.g. `/run/udev/data/b8:0`)
         udev_property (str): udev property string
+        encoding (str): encoding (default is `utf-8`)
 
     Returns:
         str: udev property value
@@ -65,21 +68,22 @@ def _read_udev_property(path: str, udev_property: str) -> str:
 
     # Read proper udev data file.
     try:
-        with open(path, "rt", encoding="unicode_escape") as file:
+        with open(path, "rt", encoding=encoding) as file:
             file_content = file.read().splitlines()
     except (IOError, FileNotFoundError):
         pass
 
     # Find the specified udev_property and copy its value.
-    for lines in file_content:
-        pos = lines.find(udev_property)
+    for line in file_content:
+        pos = line.find(udev_property)
         if pos != -1:
-            result = lines[pos + len(udev_property):]
+            result = line[pos + len(udev_property):]
+            break
 
-    return result.strip()
+    # Replace encoded space characters and strip the result string.
+    return result.replace("\\x20", " ").strip()
 
-
-def _read_udev_path(path: str, path_type: int) -> List[str]:
+def _read_udev_path(path: str, path_type: int, encoding: str = "utf-8") -> List[str]:
     """Reads one or more path elements from an udev data file. It will hide :py:obj:`IOError` and
     :py:obj:`FileNotFound` exceptions during the file operations. The result path elements will be
     decoded and stripped.
@@ -94,6 +98,8 @@ def _read_udev_path(path: str, path_type: int) -> List[str]:
             - 3 `by-partlabel` path
             - 4 `by-label` path
             - 5 `by-uuid` path
+
+        encoding (str): encoding (default is `utf-8`)
 
     Returns:
         List[str]: path elements
@@ -121,7 +127,7 @@ def _read_udev_path(path: str, path_type: int) -> List[str]:
 
     # Read proper udev data file.
     try:
-        with open(path, "rt", encoding="unicode_escape") as file:
+        with open(path, "rt", encoding=encoding) as file:
             file_content = file.read().splitlines()
     except (IOError, FileNotFoundError):
         pass
