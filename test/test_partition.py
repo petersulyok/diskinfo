@@ -146,7 +146,7 @@ class PartitionTest(unittest.TestCase):
                 Partition(part_name, part_devid)
             self.assertTrue(type(cm.exception) in exceptions, error)
 
-    def test_init_file(self):
+    def test_init(self):
         """Unit test for Partition.__init__() method."""
 
         # Test an HDD with 4 partitions.

@@ -238,7 +238,7 @@ class TestData:
             if " " in part_label:
                 part_label = part_label.replace(" ", "\\x20")
             if part_label:
-                part.bypartlabel_path = "/dev/disk/by-partlabel/" + part.part_label
+                part.bypartlabel_path = "/dev/disk/by-partlabel/" + part_label
             else:
                 part.bypartlabel_path = ""
             part.part_scheme = random.choice(["gtp", "mbr"])
@@ -261,7 +261,7 @@ class TestData:
                     fs_label = fs_label.replace(" ", "_")
                     fs_label_enc = fs_label_enc.replace(" ", "\\x20")
                 if fs_label:
-                    part.bylabel_path = "/dev/disk/by-label/" + part.fs_label
+                    part.bylabel_path = "/dev/disk/by-label/" + fs_label_enc
                 else:
                     part.bylabel_path = ""
                 part.fs_uuid = str(uuid.uuid4())
