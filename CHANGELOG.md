@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2024-03-10
+
+### Added
+- A new encoding parameter has been added to Disk.__init__() and file utility methods to let user specify the proper
+  encoding for file and string operations.
+
+### Fixed
+- Encoding and parsing issues in partition data have been fixed (reported in issue #5):
+   - Partition mounting point containing space character was displayed improperly in the demo
+   - Partition label containing non-ascii character was displayed improperly in the demo
+
+
 ## [3.0.0] - 2024-03-03
 
 ### Added
