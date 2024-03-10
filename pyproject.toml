@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "diskinfo"
 description = "Disk information Python library for Linux"
 readme = "README.md"
-version = "3.0.0"
+version = "3.1.0"
 authors = [
     { name = "Peter Sulyok", email = "peter@sulyok.net" }
 ]
@@ -61,15 +61,4 @@ disable= [
     "line-too-long", "missing-module-docstring", "too-many-locals", "too-many-branches", "too-many-arguments",
     "too-many-statements", "invalid-name", "protected-access", "too-many-instance-attributes",
     "too-many-public-methods", "too-few-public-methods", "duplicate-code"
-    ]
-
-[tool.flake8]
-exclude = [ "docs", "htmlcov", ".git", "__pycache__", ".pytest_cache", ".vscode", ".idea", "venv*", ".venv*", "build" ]
-max-line-length = 120
-count = true
-show-source = true
-statistics = true
-per-file-ignores = [
-    "test_diskinfo.py: F821",
-    "test_disk.py: F821"
     ]
