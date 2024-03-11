@@ -11,6 +11,12 @@ then
     exit 1
 fi
 
+if [ "$PYENV_ROOT" = "" ];
+then
+    echo "Error: pyenv must be installed first."
+    exit 1
+fi
+
 # Install the specified python version if it hasn't been already installed.
 python_version=$(pyenv version --bare|grep $1)
 if [[ "$python_version" = "" || "$?" = "1" ]];
