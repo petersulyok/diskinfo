@@ -15,13 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Encoding and parsing issues in partition data have been fixed (reported in issue #5):
    - Partition mounting point containing space character was displayed improperly in the demo
    - Partition label containing non-ascii character was displayed improperly in the demo
+- The demo won't stop if a disk does not have temperature (e.g. USB pendrive) 
 
 
 ## [3.0.0] - 2024-03-03
 
 ### Added
 - [pySMART](https://pypi.org/project/pySMART/) library used in the refactored `Disk.get_temperature()` and
-  Disk.get_smart_data() methods
+  `Disk.get_smart_data()` methods
 - New attributed added for `NvmeAttributes()` class
 - New attributed added for `DiskSmartData()` class
 
