@@ -54,7 +54,7 @@ omit = [ "src/diskinfo/demo.py" ]
 # pylint options
 [tool.pylint.'MASTER']
 init-hook='import sys; sys.path.append("."); sys.path.append("./src"); sys.path.append("./test")'
-max-line-length=240
+max-line-length=120
 
 [tool.pylint.'MESSAGES CONTROL']
 disable= [
