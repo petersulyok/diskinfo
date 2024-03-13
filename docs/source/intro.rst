@@ -19,10 +19,9 @@ Standard installation from `pypi <https://pypi.org>`_::
 The library has the following run-time requirements:
 
     - Python version >= `3.8`
-    - reading SMART data with :meth:`~diskinfo.Disk.get_smart_data()` method the `smartmontools` has to be
-      installed
-    - reading disk temperature with :meth:`~diskinfo.Disk.get_temperature()` method the following
-      requirements has to be considered:
+    - for reading SMART data with :meth:`~diskinfo.Disk.get_smart_data()` method, the `smartmontools` package is required
+    - for reading disk temperature with :meth:`~diskinfo.Disk.get_temperature()` method, the following dependencies
+      needs to be considered:
 
         .. list-table::
             :header-rows: 1
@@ -36,8 +35,9 @@ The library has the following run-time requirements:
             *   - NVME
                 - none
 
-    - `df` command for :meth:`~diskinfo.Disk.get_partition_list()` method.
-    - optionally, `Rich Python library <https://pypi.org/project/rich/>`_ for the demo
+    - for reading disk partition information with :meth:`~diskinfo.Disk.get_partition_list()` method, the `df` command
+      is required.
+    - optionally, `Rich Python library <https://pypi.org/project/rich/>`_ is required for the demo
 
 
 Demo
