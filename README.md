@@ -9,7 +9,7 @@
 Disk information Python library can assist in collecting disk information on Linux. In more details, it can:
 
 - collect information about a specific disk
-- explore existing disks in the system
+- explore all existing disks in the system
 - translate between traditional and persistent disk names
 - read current disk temperature
 - read SMART data of a disk
@@ -26,8 +26,7 @@ See the complete list of dependencies and requirements in the
 
 Demo
 ----
-The library contains a demo application with multiple screens ([`rich`](https://pypi.org/project/rich)
-needs to be installed):
+The library contains a demo application with multiple screens:
 
     pip install rich
     python -m diskinfo.demo
