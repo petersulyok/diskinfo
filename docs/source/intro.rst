@@ -3,7 +3,7 @@ Introduction
 This Python library can assist in collecting disk information on Linux. In more details, it can:
 
     - collect information about a specific disk
-    - explore existing disks in the system
+    - explore all existing disks in the system
     - translate between traditional and persistent disk names
     - read disk temperature
     - read SMART attributes of a disk
@@ -37,13 +37,12 @@ The library has the following run-time requirements:
 
     - for reading disk partition information with :meth:`~diskinfo.Disk.get_partition_list()` method, the `df` command
       is required.
-    - optionally, `Rich Python library <https://pypi.org/project/rich/>`_ is required for the demo
+    - optionally, for the demo `Rich <https://pypi.org/project/rich/>`_ Python library is required
 
 
 Demo
 ----
-The library contains a demo application with multiple screens. The `Rich Python library <https://pypi.org/project/rich/>`_
-must be installed for the running the demo::
+The library contains a demo application with multiple screens. In order to run demo execute the following commands::
 
      pip install rich
 
@@ -64,6 +63,7 @@ The third demo screen will display the SMART attributes of a specified disk::
      python -m diskinfo.demo nvme0n1 -s
 
 .. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo_4.png
+  :width: 400
 
 
 The fourth demo screen will display the list of partitions on a specified disk::
