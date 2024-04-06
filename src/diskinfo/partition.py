@@ -113,9 +113,18 @@ class Partition:
         self.__part_label = _read_udev_property(path, "ID_PART_ENTRY_NAME=")
         self.__part_uuid = _read_udev_property(path, "ID_PART_ENTRY_UUID=")
         self.__part_type = _read_udev_property(path, "ID_PART_ENTRY_TYPE=")
-        self.__part_number = int(_read_udev_property(path, "ID_PART_ENTRY_NUMBER="))
-        self.__part_offset = int(_read_udev_property(path, "ID_PART_ENTRY_OFFSET="))
-        self.__part_size = int(_read_udev_property(path, "ID_PART_ENTRY_SIZE="))
+        self.__part_number = 0
+        value = _read_udev_property(path, "ID_PART_ENTRY_NUMBER=")
+        if value:
+            self.__part_number = int(value)
+        self.__part_offset = -1
+        value = _read_udev_property(path, "ID_PART_ENTRY_OFFSET=")
+        if value:
+            self.__part_offset = int(value)
+        self.__part_size = 0
+        value = _read_udev_property(path, "ID_PART_ENTRY_SIZE=")
+        if value:
+            self.__part_size = int(value)
         value = _read_udev_property(path, "ID_FS_LABEL_ENC=")
         if value:
             self.__fs_label = value
