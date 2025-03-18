@@ -1,5 +1,5 @@
 # diskinfo
-[![Tests](https://github.com/petersulyok/smfc/actions/workflows/test.yml/badge.svg)](https://github.com/petersulyok/smfc/actions/workflows/tests.yml)
+[![Tests](https://github.com/petersulyok/smfc/actions/workflows/test.yml/badge.svg)](https://github.com/petersulyok/diskinfo/actions/workflows/tests.yml)
 [![Codecov](https://codecov.io/gh/petersulyok/diskinfo/branch/main/graph/badge.svg)](https://app.codecov.io/gh/petersulyok/diskinfo)
 [![Documentation Status](https://readthedocs.org/projects/diskinfo/badge/?version=latest)](https://diskinfo.readthedocs.io/en/latest/?badge=latest)
 [![Issues](https://img.shields.io/github/issues/petersulyok/diskinfo)](https://github.com/petersulyok/diskinfo/issues)
