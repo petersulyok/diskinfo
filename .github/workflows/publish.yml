@@ -1,4 +1,4 @@
-name: Publish Python distribution packages to PypI.
+name: Publish Python distribution packages to PyPI.
 
 on:
   release:
@@ -13,14 +13,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
         with:
-          python-version: "3.11"
-      - name: Install pypa/build
-        run: python -m pip install build --user
+          python-version: "3.14"
       - name: Build a binary wheel and a source tarball
-        run: python -m build --sdist --wheel --outdir dist/ .
+        run: uv build
       - name: Publish a Python distribution package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
