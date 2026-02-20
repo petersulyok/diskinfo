@@ -3,8 +3,6 @@ name: Publish Python distribution packages to PyPI.
 on:
   release:
     types: [published]
-    branches:
-      - main
 
 jobs:
   build-n-publish:
@@ -12,7 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          ref: main
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
         with:
