@@ -1,6 +1,6 @@
 #
-#    Module `disksmart`: implements classes `DiskSmartData`, SmartAttribute, and NvmeAttributes.
-#    Peter Sulyok (C) 2022-2024.
+#    Module `disksmart`: implements `DiskSmartData`, SmartAttribute, and NvmeAttributes classes.
+#    Peter Sulyok (C) 2022-2026.
 #
 from typing import List
 
@@ -9,7 +9,7 @@ class SmartAttribute:
     """This class implements a SMART attribute. It stores ten values from `smartctl` command.
 
     Example:
-        This class presents one line in the following sample output (from a`smartctrl` command)::
+        This class presents one line in the following sample output (from a `smartctl` command)::
 
             ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
               5 Reallocated_Sector_Ct   0x0033   100   100   010    Pre-fail  Always       -       0
@@ -28,6 +28,7 @@ class SmartAttribute:
             241 Total_LBAs_Written      0x0032   099   099   000    Old_age   Always       -       51650461687
 
     """
+
     id: int
     """ID of the SMART attribute (`1-255`)."""
     attribute_name: str
@@ -39,7 +40,7 @@ class SmartAttribute:
 
             - values `0`, `254`, `255` are reserved for internal use
             - value `253` means not used yet
-            - many cases it is starting at `value=100` case then dropping to `value=1`
+            - in many cases it starts at `value=100` then drops to `value=1`
 
     """
     worst: int
@@ -78,11 +79,12 @@ class SmartAttribute:
 class NvmeAttributes:
     """This class implements NVME attributes. Read more about NVME attributes:
 
-        - `smartmontools: NVME support <https://www.smartmontools.org/wiki/NVMe_Support>`_
-        -  `NVME standard v1.4 (page 121-125)
-           <https://nvmexpress.org/wp-content/uploads/NVM-Express-1_4-2019.06.10-Ratified.pdf>`_
+    - `smartmontools: NVME support <https://www.smartmontools.org/wiki/NVMe_Support>`_
+    -  `NVME standard v1.4 (page 121-125)
+       <https://nvmexpress.org/wp-content/uploads/NVM-Express-1_4-2019.06.10-Ratified.pdf>`_
 
     """
+
     critical_warning: int
     """This attributes indicates critical warnings for the state of the controller."""
 
@@ -102,12 +104,12 @@ class NvmeAttributes:
     NVM in the NVM subsystem has been consumed, but may not indicate an NVM subsystem failure."""
 
     data_units_read: int
-    """Contains the number of 512-byte blocks the host has read from the NVME controller. The value reported in
+    """Contains the number of 512-byte blocks the host has read from the NVME controller. The value is reported in
     thousands (i.e. 1 means 1000 units of 512-byte blocks) and rounded up. Value 0 means that this attribute is
     not reported."""
 
     data_units_written: int
-    """Contains the number of 512-byte blocks the host has written to the NVME controller. The value reported in
+    """Contains the number of 512-byte blocks the host has written to the NVME controller. The value is reported in
     thousands (i.e. 1 means 1000 units of 512-byte blocks) and rounded up. Value 0 means that this attribute is
     not reported."""
 
@@ -238,11 +240,11 @@ class DiskSmartData:
         return -1
 
     def find_smart_attribute_by_name(self, name_val: str) -> int:
-        """Finds an attribute by `name` and return with its index in :attr:`~diskinfo.DiskSmartData.smart_attributes`
+        """Finds an attribute by `name` and returns its index in :attr:`~diskinfo.DiskSmartData.smart_attributes`
         list.
 
         Args:
-            name_val (int): SMART attribute name value
+            name_val (str): SMART attribute name value
 
         Returns:
             int:  an index of the attribute in :attr:`~diskinfo.DiskSmartData.smart_attributes` list, or -1
@@ -262,5 +264,6 @@ class DiskSmartData:
             if name_val in item.attribute_name:
                 return index
         return -1
+
 
 # End
