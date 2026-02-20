@@ -15,15 +15,15 @@ release = '3.2.0'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.viewcode",
-    "sphinx.ext.intersphinx",
-    "sphinx.ext.autosectionlabel",
-    "sphinx.ext.napoleon",
-    "sphinx_copybutton",
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.autosectionlabel',
+    'sphinx.ext.napoleon',
+    'sphinx_copybutton',
 ]
 
-html_theme = "sphinx_rtd_theme"
+html_theme = 'sphinx_rtd_theme'
 templates_path = ['_templates']
 exclude_patterns = []
 
@@ -31,5 +31,5 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 #html_static_path = ['_static']
-intersphinx_mapping = {"python": ("http://docs.python.org/3", None)}
-autodoc_typehints = "description"
+intersphinx_mapping = {'python': ('http://docs.python.org/3', None)}
+autodoc_typehints = 'description'
