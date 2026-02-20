@@ -18,7 +18,7 @@ Standard installation from `pypi <https://pypi.org>`_::
 
 The library has the following run-time requirements:
 
-    - Python version >= `3.8`
+    - Python version >= `3.10`
     - for reading SMART data with :meth:`~diskinfo.Disk.get_smart_data()` method, the `smartmontools` package is required
     - for reading disk temperature with :meth:`~diskinfo.Disk.get_temperature()` method, the following dependencies
       needs to be considered:
@@ -42,7 +42,7 @@ The library has the following run-time requirements:
 
 Demo
 ----
-The library contains a demo application with multiple screens. In order to run demo execute the following commands::
+The library contains a demo application with multiple screens. To run the demo, execute the following commands::
 
      pip install rich
 
@@ -80,11 +80,11 @@ Please note that the traditional disk names in Linux are not persistent::
      /dev/sda
      /dev/sdb
 
-It means they can refer a different physical disk after a reboot. Read more about this topic
+It means they can refer to a different physical disk after a reboot. Read more about this topic
 at `Arch Linux wiki: Persistent block device naming
 <https://wiki.archlinux.org/title/persistent_block_device_naming>`_.
 
-On the other hand, there are real persistent ways to refer disk or block devices in Linux:
+On the other hand, there are persistent ways to refer to a disk or block device in Linux:
 
     1. `by-id` path: it can be found in `/dev/disk/by-id` directory and it is constructed with disk serial numbers::
 
@@ -134,7 +134,7 @@ The :class:`~diskinfo.Disk` class contains the following disk attributes:
         - Sample value
     *   - name
         - Disk name
-        - `sda` or `nvme0n1`)
+        - `sda` or `nvme0n1`
     *   - path
         - Disk path
         - `/dev/sda` or `/dev/nvme0n1`
@@ -162,8 +162,8 @@ The :class:`~diskinfo.Disk` class contains the following disk attributes:
     *   - size
         - Disk size in 512-byte blocks
         -
-    *   - device id
-        - Disk device id, in `'major:minor'` form
+    *   - device ID
+        - Disk device ID, in `'major:minor'` form
         - `8:0`
     *   - physical block size
         - Disk physical block size in bytes
@@ -180,7 +180,7 @@ The :class:`~diskinfo.Disk` class contains the following disk attributes:
 
 Use case 2: explore disks
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Disks can be explored with the creation of the :class:`~diskinfo.DiskInfo` class. During this process all disks will
+Disks can be explored with the creation of the :class:`~diskinfo.DiskInfo` class. During this process all disks will be
 identified and their attributes will be stored::
 
     >>> from diskinfo import Disk, DiskInfo
@@ -202,8 +202,8 @@ and the list of the disks can be accessed (see more details in :meth:`~diskinfo.
     /dev/sdb
     /dev/sdc
 
-The caller can also apply filters (i.e. included and excluded disk types) for both functions and can query only subset
-of the disks based on one or more specific :class:`~diskinfo.DiskType`. The list of disk can be also sorted.
+The caller can also apply filters (i.e. included and excluded disk types) for both functions and can query only a subset
+of the disks based on one or more specific :class:`~diskinfo.DiskType`. The list of disks can also be sorted.
 
 Use case 3: translate between traditional and persistent disk names
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -215,12 +215,12 @@ Translation from traditional disk names to persistent ones can be done this way:
     ['/dev/disk/by-id/ata-Samsung_SSD_850_PRO_1TB_92837A469FF876', '/dev/disk/by-id/wwn-0x5002539c417223be']
     >>> d.get_bypath_path()
     ['/dev/disk/by-path/pci-0000:00:17.0-ata-3', '/dev/disk/by-path/pci-0000:00:17.0-ata-3.0']
-    >>> d.get_serial_numner()
+    >>> d.get_serial_number()
     '92837A469FF876'
     >>> d.get_wwn()
     '0x5002539c417223be'
 
-In the opposite direction several unique (persistent) identifier can be used to initialize :class:`~diskinfo.Disk`
+In the opposite direction, several unique (persistent) identifiers can be used to initialize :class:`~diskinfo.Disk`
 class then the traditional disk path or name can be read::
 
     >>> from diskinfo import Disk
@@ -268,7 +268,7 @@ In case of HDDs, we can skip checking if they are in STANDBY mode::
     ...
     Disk is in STANDBY mode.
 
-If we dont use the `nocheck` parameter here (when the HDD is in STANDBY mode) then the HDD will spin up and will
+If we don't use the `nocheck` parameter here (when the HDD is in STANDBY mode) then the HDD will spin up and will
 return to ACTIVE mode. Please note if :attr:`~diskinfo.DiskSmartData.standby_mode` is `True` then no other
 SMART attributes are loaded.
 
@@ -304,7 +304,7 @@ In case of SSDs and HDDs the traditional SMART attributes can be accessed via
 
 See more details in :class:`~diskinfo.DiskSmartData` and :class:`~diskinfo.SmartAttribute` classes.
 
-In case of NVME disks they have their own SMART data in :attr:`~diskinfo.DiskSmartData.nvme_attributes` attribute::
+For NVMe disks, they have their own SMART data in :attr:`~diskinfo.DiskSmartData.nvme_attributes` attribute::
 
     >>> if d.is_nvme():
     ...     print(f"Power on hours: {sd.nvme_attributes.power_on_hours} h")
@@ -321,7 +321,7 @@ Use case 6: read partition list
 After having a :class:`~diskinfo.Disk` class instance, the partition list can be read with the help of
 :meth:`~diskinfo.Disk.get_partition_list()` method.
 
-    >>> from diskinfo import Disk, DiskSmartData
+    >>> from diskinfo import Disk
     >>> d = Disk("sda")
     >>> plist = d.get_partition_list()
 
@@ -332,7 +332,7 @@ the partition attributes::
     >>> disk = Disk("nvme0n1")
     >>> plist = disk.get_partition_list()
     >>> for item in plist:
-    ...     Disk(item.get_name())
+    ...     print(item.get_name())
     ...
     nvme0n1p1
     nvme0n1p2
@@ -352,7 +352,7 @@ The :class:`~diskinfo.Partition` class contains the following partition attribut
     *   - name
         - Partition name
         - `sda1` or `nvme0n1p1`
-    *   - Path
+    *   - path
         - Partition path
         - `/dev/sda1` or `/dev/nvme0n1p1`
     *   - `by-id` path
@@ -373,12 +373,12 @@ The :class:`~diskinfo.Partition` class contains the following partition attribut
     *   - `by-label` path
         - Persistent path in `/dev/disk/by-label` directory
         -
-    *   - Device id
-        - Partition device id
+    *   - Device ID
+        - Partition device ID
         - `8:1`
     *   - Partition scheme
         - Partition scheme
-        - `gtp` or `mbr`
+        - `gpt` or `mbr`
     *   - Partition label
         - Partition label
         - `Basic data partition`
@@ -405,10 +405,10 @@ The :class:`~diskinfo.Partition` class contains the following partition attribut
         -
     *   - File system type
         - File system type
-        - `ntfs` or `ext4`)
+        - `ntfs` or `ext4`
     *   - File system version
         - File system version
-        - `1.0` in case of `ext4`)
+        - `1.0` in case of `ext4`
     *   - File system usage
         - File system usage
         - `filesystem` or `other`
