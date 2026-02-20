@@ -937,16 +937,7 @@ def test_init_hwmon_device_found(ssd_device):
     mock_hwmon_dev.sys_path = '/sys/class/hwmon/hwmon2'
 
     mock_ctx = MagicMock()
-
-    def _list_devices(**kwargs):
-        sub = kwargs.get('subsystem')
-        if sub == 'block':
-            return [ssd_device]
-        if sub == 'hwmon':
-            return [mock_hwmon_dev]
-        return []
-
-    mock_ctx.list_devices.side_effect = _list_devices
+    mock_ctx.list_devices.return_value = [mock_hwmon_dev]
 
     with (
         patch('diskinfo.disk.Context', return_value=mock_ctx),
