@@ -1,0 +1,4 @@
+alabaster
+Sphinx
+sphinx-rtd-theme
+sphinx-copybutton
