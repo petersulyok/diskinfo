@@ -1,11 +1,12 @@
 #
 #    Module `utils`: implements utility functions.
-#    Peter Sulyok (C) 2022-2024.
+#    Peter Sulyok (C) 2022-2026.
 #
-from typing import List, Tuple
+from typing import List, Tuple, Union
+from pyudev import Device
 
 
-def _read_file(path, encoding: str = "utf-8") -> str:
+def _read_file(path, encoding: str = 'utf-8') -> str:
     """Reads the text content of the specified file. The function will hide :py:obj:`IOError` and
     :py:obj:`FileNotFound` exceptions during the file operations. The result bytes will be read with the specified
     encoding and stripped.
@@ -18,138 +19,19 @@ def _read_file(path, encoding: str = "utf-8") -> str:
         str: file content text
 
     Example:
-        An example aboout the use of the function::
+        An example about the use of the function::
 
             >>> from diskinfo import *
             >>> _read_file("/sys/block/sda/dev")
             '8:0'
 
     """
-    result: str = ""
+    result: str = ''
     try:
-        with open(path, "rt", encoding=encoding) as file:
+        with open(path, 'rt', encoding=encoding) as file:
             result = file.read().strip()
     except (IOError, FileNotFoundError):
         pass
-    return result
-
-
-def _read_udev_property(path: str, udev_property: str, encoding: str = "utf-8") -> str:
-    """Reads a property from an `udev` data file. The function will hide :py:obj:`IOError` and py:obj:`FileNotFound`
-    exceptions during the file operations. The result string will be decoded and stripped.
-
-    Args:
-        path (str): path of the udev data file (e.g. `/run/udev/data/b8:0`)
-        udev_property (str): udev property string
-        encoding (str): encoding (default is `utf-8`)
-
-    Returns:
-        str: udev property value
-
-    Raises:
-        ValueError: in case of empty input parameters
-
-    Example:
-        An example about the use of the function::
-
-            >>> from diskinfo import *
-            >>> _read_udev_property("/run/udev/data/b259:0", "ID_MODEL=")
-            'WDS100T1X0E-00AFY0'
-
-    """
-    file_content: List[str] = []
-    result: str = ""
-
-    # Validate input parameters.
-    if not path:
-        raise ValueError("Invalid empty path.")
-    if not udev_property:
-        raise ValueError("Invalid empty property.")
-
-    # Read proper udev data file.
-    try:
-        with open(path, "rt", encoding=encoding) as file:
-            file_content = file.read().splitlines()
-    except (IOError, FileNotFoundError):
-        pass
-
-    # Find the specified udev_property and copy its value.
-    for line in file_content:
-        pos = line.find(udev_property)
-        if pos != -1:
-            result = line[pos + len(udev_property):]
-            break
-
-    # Replace encoded space characters and strip the result string.
-    return result.replace("\\x20", " ").strip()
-
-def _read_udev_path(path: str, path_type: int, encoding: str = "utf-8") -> List[str]:
-    """Reads one or more path elements from an udev data file. It will hide :py:obj:`IOError` and
-    :py:obj:`FileNotFound` exceptions during the file operations. The result path elements will be
-    decoded and stripped.
-
-    Args:
-        path (str): path of the udev data file (e.g. `/run/udev/data/b8:0`)
-        path_type (int): type of the path to find/load from udev data file. Valid values are:
-
-            - 0 `by-id` path
-            - 1 `by-path` path
-            - 2 `by-partuuid` path
-            - 3 `by-partlabel` path
-            - 4 `by-label` path
-            - 5 `by-uuid` path
-
-        encoding (str): encoding (default is `utf-8`)
-
-    Returns:
-        List[str]: path elements
-
-    Raises:
-        ValueError: in case of empty or invalid input parameters
-
-    Example:
-        An example about the use of the function::
-
-            >>> from diskinfo import *
-            >>> _read_udev_path("/run/udev/data/b259:0", 1)
-            ['/dev/disk/by-path/pci-0000:02:00.0-nvme-1']
-
-    """
-    file_content: List[str] = []
-    result: List[str] = []
-    udev_property: str = ""
-
-    # Validate input parameters.
-    if not path:
-        raise ValueError("Invalid empty path.")
-    if path_type not in (0, 1, 2, 3, 4, 5):
-        raise ValueError(f"Invalid path type ({path_type}).")
-
-    # Read proper udev data file.
-    try:
-        with open(path, "rt", encoding=encoding) as file:
-            file_content = file.read().splitlines()
-    except (IOError, FileNotFoundError):
-        pass
-
-    # Find the specified path elements and collect their value.
-    if path_type == 0:
-        udev_property = "disk/by-id/"
-    elif path_type == 1:
-        udev_property = "disk/by-path/"
-    elif path_type == 2:
-        udev_property = "disk/by-partuuid/"
-    elif path_type == 3:
-        udev_property = "disk/by-partlabel/"
-    elif path_type == 4:
-        udev_property = "disk/by-label/"
-    elif path_type == 5:
-        udev_property = "disk/by-uuid/"
-    for lines in file_content:
-        pos = lines.find(udev_property)
-        if pos != -1:
-            result.append("/dev/" + lines[pos:].strip())
-
     return result
 
 
@@ -177,7 +59,7 @@ def size_in_hrf(size_value: int, units: int = 0) -> Tuple[float, str]:
 
             >>> from diskinfo import *
             >>> size = 12839709879873
-            >>> s, u = size_in_hrf()
+            >>> s, u = size_in_hrf(size)
             >>> print(f"{s:.1f} {u}")
             12.8 TB
             >>> s, u = size_in_hrf(size, units=1)
@@ -185,19 +67,19 @@ def size_in_hrf(size_value: int, units: int = 0) -> Tuple[float, str]:
             11.7 TiB
 
     """
-    metric_units: List[str] = ["B", "kB", "MB", "GB", "TB", "PB", "EB"]
-    iec_units: List[str] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"]
-    legacy_units: List[str] = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
-    divider: int        # Divider for the specified unit.
-    hrf_size: float     # Result size
-    hfr_unit: str       # Result unit
-    index: int = 0      # Unit index
+    metric_units: List[str] = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB']
+    iec_units: List[str] = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB']
+    legacy_units: List[str] = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
+    divider: int  # Divider for the specified unit.
+    hrf_size: float  # Result size
+    hfr_unit: str  # Result unit
+    index: int = 0  # Unit index
 
     # Validate input parameters.
     if units not in (0, 1, 2):
-        raise ValueError(f"Invalid units parameter ({units}).")
+        raise ValueError(f'Invalid units parameter ({units}).')
     if size_value < 0:
-        raise ValueError(f"Invalid size value ({size_value}).")
+        raise ValueError(f'Invalid size value ({size_value}).')
 
     # Set up the proper divider.
     if units == 0:
@@ -261,21 +143,21 @@ def time_in_hrf(time: int, unit: int = 0, short_format: bool = False) -> Tuple[f
             6.6 yr
 
     """
-    time_long_units: List[str] = ["second", "minute", "hour", "day", "year"]
-    time_short_units: List[str] = ["s", "min", "h", "d", "yr"]
+    time_long_units: List[str] = ['second', 'minute', 'hour', 'day', 'year']
+    time_short_units: List[str] = ['s', 'min', 'h', 'd', 'yr']
     time_dividers: List[int] = [60, 60, 24, 365, 1]
 
-    divider: int        # Divider for the specified unit.
-    hrf_time: float     # Result size
-    hfr_unit: str       # Result unit
-    index: int          # Unit index
+    divider: int  # Divider for the specified unit.
+    hrf_time: float  # Result size
+    hfr_unit: str  # Result unit
+    index: int  # Unit index
 
     # Validate input parameters.
     if time < 0:
-        raise ValueError(f"Invalid input time value ({time}).")
+        raise ValueError(f'Invalid input time value ({time}).')
     length = len(time_long_units) - 1
     if unit < 0 or unit > length:
-        raise ValueError(f"Invalid input unit ({unit}).")
+        raise ValueError(f'Invalid input unit ({unit}).')
 
     # Calculate the proper time.
     hrf_time = time
@@ -294,5 +176,77 @@ def time_in_hrf(time: int, unit: int = 0, short_format: bool = False) -> Tuple[f
         hfr_unit = time_long_units[index]
 
     return hrf_time, hfr_unit
+
+
+def _pyudev_getint(device: Device, key: str, default_value: int = None) -> Union[int, None]:
+    """Returns an integer attribute value of a pyudev.Device() class. The function hides the ValueError exception
+    in case of conversion error and returns the `default_value`.
+
+    Args:
+        device (pyudev.Device): pyudev.Device() class
+        key (str): attribute key
+        default_value (int): default int value in case of missing attribute
+
+    Returns:
+        Union[int, None]: int attribute value or None
+
+    Example:
+        An example about the use of the function::
+
+            >>> from diskinfo import *
+            >>> from pyudev import *
+            >>> c = Context()
+            >>> d = Devices.from_name(c, 'block', 'sda1')
+            >>> print(_pyudev_getint(d, 'ID_PART_ENTRY_SIZE'))
+            20000409264
+
+    """
+    value: str
+
+    # Read the value for the specified device attribute.
+    value = device.get(key)
+    # Convert the value string to integer if the key exists.
+    if value:
+        try:
+            return int(value)
+        except ValueError:
+            pass
+    # Otherwise return the default value.
+    return default_value
+
+
+def _pyudev_getenc(dev: Device, key: str) -> Union[str, None]:
+    """Returns one of the device attribute key pairs. There are udev attributes key pairs (e.g. `ID_MODEL` and
+    `ID_MODEL_ENC`), where this function first tries to read and decode the `_ENC` version of the key then the simple
+    key if the previous one does not exist.
+
+    Args:
+        device (pyudev.Device): pyudev.Device() class
+        key (str): attribute key
+
+    Returns:
+        Union[str, None]: str attribute value or None
+
+    Example:
+        An example about the use of the function::
+
+            >>> from diskinfo import *
+            >>> from pyudev import *
+            >>> c = Context()
+            >>> d = Devices.from_name(c, 'block', 'sda')
+            >>> print(_pyudev_getenc(d, 'ID_MODEL'))
+            Samsung SSD 850 PRO 1TB
+
+    """
+    value: str
+
+    # Read and decode the `_ENC` key.
+    value = dev.get(key + '_ENC')
+    if value:
+        if '\\x20' in value:
+            return value.replace('\\x20', ' ').strip()
+    # Read the simple key.
+    return dev.get(key)
+
 
 # End
