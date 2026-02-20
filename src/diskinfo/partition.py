@@ -1,32 +1,33 @@
 #
 #    Module `partition`: implements `Partition` class.
-#    Peter Sulyok (C) 2022-2024.
+#    Peter Sulyok (C) 2022-2026.
 #
-import os.path
 import subprocess
 import re
 from typing import List, Tuple
-from diskinfo.utils import _read_udev_property, _read_udev_path, size_in_hrf
+from pyudev import Device
+from diskinfo.utils import size_in_hrf, _pyudev_getint, _pyudev_getenc
 
 
 class Partition:
-    """This class is the implementation of a partition entry. It is created by the
-    :meth:`~diskinfo.Disk.get_partition_list()` method. All partition attributes are collected at class
-    creation time and these attributes can be accessed through get functions of the class later.
+    """This class implements a partition entry containing all the relevant information. All partition attributes
+    are collected at class creation time and these attributes can be accessed through get functions of the class.
 
     .. note::
 
         1. The class creation and the get functions will not generate disk operations and will not change the
-           power state of the disk.
+           power state of the hard disk.
         2. The class uses the `df` command to find the mounting point and available space of a file system.
+        3. A list of partition classes are created with the creation of :class:`~diskinfo.Disk` class and later can
+           be accessed with :meth:`~diskinfo.Disk.get_partition_list()` method.
 
     Args:
-        name (str): name of the partition (e.g. `sda1`)
-        dev_id (str): device id of the partition (e.g. `8:1`)
+        _device (pyudev.Device): pyudev.Device class
 
     Raises:
-        ValueError: in case of invalid input parameters
-        FileNotFoundError: if the `df` command cannot be executed
+        FileNotFoundError: `df` command not found
+        OSError: `df` command cannot be executed
+
 
     Example:
         This example shows the basic use of the class::
@@ -47,116 +48,100 @@ class Partition:
     """
 
     # Partition attributes.
-    __name: str                         # Partition name (e.g. sda1)
-    __path: str                         # Partition path (e.g. /dev/sda1)
-    __byid_path: List[str]              # Partition by-byid path elements, located in /dev/disk/by-byid/ folder
-    __bypath_path: str                  # Partition by-path path located in /dev/disk/by-path/ folder
-    __bypartuuid_path: str              # Partition by-partuuid path located in /dev/disk/by-partuuid/ folder
-    __bypartlabel_path: str             # Partition by-partlabel path located in /dev/disk/by-partlabel/ folder
-    __bylabel_path: str                 # Partition by-label path located in /dev/disk/by-label/ folder
-    __byuuid_path: str                  # Partition by-uuid path located in /dev/disk/by-uuid/ folder
-    __part_dev_id: str                  # Partition device id (e.g. 8:1)
-    __part_scheme: str                  # Partition scheme (e.g. gpt)
-    __part_label: str                   # Partition label
-    __part_uuid: str                    # Partition uuid
-    __part_type: str                    # Partition type uuid
-    __part_number: int                  # Partition number
-    __part_offset: int                  # Partition first sector
-    __part_size: int                    # Partition size, in sectors
-    __fs_label: str                     # File system label
-    __fs_uuid: str                      # File system UUID
-    __fs_type: str                      # File system type
-    __fs_version: str                   # File system version
-    __fs_usage: str                     # File system usage
-    __fs_free_size: int                 # File system free/available 512-bytes blocks
-    __fs_mounting_point: str            # File system mounting folder
+    __name: str                 # Partition name (e.g. sda1)
+    __path: str                 # Partition path (e.g. /dev/sda1)
+    __device_id: str            # Partition device id (e.g. 8:1)
+    __byid_path: List[str]      # Partition by-byid path elements, located in /dev/disk/by-byid/ folder
+    __bypath_path: str          # Partition by-path path located in /dev/disk/by-path/ folder
+    __bypartuuid_path: str      # Partition by-partuuid path located in /dev/disk/by-partuuid/ folder
+    __bypartlabel_path: str     # Partition by-partlabel path located in /dev/disk/by-partlabel/ folder
+    __bylabel_path: str         # Partition by-label path located in /dev/disk/by-label/ folder
+    __byuuid_path: str          # Partition by-uuid path located in /dev/disk/by-uuid/ folder
+    __part_dev_id: str          # Partition device id (e.g. 8:1)
+    __part_scheme: str          # Partition scheme (e.g. gpt)
+    __part_label: str           # Partition label
+    __part_uuid: str            # Partition uuid
+    __part_type: str            # Partition type uuid
+    __part_number: int          # Partition number
+    __part_offset: int          # Partition first sector
+    __part_size: int            # Partition size, in sectors
+    __fs_label: str             # File system label
+    __fs_uuid: str              # File system UUID
+    __fs_type: str              # File system type
+    __fs_version: str           # File system version
+    __fs_usage: str             # File system usage
+    __fs_free_size: int         # File system free/available 512-bytes blocks
+    __fs_mounting_point: str    # File system mounting folder
 
-    def __init__(self, name: str, dev_id: str) -> None:
+    def __init__(self, _device: Device) -> None:
+        # Save partition name, path and device id.
+        self.__name = _device.sys_name
+        self.__path = _device.device_node
+        self.__part_dev_id = _device.attributes.asstring('dev')
 
-        self.__name = name
-        self.__path = "/dev/" + name
-        if not os.path.exists(self.__path):
-            raise ValueError(f"Partition path ({self.__path}) does not exist.")
-        self.__part_dev_id = dev_id
-        path = "/run/udev/data/b" + dev_id
-        if not os.path.exists(path):
-            raise ValueError(f"Partition udev data file ({path}) does not exist.")
-        # by-id path elements
-        self.__byid_path = _read_udev_path(path, 0)
-        # by-path path
-        self.__bypath_path = ""
-        path_list = _read_udev_path(path, 1)
-        if path_list:
-            self.__bypath_path = path_list[0]
-        # by-partuuid path
-        self.__bypartuuid_path = ""
-        path_list = _read_udev_path(path, 2)
-        if path_list:
-            self.__bypartuuid_path = path_list[0]
-        # by-partlabel path
-        self.__bypartlabel_path = ""
-        path_list = _read_udev_path(path, 3)
-        if path_list:
-            self.__bypartlabel_path = path_list[0]
-        # by-label path
-        self.__bylabel_path = ""
-        path_list = _read_udev_path(path, 4)
-        if path_list:
-            self.__bylabel_path = path_list[0]
-        # by-uuid path
-        self.__byuuid_path = ""
-        path_list = _read_udev_path(path, 5)
-        if path_list:
-            self.__byuuid_path = path_list[0]
-        # other udev properties
-        self.__part_scheme = _read_udev_property(path, "ID_PART_ENTRY_SCHEME=")
-        self.__part_label = _read_udev_property(path, "ID_PART_ENTRY_NAME=")
-        self.__part_uuid = _read_udev_property(path, "ID_PART_ENTRY_UUID=")
-        self.__part_type = _read_udev_property(path, "ID_PART_ENTRY_TYPE=")
-        self.__part_number = 0
-        value = _read_udev_property(path, "ID_PART_ENTRY_NUMBER=")
-        if value:
-            self.__part_number = int(value)
-        self.__part_offset = -1
-        value = _read_udev_property(path, "ID_PART_ENTRY_OFFSET=")
-        if value:
-            self.__part_offset = int(value)
-        self.__part_size = 0
-        value = _read_udev_property(path, "ID_PART_ENTRY_SIZE=")
-        if value:
-            self.__part_size = int(value)
-        value = _read_udev_property(path, "ID_FS_LABEL_ENC=")
-        if value:
-            self.__fs_label = value
-        else:
-            self.__fs_label = _read_udev_property(path, "ID_FS_LABEL=")
-        value = _read_udev_property(path, "ID_FS_UUID_ENC=")
-        if value:
-            self.__fs_uuid = value
-        else:
-            self.__fs_uuid = _read_udev_property(path, "ID_FS_UUID=")
-        self.__fs_type = _read_udev_property(path, "ID_FS_TYPE=")
-        self.__fs_version = _read_udev_property(path, "ID_FS_VERSION=")
-        self.__fs_usage = _read_udev_property(path, "ID_FS_USAGE=")
-        self.__fs_mounting_point = ""
+        # Save several path elements for the partition.
+        self.__byid_path = []
+        self.__bypath_path = ''
+        self.__bypartuuid_path = ''
+        self.__bypartlabel_path = ''
+        self.__bylabel_path = ''
+        self.__byuuid_path = ''
+        for link in _device.device_links:
+            if link.startswith('/dev/disk/by-id'):
+                self.__byid_path.append(link)
+                continue
+            if link.startswith('/dev/disk/by-path'):
+                self.__bypath_path = link
+                continue
+            if link.startswith('/dev/disk/by-partuuid'):
+                self.__bypartuuid_path = link
+                continue
+            if link.startswith('/dev/disk/by-partlabel'):
+                self.__bypartlabel_path = link
+                continue
+            if link.startswith('/dev/disk/by-label'):
+                self.__bylabel_path = link
+                continue
+            if link.startswith('/dev/disk/by-uuid'):
+                self.__byuuid_path = link
+                continue
+
+        # Save further partition attributes.
+        self.__part_scheme = _device.get('ID_PART_ENTRY_SCHEME')
+        self.__part_label = _device.get('ID_PART_ENTRY_NAME')
+        self.__part_uuid = _device.get('ID_PART_ENTRY_UUID')
+        self.__part_type = _device.get('ID_PART_ENTRY_TYPE')
+        self.__part_number = _pyudev_getint(_device, 'ID_PART_ENTRY_NUMBER', 0)
+        self.__part_offset = _pyudev_getint(_device, 'ID_PART_ENTRY_OFFSET', -1)
+        self.__part_size = _pyudev_getint(_device, 'ID_PART_ENTRY_SIZE', 0)
+        self.__fs_label = _pyudev_getenc(_device, 'ID_FS_LABEL')
+        self.__fs_uuid = _pyudev_getenc(_device, 'ID_FS_UUID')
+        self.__fs_type = _device.get('ID_FS_TYPE')
+        self.__fs_version = _device.get('ID_FS_VERSION')
+        self.__fs_usage = _device.get('ID_FS_USAGE')
+        self.__fs_mounting_point = ''
         self.__fs_free_size = 0
 
-        # Execute `df` command.
+        # Save partition free space and mounting point.
         try:
-            result = subprocess.run(["df", "--block-size", "512", "--output=source,avail,target"],
-                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                    check=False, text=True)
-        except (FileNotFoundError, ValueError) as e:
+            # Execute `df` command.
+            result = subprocess.run(
+                ['df', '--block-size', '512', '--output=source,avail,target'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                text=True,
+            )
+            # Parse output: find free size and mounting point
+            output_lines = result.stdout.splitlines()
+            for line in output_lines:
+                items = re.sub(r'\s+', ' ', line).split(maxsplit=2)
+                if items[0] == self.__path:
+                    self.__fs_free_size = int(items[1])
+                    self.__fs_mounting_point = items[2]
+                    break
+        except (FileNotFoundError, OSError, ValueError) as e:
             raise e
-
-        # Parse output: find free size and mounting point
-        output_lines = result.stdout.splitlines()
-        for line in output_lines:
-            items = re.sub(r"\s+", " ", line).split(maxsplit=2)
-            if items[0] == self.__path:
-                self.__fs_free_size = int(items[1])
-                self.__fs_mounting_point = items[2]
-                break
 
     def get_name(self) -> str:
         """Returns the name of the partition (e.g. `sda1` or `nvme0n1p1`).
@@ -207,7 +192,7 @@ class Partition:
         return self.__path
 
     def get_byid_path(self) -> List[str]:
-        """Returns the `by-id` persistent path of the partition. The result could be on or more path elements.
+        """Returns the `by-id` persistent path of the partition. The result could be one or more path elements.
 
         Example:
             An example about use of the function::
@@ -260,7 +245,7 @@ class Partition:
         """Returns the `by-partuuid` persistent path of the partition (see sample values in the example).
 
         .. note::
-            This is a GTP partition specific value.
+            This is a GPT partition-specific value.
 
         Example:
             An example about use of the function::
@@ -286,7 +271,7 @@ class Partition:
         The result could be empty if the partition does not have a label.
 
         .. note::
-            This is a GTP partition specific value.
+            This is a GPT partition-specific value.
 
         Example:
             An example about use of the function::
@@ -376,7 +361,7 @@ class Partition:
         return self.__part_dev_id
 
     def get_part_scheme(self) -> str:
-        """Returns the scheme of the partition. The result could be `gtp` or `mbr`.
+        """Returns the scheme of the partition. The result could be `gpt` or `mbr`.
 
         Example:
             An example about use of the function::
@@ -401,7 +386,7 @@ class Partition:
         """Returns the label of the partition. The result could be empty if the partition does not have a label.
 
         .. note::
-            This is a GTP partition specific value.
+            This is a GPT partition-specific value.
 
         Example:
             An example about use of the function::
@@ -426,7 +411,7 @@ class Partition:
         """Returns the UUID of the partition.
 
         .. note::
-            This is a GTP partition specific value.
+            This is a GPT partition-specific value.
 
         Example:
             An example about use of the function::
@@ -448,11 +433,11 @@ class Partition:
         return self.__part_uuid
 
     def get_part_type(self) -> str:
-        """Returns the UUID of the partition type. See available GTP partition types listed on
+        """Returns the UUID of the partition type. See available GPT partition types listed on
         `wikipedia <https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs>`_.
 
         .. note::
-            This is a GTP partition specific value.
+            This is a GPT partition-specific value.
 
         Example:
             An example about use of the function::
@@ -667,7 +652,7 @@ class Partition:
 
     def get_fs_usage(self) -> str:
         """Returns the usage of the file system. The result could be empty if the partition does not contain a
-        file system. Vlaid values are`filesystem` or `other` for special partitions (e.g. for a swap partition).
+        file system. Valid values are `filesystem` or `other` for special partitions (e.g. for a swap partition).
 
         Example:
             An example about use of the function::
@@ -769,5 +754,6 @@ class Partition:
 
         """
         return self.__fs_mounting_point
+
 
 # End
