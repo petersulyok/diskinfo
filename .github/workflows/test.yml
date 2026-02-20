@@ -22,9 +22,9 @@ jobs:
             python-version: "3.14"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -40,7 +40,7 @@ jobs:
         run: uv run pytest --cov=src/diskinfo --cov-report=xml
       - name: Upload coverage to Codecov
         if: "matrix.coverage"
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           files: ./coverage.xml
