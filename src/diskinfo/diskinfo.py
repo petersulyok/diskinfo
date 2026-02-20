@@ -1,9 +1,9 @@
 #
-#    Module `diskinfo`: implements class `DiskInfo`.
-#    Peter Sulyok (C) 2022-2024.
+#    Module `diskinfo`: implements `DiskInfo` class.
+#    Peter Sulyok (C) 2022-2026.
 #
-import os
 from typing import List
+from pyudev import Context
 from diskinfo.disktype import DiskType
 from diskinfo.disk import Disk
 
@@ -11,7 +11,7 @@ from diskinfo.disk import Disk
 class DiskInfo:
     """This class implements disk exploration functionality. At class initialization time all existing disks
     will be explored automatically (empty loop devices will be skipped). In a next step,
-    :meth:`~diskinfo.DiskInfo.get_disk_number()` method can return the number of identified disk and
+    :meth:`~diskinfo.DiskInfo.get_disk_number()` method can return the number of identified disks and
     :meth:`~diskinfo.DiskInfo.get_disk_list()` method can return the list of the identified disks.
     In both cases disk type filters can be applied to get only a subset of the discovered disks. The filters are
     set of :class:`~diskinfo.DiskType` values.
@@ -20,7 +20,7 @@ class DiskInfo:
     can be found on the list of the identified disks.
 
     Example:
-        A code example about the basic use of the class and the use of the ``in`` operator.
+        An example for the basic use of the class and with ``in`` operator.
 
             >>> from diskinfo import Disk, DiskType, DiskInfo
             >>> di = DiskInfo()
@@ -30,9 +30,9 @@ class DiskInfo:
             >>> d = Disk("sda")
             >>> print(d in di)
             True
-        """
+    """
 
-    __disk_list: List[Disk]           # List of discovered disks.
+    __disk_list: List[Disk]  # List of discovered disks.
 
     def __init__(self):
         """See class definition."""
@@ -40,10 +40,11 @@ class DiskInfo:
         # Initialize class variables.
         self.__disk_list = []
 
-        # Iterate on list of block devices.
-        for file_name in os.listdir('/sys/block'):
-            new_disk = Disk(disk_name=file_name)
-            # Empty loop devices are skipped
+        # Iterate on block devices.
+        c = Context()
+        for device in c.list_devices(subsystem='block', DEVTYPE='disk'):
+            new_disk = Disk(_device=device)
+            # Empty loop device is skipped
             if not (new_disk.is_loop() and new_disk.get_size() == 0):
                 self.__disk_list.append(new_disk)
 
@@ -62,7 +63,7 @@ class DiskInfo:
             ValueError: if the same disk type is on both included and excluded filter sets
 
         Example:
-            A code example about using filters: it counts the number of SSDs excluding NVME disks.
+            An example for using filters: it counts the number of SSDs excluding HDDs.
 
             >>> from diskinfo import DiskType, DiskInfo
             >>> di = DiskInfo()
@@ -70,7 +71,7 @@ class DiskInfo:
             >>> print(f"Number of SSDs: {n}")
             Number of SSDs: 3
         """
-        disk_number: int    # Number of disk counted
+        disk_number: int  # Number of disk counted
 
         # Set the default filter if not specified.
         if not included:
@@ -80,7 +81,7 @@ class DiskInfo:
 
         # Check invalid filters.
         if included.intersection(excluded):
-            raise ValueError("Parameter error: same value on included and excluded list.")
+            raise ValueError('Parameter error: same value on included and excluded list.')
 
         # Count number of disks based on the specified filters.
         disk_number = 0
@@ -111,7 +112,7 @@ class DiskInfo:
             ValueError: if the same disk type is on both included and excluded filter sets
 
         Example:
-            A code example about using filters and sorting: it will list the device path of the sorted list
+            An example for using filters and sorting: it will list the device path of the sorted list
             of the HDDs:
 
             >>> from diskinfo import DiskType, DiskInfo
@@ -134,7 +135,7 @@ class DiskInfo:
 
         # Check invalid filters.
         if included.intersection(excluded):
-            raise ValueError("Parameter error: same value on included and excluded list.")
+            raise ValueError('Parameter error: same value on included and excluded list.')
 
         # Collect selected disks based on the specified filters.
         for disk in self.__disk_list:
@@ -159,7 +160,8 @@ class DiskInfo:
 
     def __repr__(self):
         """String representation of the DiskInfo class."""
-        return f"DiskInfo(number_of_disks={len(self.__disk_list)}, " \
-               f"list_of_disks={self.__disk_list})"
+        return f'DiskInfo(number_of_disks={len(self.__disk_list)}, ' \
+               f'list_of_disks={self.__disk_list})'
+
 
 # End
