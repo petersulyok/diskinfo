@@ -1,212 +1,346 @@
 #
-#    Unitest for `partition` module
-#    Peter Sulyok (C) 2022-2024.
+#    Unit tests for `partition` module (pytest style)
+#    Peter Sulyok (C) 2022-2026.
 #
-import os
-import random
-import subprocess
-import unittest
-from typing import List, Any
-from unittest.mock import patch, MagicMock
-from test_data import TestData, TestPartition
-from diskinfo import DiskType, Partition, size_in_hrf
+from unittest.mock import MagicMock, patch
+import pytest
+from diskinfo.partition import Partition
 
 
-class PartitionTest(unittest.TestCase):
-    """Unit test for utils module."""
-
-    def pt_init_p1(self, part_name: str, part_devid: str, part_data: TestPartition, test_dir: str, error: str):
-        """Primitive positive test function. It contains the following steps:
-            - create TestData class
-            - os.path.exists() and subprocess.run() open() functions
-            - create Partition() class
-            - ASSERT: if the partition attributes are different from the expected
-            - delete all instances
-        """
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            if not path.startswith(test_dir):
-                path = test_dir + path
-            return original_exists(path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str,  *args, **kwargs):
-            return original_open(test_dir + path, *args, **kwargs)
-
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        mock_subprocess_run = MagicMock()
-        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
-                args=[],
-                returncode=0,
-                stdout=part_data.df_output
-                )]
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('os.path.exists', mock_exists), \
-             patch('subprocess.run', mock_subprocess_run), \
-             patch('builtins.open', mock_open):
-            part = Partition(part_name, part_devid)
-        args = ["df", "--block-size", "512", "--output=source,avail,target"]
-        mock_subprocess_run.assert_called_with(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                               check=False, text=True)
-        self.assertEqual(part.get_name(), part_data.name, error)
-        self.assertEqual(part.get_path(), part_data.path, error)
-        plist = part.get_byid_path()
-        self.assertEqual(plist[0], part_data.byid_path[0], error)
-        self.assertEqual(plist[1], part_data.byid_path[1], error)
-        self.assertEqual(part.get_bypath_path(), part_data.bypath_path, error)
-        self.assertEqual(part.get_bypartuuid_path(), part_data.bypartuuid_path, error)
-        self.assertEqual(part.get_bypartlabel_path(), part_data.bypartlabel_path, error)
-        self.assertEqual(part.get_byuuid_path(), part_data.byuuid_path, error)
-        self.assertEqual(part.get_bylabel_path(), part_data.bylabel_path, error)
-        self.assertEqual(part.get_part_device_id(), part_data.part_dev_id, error)
-        self.assertEqual(part.get_part_scheme(), part_data.part_scheme, error)
-        self.assertEqual(part.get_part_label(), part_data.part_label, error)
-        self.assertEqual(part.get_part_uuid(), part_data.part_uuid, error)
-        self.assertEqual(part.get_part_type(), part_data.part_type, error)
-        self.assertEqual(part.get_part_number(), part_data.part_number, error)
-        self.assertEqual(part.get_part_offset(), part_data.part_offset, error)
-        self.assertEqual(part.get_part_size(), part_data.part_size, error)
-        s1, u1 = part.get_part_size_in_hrf()
-        s2, u2 = size_in_hrf(part_data.part_size * 512)
-        self.assertEqual(s1, s2, error)
-        self.assertEqual(u1, u2, error)
-        self.assertEqual(part.get_fs_label(), part_data.fs_label, error)
-        self.assertEqual(part.get_fs_uuid(), part_data.fs_uuid, error)
-        self.assertEqual(part.get_fs_type(), part_data.fs_type, error)
-        self.assertEqual(part.get_fs_version(), part_data.fs_version, error)
-        self.assertEqual(part.get_fs_usage(), part_data.fs_usage, error)
-        self.assertEqual(part.get_fs_free_size(), part_data.fs_free_size, error)
-        s1, u1 = part.get_fs_free_size_in_hrf()
-        s2, u2 = size_in_hrf(part_data.fs_free_size * 512)
-        self.assertEqual(s1, s2, error)
-        self.assertEqual(u1, u2, error)
-        self.assertEqual(part.get_fs_mounting_point(), part_data.fs_mounting_point, error)
-
-    def pt_init_n1(self, part_name: str, part_devid: str, test_dir: str, exceptions: List[Any], error: str):
-        """Primitive negative test function. It contains the following steps:
-            - create TestData class
-            - os.path.exists() and subprocess.run() functions
-            - create Partition() class
-            - ASSERT: if no assertion will be raised for missing files
-            - delete all instances
-        """
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            if not path.startswith(test_dir):
-                path = test_dir + path
-            return original_exists(path)
-
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        mock_subprocess_run = MagicMock()
-        mock_subprocess_run.side_effect = [subprocess.CompletedProcess(
-                args=[],
-                returncode=0,
-                stdout=""
-                )]
-        with patch('os.path.exists', mock_exists), \
-             patch('subprocess.run', mock_subprocess_run):
-            with self.assertRaises(Exception) as cm:
-                Partition(part_name, part_devid)
-            self.assertTrue(type(cm.exception) in exceptions, error)
-
-    def pt_init_n2(self, part_name: str, part_devid: str, test_dir: str, exceptions: List[Any], error: str):
-        """Primitive negative test function. It contains the following steps:
-            - create TestData class
-            - os.path.exists(), subprocess.run(), open() functions
-            - create Partition() class
-            - ASSERT: if no assertion will be raised for missing `df` command
-            - delete all instances
-        """
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            if not path.startswith(test_dir):
-                path = test_dir + path
-            return original_exists(path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str,  *args, **kwargs):
-            return original_open(test_dir + path, *args, **kwargs)
-
-        # Mock function for subprocess.run().
-        def mocked_run(*args, **kwargs):
-            raise random.choice([FileNotFoundError, ValueError])
-
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        mock_subprocess_run = MagicMock(side_effect=mocked_run)
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('os.path.exists', mock_exists), \
-             patch('subprocess.run', mock_subprocess_run), \
-             patch('builtins.open', mock_open):
-            with self.assertRaises(Exception) as cm:
-                Partition(part_name, part_devid)
-            self.assertTrue(type(cm.exception) in exceptions, error)
-
-    def test_init(self):
-        """Unit test for Partition.__init__() method."""
-
-        # Test an HDD with 4 partitions.
-        my_td = TestData()
-        my_td.create_disks(["sda"], [DiskType.HDD])
-        part_number = 4
-        my_td.create_partitions(0, part_number)
-        for i in range(part_number):
-            self.pt_init_p1(my_td.disks[0].partitions[i].name, my_td.disks[0].partitions[i].part_dev_id,
-                            my_td.disks[0].partitions[i], my_td.td_dir, f"partition_init {i+1}")
-        del my_td
-
-        # Test an SSD with 5 partitions.
-        my_td = TestData()
-        my_td.create_disks(["sda"], [DiskType.SSD])
-        part_number = 5
-        my_td.create_partitions(0, part_number)
-        for i in range(part_number):
-            self.pt_init_p1(my_td.disks[0].partitions[i].name, my_td.disks[0].partitions[i].part_dev_id,
-                            my_td.disks[0].partitions[i], my_td.td_dir, f"partition_init {i+1}")
-        del my_td
-
-        # Test an NVME with 9 partitions.
-        my_td = TestData()
-        my_td.create_disks(["nvme0n1"], [DiskType.NVME])
-        part_number = 9
-        my_td.create_partitions(0, part_number)
-        for i in range(part_number):
-            self.pt_init_p1(my_td.disks[0].partitions[i].name, my_td.disks[0].partitions[i].part_dev_id,
-                            my_td.disks[0].partitions[i], my_td.td_dir, f"partition_init {i+1}")
-        del my_td
-
-        # Test exceptions for missing /dev/nvme0n1p1
-        my_td = TestData()
-        my_td.create_disks(["nvme0n1"], [DiskType.NVME])
-        my_td.create_partitions(0, 1)
-        os.remove(my_td.td_dir + my_td.disks[0].partitions[0].path)
-        self.pt_init_n1(my_td.disks[0].partitions[0].name, my_td.disks[0].partitions[0].part_dev_id,
-                        my_td.td_dir, [ValueError], "partition_init exception 1")
-        del my_td
-
-        # Test exceptions for missing /run/udev/data/b259:1
-        my_td = TestData()
-        my_td.create_disks(["nvme0n1"], [DiskType.NVME])
-        my_td.create_partitions(0, 1)
-        os.remove(my_td.td_dir + "/run/udev/data/b" + my_td.disks[0].partitions[0].part_dev_id)
-        self.pt_init_n1(my_td.disks[0].partitions[0].name, my_td.disks[0].partitions[0].part_dev_id,
-                        my_td.td_dir, [ValueError], "partition_init exception 2")
-        del my_td
-
-        # Test exceptions for missing `df` command
-        my_td = TestData()
-        my_td.create_disks(["nvme0n1"], [DiskType.NVME])
-        my_td.create_partitions(0, 1)
-        self.pt_init_n2(my_td.disks[0].partitions[0].name, my_td.disks[0].partitions[0].part_dev_id,
-                        my_td.td_dir, [FileNotFoundError, ValueError], "partition_init exception 3")
-        del my_td
+# ── mock helpers ──────────────────────────────────────────────────────────────
 
 
-if __name__ == "__main__":
-    unittest.main()
+def _make_part_device(
+    name: str = 'sda1',
+    dev_id: str = '8:1',
+    links: list = None,
+    scheme: str = 'gpt',
+    part_label: str = 'MyLabel',
+    part_uuid: str = 'acb8374d-fb60-4cb0-8ac4-273417c6f847',
+    part_type: str = 'ebd0a0a2-b9e5-4433-87c0-68b6b72699c7',
+    part_number: str = '1',
+    part_offset: str = '2048',
+    part_size: str = '2097152',
+    fs_label: str = 'MyFS',
+    fs_uuid: str = 'd54d33ea-d892-44d9-ae24-e3c6216d7a32',
+    fs_type: str = 'ext4',
+    fs_version: str = '1.0',
+    fs_usage: str = 'filesystem',
+) -> MagicMock:
+    """Return a MagicMock satisfying all pyudev.Device patterns in Partition.__init__."""
+    dev = MagicMock()
+    dev.sys_name = name
+    dev.device_node = f'/dev/{name}'
+    dev.attributes.asstring.return_value = dev_id
+    dev.device_links = list(links or [])
+
+    props = {
+        'ID_PART_ENTRY_SCHEME': scheme,
+        'ID_PART_ENTRY_NAME': part_label,
+        'ID_PART_ENTRY_UUID': part_uuid,
+        'ID_PART_ENTRY_TYPE': part_type,
+        'ID_PART_ENTRY_NUMBER': part_number,
+        'ID_PART_ENTRY_OFFSET': part_offset,
+        'ID_PART_ENTRY_SIZE': part_size,
+        # _pyudev_getenc tries ID_FS_LABEL_ENC first, falls back to ID_FS_LABEL
+        'ID_FS_LABEL_ENC': None,
+        'ID_FS_LABEL': fs_label,
+        # same pattern for fs uuid
+        'ID_FS_UUID_ENC': None,
+        'ID_FS_UUID': fs_uuid,
+        'ID_FS_TYPE': fs_type,
+        'ID_FS_VERSION': fs_version,
+        'ID_FS_USAGE': fs_usage,
+    }
+    dev.get.side_effect = props.get
+    return dev
+
+
+def _df_mock(path: str = '', avail: int = 0, mount: str = '') -> MagicMock:
+    """Return a mock subprocess.CompletedProcess whose stdout simulates df output."""
+    r = MagicMock()
+    if path:
+        r.stdout = f'Filesystem Avail Mounted\n{path} {avail} {mount}\n'
+    else:
+        r.stdout = 'Filesystem Avail Mounted\n'
+    return r
+
+
+# ── Partition.__init__ – basic attributes ─────────────────────────────────────
+
+
+def test_partition_stores_name_and_path():
+    """Partition stores the partition name and device path from pyudev."""
+    dev = _make_part_device(name='sda1', dev_id='8:1')
+    with patch('diskinfo.partition.subprocess.run', return_value=_df_mock()):
+        p = Partition(dev)
+    assert p.get_name() == 'sda1'
+    assert p.get_path() == '/dev/sda1'
+    assert p.get_part_device_id() == '8:1'
+
+
+def test_partition_stores_all_attributes():
+    """Partition stores every attribute correctly from the pyudev device."""
+    dev = _make_part_device(
+        name='sda1',
+        dev_id='8:1',
+        scheme='gpt',
+        part_label='Boot',
+        part_uuid='abcd-1234',
+        part_type='ebd0a0a2-b9e5-4433-87c0-68b6b72699c7',
+        part_number='1',
+        part_offset='2048',
+        part_size='1048576',
+        fs_label='BOOT',
+        fs_uuid='6432-935A',
+        fs_type='vfat',
+        fs_version='FAT32',
+        fs_usage='filesystem',
+    )
+    df = _df_mock('/dev/sda1', 512000, '/boot/efi')
+    with patch('diskinfo.partition.subprocess.run', return_value=df):
+        p = Partition(dev)
+
+    assert p.get_part_scheme() == 'gpt'
+    assert p.get_part_label() == 'Boot'
+    assert p.get_part_uuid() == 'abcd-1234'
+    assert p.get_part_type() == 'ebd0a0a2-b9e5-4433-87c0-68b6b72699c7'
+    assert p.get_part_number() == 1
+    assert p.get_part_offset() == 2048
+    assert p.get_part_size() == 1048576
+    assert p.get_fs_label() == 'BOOT'
+    assert p.get_fs_uuid() == '6432-935A'
+    assert p.get_fs_type() == 'vfat'
+    assert p.get_fs_version() == 'FAT32'
+    assert p.get_fs_usage() == 'filesystem'
+    assert p.get_fs_free_size() == 512000
+    assert p.get_fs_mounting_point() == '/boot/efi'
+
+
+# ── Partition.__init__ – device links ─────────────────────────────────────────
+
+
+def test_partition_classifies_all_link_types():
+    """Partition correctly routes each device link to the right path attribute."""
+    dev = _make_part_device(
+        links=[
+            '/dev/disk/by-id/ata-Samsung-part1',
+            '/dev/disk/by-id/wwn-0xabc-part1',
+            '/dev/disk/by-path/pci-0000:00:17.0-ata-1-part1',
+            '/dev/disk/by-partuuid/acb8374d-fb60-4cb0-8ac4-273417c6f847',
+            '/dev/disk/by-partlabel/EFI',
+            '/dev/disk/by-label/SYSTEM',
+            '/dev/disk/by-uuid/6432-935A',
+        ]
+    )
+    with patch('diskinfo.partition.subprocess.run', return_value=_df_mock()):
+        p = Partition(dev)
+
+    assert p.get_byid_path() == [
+        '/dev/disk/by-id/ata-Samsung-part1',
+        '/dev/disk/by-id/wwn-0xabc-part1',
+    ]
+    assert p.get_bypath_path() == '/dev/disk/by-path/pci-0000:00:17.0-ata-1-part1'
+    assert (
+        p.get_bypartuuid_path()
+        == '/dev/disk/by-partuuid/acb8374d-fb60-4cb0-8ac4-273417c6f847'
+    )
+    assert p.get_bypartlabel_path() == '/dev/disk/by-partlabel/EFI'
+    assert p.get_bylabel_path() == '/dev/disk/by-label/SYSTEM'
+    assert p.get_byuuid_path() == '/dev/disk/by-uuid/6432-935A'
+
+
+def test_partition_multiple_byid_links():
+    """Partition accumulates multiple by-id links into a list."""
+    dev = _make_part_device(
+        links=[
+            '/dev/disk/by-id/ata-Samsung-part1',
+            '/dev/disk/by-id/wwn-0x5002539c-part1',
+            '/dev/disk/by-id/nvme-Samsung-part1',
+        ]
+    )
+    with patch('diskinfo.partition.subprocess.run', return_value=_df_mock()):
+        p = Partition(dev)
+
+    assert len(p.get_byid_path()) == 3
+
+
+def test_partition_no_device_links_returns_defaults():
+    """Partition sets empty/'' path attributes when no device links are present."""
+    dev = _make_part_device(links=[])
+    with patch('diskinfo.partition.subprocess.run', return_value=_df_mock()):
+        p = Partition(dev)
+
+    assert not p.get_byid_path()
+    assert p.get_bypath_path() == ''
+    assert p.get_bypartuuid_path() == ''
+    assert p.get_bypartlabel_path() == ''
+    assert p.get_bylabel_path() == ''
+    assert p.get_byuuid_path() == ''
+
+
+# ── Partition.__init__ – df parsing ──────────────────────────────────────────
+
+
+def test_partition_mounted_path_is_extracted():
+    """Partition reads free_size and mounting_point from df output."""
+    dev = _make_part_device(name='sdb1')
+    df = _df_mock('/dev/sdb1', 2_097_152, '/home')
+    with patch('diskinfo.partition.subprocess.run', return_value=df):
+        p = Partition(dev)
+
+    assert p.get_fs_free_size() == 2_097_152
+    assert p.get_fs_mounting_point() == '/home'
+
+
+def test_partition_unmatched_df_line_leaves_defaults():
+    """Partition leaves free_size=0 and mount_point='' when df has no matching line."""
+    dev = _make_part_device(name='sda2')
+    df = _df_mock('/dev/sda1', 1_000_000, '/')  # sda1, not sda2
+    with patch('diskinfo.partition.subprocess.run', return_value=df):
+        p = Partition(dev)
+
+    assert p.get_fs_free_size() == 0
+    assert p.get_fs_mounting_point() == ''
+
+
+def test_partition_df_multiple_lines_matches_correct_one():
+    """Partition picks the matching line when df output contains many entries."""
+    dev = _make_part_device(name='sda3')
+    r = MagicMock()
+    r.stdout = (
+        'Filesystem Avail Mounted\n'
+        '/dev/sda1 500000 /\n'
+        '/dev/sda2 100000 /boot\n'
+        '/dev/sda3 999999 /data\n'
+    )
+    with patch('diskinfo.partition.subprocess.run', return_value=r):
+        p = Partition(dev)
+
+    assert p.get_fs_free_size() == 999999
+    assert p.get_fs_mounting_point() == '/data'
+
+
+def test_partition_empty_df_output_leaves_defaults():
+    """Partition handles empty df stdout gracefully (free_size=0, mount='')."""
+    dev = _make_part_device(name='sda1')
+    r = MagicMock()
+    r.stdout = ''
+    with patch('diskinfo.partition.subprocess.run', return_value=r):
+        p = Partition(dev)
+
+    assert p.get_fs_free_size() == 0
+    assert p.get_fs_mounting_point() == ''
+
+
+# ── Partition.__init__ – df error propagation ─────────────────────────────────
+
+
+def test_partition_df_file_not_found_raises():
+    """Partition.__init__() re-raises FileNotFoundError from df."""
+    dev = _make_part_device()
+    with patch(
+        'diskinfo.partition.subprocess.run',
+        side_effect=FileNotFoundError('df not found'),
+    ):
+        with pytest.raises(FileNotFoundError):
+            Partition(dev)
+
+
+def test_partition_df_oserror_raises():
+    """Partition.__init__() re-raises OSError from df."""
+    dev = _make_part_device()
+    with patch(
+        'diskinfo.partition.subprocess.run', side_effect=OSError('permission denied')
+    ):
+        with pytest.raises(OSError):
+            Partition(dev)
+
+
+# ── Partition size helpers ────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    'units, exp_unit',
+    [
+        (0, 'GB'),  # metric
+        (1, 'GiB'),  # IEC
+        (2, 'GB'),  # legacy
+    ],
+)
+def test_partition_get_part_size_in_hrf(units, exp_unit):
+    """get_part_size_in_hrf() returns the size in the requested unit system."""
+    # part_size='2097152' → 2097152 × 512 bytes = 1 GiB exactly
+    dev = _make_part_device(part_size='2097152')
+    with patch('diskinfo.partition.subprocess.run', return_value=_df_mock()):
+        p = Partition(dev)
+
+    value, unit = p.get_part_size_in_hrf(units=units)
+    assert unit == exp_unit
+    if units == 1:
+        assert value == pytest.approx(1.0)
+    else:
+        assert value == pytest.approx(
+            2_097_152 * 512 / (1_000**3 if units == 0 else 1_024**3)
+        )
+
+
+@pytest.mark.parametrize(
+    'units, exp_unit',
+    [
+        (0, 'GB'),
+        (1, 'GiB'),
+        (2, 'GB'),
+    ],
+)
+def test_partition_get_fs_free_size_in_hrf(units, exp_unit):
+    """get_fs_free_size_in_hrf() returns free space in the requested unit system."""
+    # df returns 2097152 blocks × 512 bytes = 1 GiB free
+    dev = _make_part_device(name='sda1')
+    df = _df_mock('/dev/sda1', 2_097_152, '/mnt')
+    with patch('diskinfo.partition.subprocess.run', return_value=df):
+        p = Partition(dev)
+
+    value, unit = p.get_fs_free_size_in_hrf(units=units)
+    assert unit == exp_unit
+    if units == 1:
+        assert value == pytest.approx(1.0)
+    else:
+        assert value == pytest.approx(
+            2_097_152 * 512 / (1_000**3 if units == 0 else 1_024**3)
+        )
+
+
+# ── Partition – NVMe naming convention ───────────────────────────────────────
+
+
+def test_partition_nvme_partition_name():
+    """Partition handles nvme0n1p1 style names correctly."""
+    dev = _make_part_device(name='nvme0n1p1', dev_id='259:1')
+    with patch('diskinfo.partition.subprocess.run', return_value=_df_mock()):
+        p = Partition(dev)
+
+    assert p.get_name() == 'nvme0n1p1'
+    assert p.get_path() == '/dev/nvme0n1p1'
+
+
+# ── additional branch-coverage tests ─────────────────────────────────────────
+
+
+def test_partition_unknown_link_prefix_is_ignored():
+    """A device link with an unrecognised prefix falls through all checks (branch 109->90)."""
+    dev = _make_part_device(
+        links=[
+            '/dev/disk/by-id/ata-Samsung-part1',
+            '/dev/disk/by-diskseq/123',  # unrecognised prefix → skipped
+            '/dev/disk/by-uuid/6432-935A',
+        ]
+    )
+    with patch('diskinfo.partition.subprocess.run', return_value=_df_mock()):
+        p = Partition(dev)
+
+    assert p.get_byid_path() == ['/dev/disk/by-id/ata-Samsung-part1']
+    assert p.get_byuuid_path() == '/dev/disk/by-uuid/6432-935A'
+
 
 # End

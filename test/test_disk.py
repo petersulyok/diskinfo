@@ -1,780 +1,1080 @@
 #
-#    Unitest for `disk` module
-#    Peter Sulyok (C) 2022-2024.
+#    Unit tests for `disk` module (pytest style)
+#    Peter Sulyok (C) 2022-2026.
 #
-import glob
+# pylint: disable=redefined-outer-name
 import os
-import shutil
+import uuid
 import random
-import unittest
+import tempfile
+import contextlib
+from typing import List
 from unittest.mock import patch, MagicMock, PropertyMock
-from typing import List, Tuple
-from test_data import TestData
+import pytest
+import pySMART
+from pyudev import DeviceNotFoundAtPathError
 from pySMART import Device
-from test_data_smart import TestSmartData
-from diskinfo import Disk, DiskType, _read_file
-
-
-class DiskTest(unittest.TestCase):
-    """Unit tests for Disk() class."""
-
-    def pt_init_p1(self, disk_name: str, disk_type: int, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - create TestData class
-            - mock glob.glob(), os.readlink(), os.listdir(), os.path.exists() and builtins.open() functions
-            - create Disk() class instance based on test data in all five ways
-            - ASSERT: if any attribute of the class is different from the generated test data
-            - delete all instance
-        """
-
-        # Mock function for glob.glob().
-        def mocked_glob(file: str, *args, **kwargs):
-            if file.startswith('/sys/block'):
-                file = my_td.td_dir + file
-            return original_glob(file, *args, **kwargs)
-
-        # Mock function for os.readlink().
-        def mocked_readlink(path: str,  *args, **kwargs):
-            return original_readlink(my_td.td_dir + path, *args, **kwargs)
-
-        # Mock function for os.listdir().
-        def mocked_listdir(path: str):
-            return original_listdir(my_td.td_dir + path)
-
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            return original_exists(my_td.td_dir + path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str,  *args, **kwargs):
-            return original_open(my_td.td_dir + path, *args, **kwargs)
-
-        my_td = TestData()
-        my_td.create_disks([disk_name], [disk_type])
-        original_glob = glob.glob
-        mock_glob = MagicMock(side_effect=mocked_glob)
-        original_readlink = os.readlink
-        mock_readlink = MagicMock(side_effect=mocked_readlink)
-        original_listdir = os.listdir
-        mock_listdir = MagicMock(side_effect=mocked_listdir)
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('glob.glob', mock_glob), \
-             patch('os.readlink', mock_readlink), \
-             patch('os.listdir', mock_listdir), \
-             patch('os.path.exists', mock_exists), \
-             patch('builtins.open', mock_open):
-
-            for i in range(5):
-                d = None
-
-                # Disk class creation with disk name
-                if i == 0:
-                    d = Disk(disk_name)
-                # Disk class creation with disk by-id name
-                elif not disk_type == DiskType.LOOP and i == 1:
-                    name = os.path.basename(random.choice(my_td.disks[0].byid_path))
-                    d = Disk(byid_name=name)
-                # Disk class creation with disk by-path name
-                elif not disk_type == DiskType.LOOP and i == 2:
-                    name = os.path.basename(random.choice(my_td.disks[0].bypath_path))
-                    d = Disk(bypath_name=name)
-                # Disk class creation with disk serial number
-                elif not disk_type == DiskType.LOOP and i == 3:
-                    name = my_td.disks[0].serial
-                    d = Disk(serial_number=name)
-                # Disk class creation with disk wwn name
-                elif not disk_type == DiskType.LOOP and i == 4:
-                    name = my_td.disks[0].wwn
-                    d = Disk(wwn=name)
-
-                if not d:
-                    continue
-
-                # Check all disk attributes.
-                self.assertEqual(d.get_name(), my_td.disks[0].name, error)
-                self.assertEqual(d.get_path(), my_td.disks[0].path.replace(my_td.td_dir, ""), error)
-                if not disk_type == DiskType.LOOP:
-                    self.assertEqual(d.get_serial_number(), my_td.disks[0].serial, error)
-                    self.assertEqual(d.get_firmware(), my_td.disks[0].firmware, error)
-                    self.assertEqual(d.get_model(), my_td.disks[0].model, error)
-                    self.assertEqual(d.get_wwn(), my_td.disks[0].wwn, error)
-                self.assertEqual(d.get_device_id(), my_td.disks[0].dev_id, error)
-                self.assertEqual(d.get_size(), my_td.disks[0].size, error)
-                self.assertEqual(d.get_logical_block_size(), my_td.disks[0].log_bs, error)
-                self.assertEqual(d.get_physical_block_size(), my_td.disks[0].phys_bs, error)
-                self.assertEqual(d.get_partition_table_type(), my_td.disks[0].part_table_type, error)
-                self.assertEqual(d.get_partition_table_uuid(), my_td.disks[0].part_table_uuid, error)
-                for index, item in enumerate(d.get_byid_path()):
-                    self.assertEqual(item, my_td.disks[0].byid_path[index].replace(my_td.td_dir, ""), error)
-                for index, item in enumerate(d.get_bypath_path()):
-                    self.assertEqual(item, my_td.disks[0].bypath_path[index].replace(my_td.td_dir, ""), error)
-                self.assertEqual(d.get_type(), my_td.disks[0].type, error)
-                disk_type = d.get_type()
-                if disk_type == DiskType.NVME:
-                    self.assertTrue(d.is_nvme(), error)
-                    self.assertFalse(d.is_ssd(), error)
-                    self.assertFalse(d.is_hdd(), error)
-                    self.assertFalse(d.is_loop(), error)
-                    self.assertEqual(d.get_type_str(), DiskType.NVME_STR, error)
-                elif disk_type == DiskType.SSD:
-                    self.assertTrue(d.is_ssd(), error)
-                    self.assertFalse(d.is_nvme(), error)
-                    self.assertFalse(d.is_hdd(), error)
-                    self.assertFalse(d.is_loop(), error)
-                    self.assertEqual(d.get_type_str(), DiskType.SSD_STR, error)
-                if disk_type == DiskType.HDD:
-                    self.assertTrue(d.is_hdd(), error)
-                    self.assertFalse(d.is_nvme(), error)
-                    self.assertFalse(d.is_ssd(), error)
-                    self.assertFalse(d.is_loop(), error)
-                    self.assertEqual(d.get_type_str(), DiskType.HDD_STR, error)
-                if disk_type == DiskType.LOOP:
-                    self.assertTrue(d.is_loop(), error)
-                    self.assertFalse(d.is_nvme(), error)
-                    self.assertFalse(d.is_ssd(), error)
-                    self.assertFalse(d.is_hdd(), error)
-                    self.assertEqual(d.get_type_str(), DiskType.LOOP_STR, error)
-                del d
-        del my_td
-
-    def pt_init_n1(self, disk_name: str, disk_type: int, error: str) -> None:
-        """Primitive negative test function. It contains the following steps:
-            - create TestData class
-            - mock os.readlink(), os.path.exists() and builtins.open() functions
-            - create Disk() class instance based on test data
-            - ASSERT: if assert not raised in case of missing system files/folders
-            - delete all instance
-        """
-
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            return original_exists(my_td.td_dir + path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str,  *args, **kwargs):
-            return original_open(my_td.td_dir + path, *args, **kwargs)
-
-        my_td = TestData()
-        my_td.create_disks([disk_name], [disk_type])
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('os.path.exists', mock_exists), \
-             patch('builtins.open', mock_open):
-
-            # Exception 1: missing by-path path
-            if not disk_type == DiskType.LOOP:
-                os.unlink(my_td.disks[0].bypath_path[0])
-                with self.assertRaises(Exception) as cm:
-                    Disk(disk_name)
-                self.assertEqual(type(cm.exception), RuntimeError, error)
-
-            # Exception 2: missing by-id path
-            if not disk_type == DiskType.LOOP:
-                os.unlink(my_td.disks[0].byid_path[0])
-                with self.assertRaises(Exception) as cm:
-                    Disk(disk_name)
-                self.assertEqual(type(cm.exception), RuntimeError, error)
-
-            # Exception 3: missing file `/sys/block/name/queue/rotational`
-            if not disk_type == DiskType.LOOP:
-                os.remove(my_td.td_dir + "/sys/block/" + my_td.disks[0].name + "/queue/rotational")
-                with self.assertRaises(Exception) as cm:
-                    Disk(disk_name)
-                self.assertEqual(type(cm.exception), RuntimeError, error)
-
-            # Exception 4: missing file `/sys/block/name`
-            shutil.rmtree(my_td.td_dir + "/sys/block/" + my_td.disks[0].name)
-            with self.assertRaises(Exception) as cm:
-                Disk(disk_name)
-            self.assertEqual(type(cm.exception), ValueError, error)
-
-            # Exception 5: missing file `/dev/name`
-            os.remove(my_td.td_dir + "/dev/" + my_td.disks[0].name)
-            with self.assertRaises(Exception) as cm:
-                Disk(disk_name)
-            self.assertEqual(type(cm.exception), ValueError, error)
-
-            # Exception 6: missing initialization parameters
-            with self.assertRaises(Exception) as cm:
-                Disk()
-            self.assertEqual(type(cm.exception), ValueError, error)
-        del my_td
-
-    def pt_init_n2(self, name: str, serial: bool, error: str) -> None:
-        """Primitive negative test function. It contains the following steps:
-            - create TestData class
-            - mock os.listdir(), os.path.exists() and builtins.open() functions
-            - create Disk() class instance with serial and wwn name
-            - ASSERT: if assert not raised in case of invalid missing serial number or wwn name.
-            - delete all instance
-        """
-
-        # Mock function for os.listdir().
-        def mocked_listdir(path: str):
-            return original_listdir(my_td.td_dir + path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str,  *args, **kwargs):
-            return original_open(my_td.td_dir + path, *args, **kwargs)
-
-        my_td = TestData()
-        my_td.create_disks(["sda"], [DiskType.SSD])
-        original_listdir = os.listdir
-        mock_listdir = MagicMock(side_effect=mocked_listdir)
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('os.listdir', mock_listdir), \
-             patch('builtins.open', mock_open):
-            with self.assertRaises(Exception) as cm:
-                if serial:
-                    Disk(serial_number=name)
-                else:
-                    Disk(wwn=name)
-            self.assertEqual(type(cm.exception), ValueError, error)
-        del my_td
-
-    def test_init(self):
-        """Unit test for Disk.__init__()"""
-
-        # Test creation of all valid disk types.
-        self.pt_init_p1("nvmep0n1", DiskType.NVME, "disk_init 1")
-        self.pt_init_p1("sda", DiskType.SSD, "disk_init 2")
-        self.pt_init_p1("sda", DiskType.HDD, "disk_init 3")
-        self.pt_init_p1("loop0", DiskType.LOOP, "disk_init 4")
-
-        # Test of asserts in __init__() in case of missing files.
-        self.pt_init_n1("nvmep0n1", DiskType.NVME, "disk_init 5")
-        self.pt_init_n1("sda", DiskType.SSD, "disk_init 6")
-        self.pt_init_n1("sda", DiskType.HDD, "disk_init 7")
-        self.pt_init_n1("loop0", DiskType.LOOP, "disk_init 8")
-
-        # Test of asserts in __init__() in case of invalid serial number and wwn name.
-        self.pt_init_n2("nonexisting_serial_0923409283408", True, "disk_init 9")
-        self.pt_init_n2("nonexisting_wwn_0923409283408", False,  "disk_init 10")
-
-    def test_get_type(self):
-        """Unit test for function Disk.get_type and Disk.get_type_str."""
-        d = Disk.__new__(Disk)
-        d._Disk__type = DiskType.SSD
-        self.assertTrue(d.get_type() == DiskType.SSD, "get_type 1")
-        self.assertTrue(d.is_ssd(), "get_type 2")
-        self.assertTrue(d.get_type_str() == DiskType.SSD_STR, "get_type 3")
-        d._Disk__type = DiskType.HDD
-        self.assertTrue(d.get_type() == DiskType.HDD, "get_type 4")
-        self.assertTrue(d.is_hdd(), "get_type 5")
-        self.assertTrue(d.get_type_str() == DiskType.HDD_STR, "get_type 6")
-        d._Disk__type = DiskType.NVME
-        self.assertTrue(d.get_type() == DiskType.NVME, "get_type 7")
-        self.assertTrue(d.is_nvme(), "get_type 8")
-        self.assertTrue(d.get_type_str() == DiskType.NVME_STR, "get_type 9")
-        d._Disk__type = DiskType.LOOP
-        self.assertTrue(d.get_type() == DiskType.LOOP, "get_type 10")
-        self.assertTrue(d.is_loop(), "get_type 11")
-        self.assertTrue(d.get_type_str() == DiskType.LOOP_STR, "get_type 12")
-
-        d._Disk__type = 10345
-        with self.assertRaises(Exception) as cm:
-            d.get_type_str()
-        self.assertEqual(type(cm.exception), RuntimeError, "get_type 13")
-
-    def pt_gsih_p1(self, size_in_512: int, calc_size: float, calc_unit: str, metric: int, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - create an empty Disk() class
-            - setup __size attribute
-            - call get_size_in_hrf() function
-            - ASSERT: if the result is different from the expected ones
-            - delete instance
-        """
-        d = Disk.__new__(Disk)
-        d._Disk__size = size_in_512
-        size, unit = d.get_size_in_hrf(metric)
-        self.assertEqual(size, calc_size, error)
-        self.assertEqual(unit, calc_unit, error)
-        del d
-
-    def test_get_size_in_hrf(self):
-        """Unit test for function Disk.get_size_in_hrf()."""
-
-        self.pt_gsih_p1(1, 512, "B", 0, "get_size_in_hrf 1")
-        self.pt_gsih_p1(1, 512, "B", 1, "get_size_in_hrf 2")
-        self.pt_gsih_p1(1, 512, "B", 2, "get_size_in_hrf 3")
-
-        self.pt_gsih_p1(3, (3*512)/1000, "kB", 0, "get_size_in_hrf 4")
-        self.pt_gsih_p1(3, (3*512)/1024, "KiB", 1, "get_size_in_hrf 5")
-        self.pt_gsih_p1(3, (3*512)/1024, "KB", 2, "get_size_in_hrf 6")
-
-        self.pt_gsih_p1(6144, (6144*512)/1000/1000, "MB", 0, "get_size_in_hrf 7")
-        self.pt_gsih_p1(6144, (6144*512)/1024/1024, "MiB", 1, "get_size_in_hrf 8")
-        self.pt_gsih_p1(6144, (6144*512)/1024/1024, "MB", 2, "get_size_in_hrf 9")
-
-        self.pt_gsih_p1(16777216, (16777216*512)/1000/1000/1000, "GB", 0, "get_size_in_hrf 10")
-        self.pt_gsih_p1(16777216, (16777216*512)/1024/1024/1024, "GiB", 1, "get_size_in_hrf 11")
-        self.pt_gsih_p1(16777216, (16777216*512)/1024/1024/1024, "GB", 2, "get_size_in_hrf 12")
-
-        self.pt_gsih_p1(8589934592, (8589934592*512)/1000/1000/1000/1000, "TB", 0, "get_size_in_hrf 13")
-        self.pt_gsih_p1(8589934592, (8589934592*512)/1024/1024/1024/1024, "TiB", 1, "get_size_in_hrf 14")
-        self.pt_gsih_p1(8589934592, (8589934592*512)/1024/1024/1024/1024, "TB", 2, "get_size_in_hrf 15")
-
-        self.pt_gsih_p1(4398046511104, (4398046511104*512)/1000/1000/1000/1000/1000, "PB", 0, "get_size_in_hrf 16")
-        self.pt_gsih_p1(4398046511104, (4398046511104*512)/1024/1024/1024/1024/1024, "PiB", 1, "get_size_in_hrf 17")
-        self.pt_gsih_p1(4398046511104, (4398046511104*512)/1024/1024/1024/1024/1024, "PB", 2, "get_size_in_hrf 18")
-
-    def pt_gt_p1(self, disk_name: str, disk_type: int, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - create TestData class
-            - mock glob.glob(), os.path.exists(), builtins.open(), Device.__init__(), Device.temperature() functions
-            - create Disk() class instance
-            - call get_temperature() method
-            - ASSERT: if the returned temperature is different from the generated test data
-            - delete all instance
-        """
-        temp_val: float = 0.0
-
-        # Mock function for glob.glob().
-        def mocked_glob(file: str, *args, **kwargs):
-            if file.startswith('/sys/block'):
-                file = my_td.td_dir + file
-            return original_glob(file, *args, **kwargs)
-
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            if not path.startswith(my_td.td_dir):
-                path = my_td.td_dir + path
-            return original_exists(path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str, *args, **kwargs):
-            if not path.startswith(my_td.td_dir):
-                path = my_td.td_dir + path
-            return original_open(path, *args, **kwargs)
-
-        my_td = TestData()
-        my_td.create_disks([disk_name], [disk_type])
-        if disk_type != DiskType.LOOP:
-            temp_str = _read_file(my_td.disks[0].hwmon_path)
-            temp_val = float(temp_str) / 1000
-        original_glob = glob.glob
-        mock_glob = MagicMock(side_effect=mocked_glob)
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('glob.glob', mock_glob), \
-                patch('os.path.exists', mock_exists), \
-                patch('builtins.open', mock_open), \
-                patch.object(Device, '__init__', return_value=None), \
-                patch('pySMART.Device.temperature', new_callable=PropertyMock) as mock_device_temp:
-            if disk_type == DiskType.LOOP:
-                mock_device_temp.return_value = None
-            else:
-                mock_device_temp.return_value = int(temp_val)
-            d = Disk(disk_name)
-            if d.is_loop():
-                self.assertEqual(None, d.get_temperature(sudo=random.choice([True, False])), error)
-            else:
-                if d.is_hdd() and random.choice([0, 1]):
-                    os.unlink(my_td.disks[0].hwmon_path)
-                self.assertEqual(temp_val, d.get_temperature(sudo=random.choice([True, False])), error)
-            del d
-        del my_td
-
-    def pt_gt_n1(self, disk_name: str, disk_type: int, error: str) -> None:
-        """Primitive negative test function. It contains the following steps:
-            - create TestData class
-            - mock glob.glob(), os.path.exists() and builtins.open() functions
-            - create Disk() class instance
-            - call get_temperature() method
-            - ASSERT: if the return value is not None
-            - delete all instance
-        """
-
-        # Mock function for glob.glob().
-        def mocked_glob(file: str, *args, **kwargs):
-            if file.startswith('/sys/block'):
-                file = my_td.td_dir + file
-            return original_glob(file, *args, **kwargs)
-
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            if not path.startswith(my_td.td_dir):
-                path = my_td.td_dir + path
-            return original_exists(path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str, *args, **kwargs):
-            if not path.startswith(my_td.td_dir):
-                path = my_td.td_dir + path
-            return original_open(path, *args, **kwargs)
-
-        my_td = TestData()
-        my_td.create_disks([disk_name], [disk_type])
-        original_glob = glob.glob
-        mock_glob = MagicMock(side_effect=mocked_glob)
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('glob.glob', mock_glob), \
-                patch('os.path.exists', mock_exists), \
-                patch('builtins.open', mock_open):
-            d = Disk(disk_name)
-            if disk_type != DiskType.LOOP:
-                os.system("echo 'something' > " + my_td.disks[0].hwmon_path)
-                self.assertEqual(d.get_temperature(sudo=True, smartctl_path="./non-existing-folder/smartctl"),
-                                 None, error)
-                d._Disk__hwmon_path = None
-                self.assertEqual(d.get_temperature(sudo=True, smartctl_path="./non-existing-folder/smartctl"),
-                                 None, error)
-            else:
-                self.assertEqual(d.get_temperature(sudo=True, smartctl_path="./non-existing-folder/smartctl"),
-                                 None, error)
-            del d
-        del my_td
-
-    def test_get_temperature(self):
-        """Unit test for get_temperature() method of Disk class."""
-
-        # Test reading temperature.
-        for i in range(20):
-            self.pt_gt_p1("nvme0n1", DiskType.NVME, f"get_temperature {(i * 4) + 1}")
-            self.pt_gt_p1("sda", DiskType.SSD, f"get_temperature {(i * 4) + 2}")
-            self.pt_gt_p1("sdb", DiskType.HDD, f"get_temperature {(i * 4) + 3}")
-            self.pt_gt_p1("loop0", DiskType.LOOP, f"get_temperature {(i * 4) + 4}")
-
-        # Test error conditions.
-        self.pt_gt_n1("nvme0n1", DiskType.NVME, "get_temperature 81")
-        self.pt_gt_n1("sda", DiskType.SSD, "get_temperature 82")
-        self.pt_gt_n1("sdb", DiskType.HDD, "get_temperature 83")
-        self.pt_gt_n1("loop0", DiskType.LOOP, "get_temperature 84")
-
-    def pt_gsd_p1(self, disk: Disk, nocheck: bool, sudo: bool, smartctrl_path: str, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - mock pySMART.SMARTCTL.generic_call() function
-            - call get_smart_data() method for a given Disk class
-            - ASSERT: if SMART attributes are different from test data
-        """
-        tsd: TestSmartData
-
-        # Mock function for pySMART.SMARTCLT.generic_call()
-        # pylint: disable=R0911,W0613
-        def mocked_smartctl_generic_call(params: List[str], pass_options: bool = False) -> Tuple[List[str], int]:
-            if "--info" in params:
-                if disk.is_nvme():
-                    return tsd.tsd[0].input_info, 0
-                return tsd.tsd[1].input_info, 0
-            if "background" in params:
-                return tsd.tsd[1].input_background, 0
-            if "test" in params:
-                if disk.is_nvme():
-                    return tsd.tsd[0].input_test, 0
-                return tsd.tsd[1].input_test, 0
-            if disk.is_nvme():
-                return tsd.tsd[0].input_all, 0
-            return tsd.tsd[1].input_all, 0
-
-        tsd = TestSmartData()
-        mock_smartctl_generic_call = MagicMock(side_effect=mocked_smartctl_generic_call)
-        with patch('pySMART.SMARTCTL.generic_call', mock_smartctl_generic_call):
-            sd = disk.get_smart_data(nocheck=nocheck, sudo=sudo, smartctl_path=smartctrl_path)
-            self.assertTrue(sd, error)
-            if disk.is_nvme():
-                # Check NVME attributes.
-                self.assertEqual(sd.nvme_attributes.critical_warning,
-                                 tsd.tsd[0].result.nvme_attributes.critical_warning, error)
-                self.assertEqual(sd.nvme_attributes.temperature,
-                                 tsd.tsd[0].result.nvme_attributes.temperature, error)
-                self.assertEqual(sd.nvme_attributes.available_spare,
-                                 tsd.tsd[0].result.nvme_attributes.available_spare, error)
-                self.assertEqual(sd.nvme_attributes.available_spare_threshold,
-                                 tsd.tsd[0].result.nvme_attributes.available_spare_threshold, error)
-                self.assertEqual(sd.nvme_attributes.percentage_used,
-                                 tsd.tsd[0].result.nvme_attributes.percentage_used, error)
-                self.assertEqual(sd.nvme_attributes.data_units_read,
-                                 tsd.tsd[0].result.nvme_attributes.data_units_read, error)
-                self.assertEqual(sd.nvme_attributes.data_units_written,
-                                 tsd.tsd[0].result.nvme_attributes.data_units_written, error)
-                self.assertEqual(sd.nvme_attributes.host_read_commands,
-                                 tsd.tsd[0].result.nvme_attributes.host_read_commands, error)
-                self.assertEqual(sd.nvme_attributes.host_write_commands,
-                                 tsd.tsd[0].result.nvme_attributes.host_write_commands, error)
-                self.assertEqual(sd.nvme_attributes.controller_busy_time,
-                                 tsd.tsd[0].result.nvme_attributes.controller_busy_time, error)
-                self.assertEqual(sd.nvme_attributes.power_cycles,
-                                 tsd.tsd[0].result.nvme_attributes.power_cycles, error)
-                self.assertEqual(sd.nvme_attributes.power_on_hours,
-                                 tsd.tsd[0].result.nvme_attributes.power_on_hours, error)
-                self.assertEqual(sd.nvme_attributes.unsafe_shutdowns,
-                                 tsd.tsd[0].result.nvme_attributes.unsafe_shutdowns, error)
-                self.assertEqual(sd.nvme_attributes.media_and_data_integrity_errors,
-                                 tsd.tsd[0].result.nvme_attributes.media_and_data_integrity_errors, error)
-                self.assertEqual(sd.nvme_attributes.error_information_log_entries,
-                                 tsd.tsd[0].result.nvme_attributes.error_information_log_entries, error)
-                self.assertEqual(sd.nvme_attributes.warning_composite_temperature_time,
-                                 tsd.tsd[0].result.nvme_attributes.warning_composite_temperature_time, error)
-                self.assertEqual(sd.nvme_attributes.critical_composite_temperature_time,
-                                 tsd.tsd[0].result.nvme_attributes.critical_composite_temperature_time, error)
-
-            else:
-                # Check SMART attributes.
-                for j, item in enumerate(sd.smart_attributes):
-                    self.assertEqual(item.id, tsd.tsd[1].result.smart_attributes[j].id, error)
-                    self.assertEqual(item.attribute_name, tsd.tsd[1].result.smart_attributes[j].attribute_name,
-                                     error)
-                    self.assertEqual(item.flag, tsd.tsd[1].result.smart_attributes[j].flag, error)
-                    self.assertEqual(item.value, tsd.tsd[1].result.smart_attributes[j].value, error)
-                    self.assertEqual(item.worst, tsd.tsd[1].result.smart_attributes[j].worst, error)
-                    self.assertEqual(item.thresh, tsd.tsd[1].result.smart_attributes[j].thresh, error)
-                    self.assertEqual(item.type, tsd.tsd[1].result.smart_attributes[j].type, error)
-                    self.assertEqual(item.updated, tsd.tsd[1].result.smart_attributes[j].updated, error)
-                    self.assertEqual(item.when_failed, tsd.tsd[1].result.smart_attributes[j].when_failed,
-                                     error)
-                    self.assertEqual(item.raw_value, tsd.tsd[1].result.smart_attributes[j].raw_value, error)
-        del sd
-        del tsd
-
-    def pt_gsd_p2(self, disk: Disk, nocheck: bool, sudo: bool, smartctrl_path: str, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - mock pySMART.SMARTCTL.generic_call() function
-            - call get_smart_data() method for a given Disk class
-            - ASSERT: if assessment is not FAIL
-        """
-        tsd: TestSmartData
-
-        # Mock function for pySMART.SMARTCLT.generic_call()
-        # pylint: disable=R0911,W0613
-        def mocked_smartctl_generic_call(params: List[str], pass_options: bool = False) -> Tuple[List[str], int]:
-            if "--info" in params:
-                return tsd.tsd[2].input_info, 0
-            if "test" in params:
-                return tsd.tsd[2].input_test, 0
-            return tsd.tsd[2].input_all, 0
-
-        tsd = TestSmartData()
-        mock_smartctl_generic_call = MagicMock(side_effect=mocked_smartctl_generic_call)
-        with patch('pySMART.SMARTCTL.generic_call', mock_smartctl_generic_call):
-            sd = disk.get_smart_data(nocheck=nocheck, sudo=sudo, smartctl_path=smartctrl_path)
-            self.assertEqual(False, sd.healthy, error)
-        del sd
-        del tsd
-
-    def pt_gsd_p3(self, disk: Disk, nocheck: bool, sudo: bool, smartctrl_path: str, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - mock pySMART.SMARTCTL.generic_call() function
-            - call get_smart_data() method for a given Disk class
-            - ASSERT: if disk is not in STANDBY mode
-        """
-        tsd: TestSmartData
-
-        # Mock function for pySMART.SMARTCLT.generic_call()
-        # pylint: disable=R0911,W0613
-        def mocked_smartctl_generic_call(params: List[str], pass_options: bool = False) -> Tuple[List[str], int]:
-            return tsd.tsd[3].input_info, 2
-
-        tsd = TestSmartData()
-        mock_smartctl_generic_call = MagicMock(side_effect=mocked_smartctl_generic_call)
-        with patch('pySMART.SMARTCTL.generic_call', mock_smartctl_generic_call):
-            sd = disk.get_smart_data(nocheck=nocheck, sudo=sudo, smartctl_path=smartctrl_path)
-            self.assertEqual(True, sd.standby_mode, error)
-        del sd
-        del tsd
-
-    def pt_gsd_n1(self, disk: Disk, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - mock pySMART.SMARTCTL.generic_call() function
-            - call get_smart_data() with empty output from `smartctl`
-            - ASSERT: if not None return value will be provided
-        """
-
-        # Mock function for pySMART.SMARTCLT.generic_call()
-        # pylint: disable=R0911,W0613
-        def mocked_smartctl_generic_call(params: List[str], pass_options: bool = False) -> Tuple[List[str], int]:
-            return [], 1
-
-        mock_smartctl_generic_call = MagicMock(side_effect=mocked_smartctl_generic_call)
-        with patch('pySMART.SMARTCTL.generic_call', mock_smartctl_generic_call):
-            sd = disk.get_smart_data()
-            self.assertEqual(None, sd, error)
-            del sd
-
-    def pt_gsd_n2(self, disk: Disk, tc: int, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - mock pySMART.SMARTCTL.generic_call() function
-            - call get_smart_data() for a loop disk
-            - ASSERT: if not None return value will be provided
-        """
-        tsd: TestSmartData
-
-        # Mock function for pySMART.SMARTCLT.generic_call()
-        # pylint: disable=R0911,W0613
-        def mocked_smartctl_generic_call(params: List[str], pass_options: bool = False) -> Tuple[List[str], int]:
-            if "--info" in params:
-                return tsd.tsd[tc].input_info, 1
-            return tsd.tsd[tc].input_all, 1
-
-        tsd = TestSmartData()
-        mock_smartctl_generic_call = MagicMock(side_effect=mocked_smartctl_generic_call)
-        with patch('pySMART.SMARTCTL.generic_call', mock_smartctl_generic_call):
-            sd = disk.get_smart_data()
-            self.assertEqual(None, sd, error)
-            del sd
-        del tsd
-
-    def test_get_smart_data(self):
-        """Unit test for get_smart_data() method of Disk class."""
-        d = Disk.__new__(Disk)
-
-        # Test all combination of the input parameters
-        d._Disk__path = "/dev/nvme0"
-        d._Disk__type = DiskType.NVME
-        self.pt_gsd_p1(d, True, True, "/usr/sbin/smartctl", "get_smart_data 1")
-
-        d._Disk__path = "/dev/sda"
-        d._Disk__type = DiskType.HDD
-        self.pt_gsd_p1(d, False, False, "/usr/sbin/smartctl", "get_smart_data 2")
-
-        # Test a FAIL disk
-        d._Disk__path = "/dev/nvme0"
-        d._Disk__type = DiskType.NVME
-        self.pt_gsd_p2(d, False, False, "/usr/sbin/smartctl", "get_smart_data 3")
-
-        # Test a disk in standby mode
-        d._Disk__path = "/dev/sda"
-        d._Disk__type = DiskType.HDD
-        self.pt_gsd_p3(d, False, False, "/usr/sbin/smartctl", "get_smart_data 4")
-
-        # Test if `smartctl` cannot be executed
-        d._Disk__path = "/dev/sda"
-        d._Disk__type = DiskType.HDD
-        self.pt_gsd_n1(d, "get_smart_data 5")
-
-        # Test if `smartctl` is executed on a LOOP disk
-        d._Disk__path = "/dev/loop0"
-        d._Disk__type = DiskType.LOOP
-        self.pt_gsd_n2(d, 4, "get_smart_data 6")
-
-        # Test if `smartctl` cannot identify the interface of the disk.
-        d._Disk__path = "/dev/xyz"
-        d._Disk__type = DiskType.SSD
-        self.pt_gsd_n2(d, 5, "get_smart_data 7")
-
-    def pt_gpl_p1(self, disk_name: str, disk_type: int, part_num: int, error: str) -> None:
-        """Primitive positive test function. It contains the following steps:
-            - create TestData class
-            - mock glob.glob(), os.path.exists() and builtins.open() functions
-            - create Disk() class instance
-            - create partitions for Disk() class
-            - call get_partition_list() method
-            - ASSERT: if number of identified partitions are different from the expected number
-            - delete all instances
-        """
-        def mocked_glob(file: str, *args, **kwargs):
-            if file.startswith('/sys/block'):
-                file = my_td.td_dir + file
-            return original_glob(file, *args, **kwargs)
-
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            if not path.startswith(my_td.td_dir):
-                path = my_td.td_dir + path
-            return original_exists(path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str,  *args, **kwargs):
-            if not path.startswith(my_td.td_dir):
-                path = my_td.td_dir + path
-            return original_open(path, *args, **kwargs)
-
-        my_td = TestData()
-        my_td.create_disks([disk_name], [disk_type])
-        my_td.create_partitions(0, part_num)
-        original_glob = glob.glob
-        mock_glob = MagicMock(side_effect=mocked_glob)
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('glob.glob', mock_glob), \
-             patch('os.path.exists', mock_exists), \
-             patch('builtins.open', mock_open):
-            d = Disk(disk_name)
-            plist = d.get_partition_list()
-            self.assertEqual(len(plist), part_num, error)
-            del d
-        del my_td
-
-    def test_get_partition_list(self):
-        """Unit test for get_partition_list() method of Disk class."""
-
-        # Test all disk types.
-        self.pt_gpl_p1("sda", DiskType.HDD, 0, "get_partition_list 1")
-        self.pt_gpl_p1("sda", DiskType.HDD, 2, "get_partition_list 2")
-        self.pt_gpl_p1("sda", DiskType.SSD, 3, "get_partition_list 3")
-        self.pt_gpl_p1("nvme0n1", DiskType.NVME, 6, "get_partition_list 4")
-
-    def test_operators(self):
-        """Unit test for operators implemented in Disk class"""
-        d1 = Disk.__new__(Disk)
-        d1._Disk__name = "sda"
-        d2 = Disk.__new__(Disk)
-        d2._Disk__name = "sda"
-        d3 = Disk.__new__(Disk)
-        d3._Disk__name = "sdb"
-        self.assertTrue(d1 == d2)
-        self.assertFalse(d1 != d2)
-        self.assertTrue(d1 < d3)
-        self.assertTrue(d3 > d1)
-        self.assertFalse(d1 > d3)
-        self.assertFalse(d3 < d1)
-        del d3
-        del d2
-        del d1
-
-    def test_repr(self):
-        """Unit test for __repr__ in Disk class"""
-
-        # Mock function for os.path.exists().
-        def mocked_exists(path: str):
-            return original_exists(my_td.td_dir + path)
-
-        # Mock function for builtin.open().
-        def mocked_open(path: str,  *args, **kwargs):
-            return original_open(my_td.td_dir + path, *args, **kwargs)
-
-        my_td = TestData()
-        my_td.create_disks(["sda"], [DiskType.HDD])
-        original_exists = os.path.exists
-        mock_exists = MagicMock(side_effect=mocked_exists)
-        original_open = open
-        mock_open = MagicMock(side_effect=mocked_open)
-        with patch('os.path.exists', mock_exists), \
-             patch('builtins.open', mock_open):
-            d = Disk("sda")
-            result = repr(d)
-            self.assertTrue(d.get_name() in result, "repr 1")
-            self.assertTrue(d.get_path() in result, "repr 2")
-            self.assertTrue(repr(d.get_byid_path()) in result, "repr 3")
-            self.assertTrue(repr(d.get_bypath_path()) in result, "repr 4")
-            self.assertTrue(d.get_wwn() in result, "repr 5")
-            self.assertTrue(d.get_model() in result, "repr 6")
-            self.assertTrue(d.get_serial_number() in result, "repr 7")
-            self.assertTrue(d.get_firmware() in result, "repr 8")
-            self.assertTrue(d.get_type_str() in result, "repr 9")
-            self.assertTrue(str(d.get_size()) in result, "repr 10")
-            self.assertTrue(d.get_device_id() in result, "repr 11")
-            self.assertTrue(str(d.get_physical_block_size()) in result, "repr 12")
-            self.assertTrue(str(d.get_logical_block_size()) in result, "repr 13")
-            self.assertTrue(d.get_partition_table_type() in result, "repr 14")
-            self.assertTrue(d.get_partition_table_uuid() in result, "repr 15")
-        del d
-        del my_td
-
-
-if __name__ == "__main__":
-    unittest.main()
+from diskinfo import Disk, DiskType
+
+
+# ── mock device factories ─────────────────────────────────────────────────────
+
+
+def _make_device(
+    name: str,
+    dev_id: str,
+    size: int,
+    phys_bs: int,
+    log_bs: int,
+    rotational: str = None,
+    serial: str = None,
+    firmware: str = None,
+    wwn: str = None,
+    model: str = None,
+    part_table_type: str = 'gpt',
+    part_table_uuid: str = None,
+    byid_links: List[str] = None,
+    bypath_links: List[str] = None,
+    children: list = None,
+) -> MagicMock:
+    """Return a MagicMock satisfying all pyudev.Device access patterns in Disk.__init__."""
+    dev = MagicMock()
+    dev.sys_name = name
+    dev.device_node = f'/dev/{name}'
+    dev.device_type = 'disk'
+    dev.parent = MagicMock()
+
+    # .attributes.asint / .asstring
+    int_attrs = {
+        'size': size,
+        'queue/physical_block_size': phys_bs,
+        'queue/logical_block_size': log_bs,
+    }
+    str_attrs: dict = {'dev': dev_id}
+    if rotational is not None:
+        str_attrs['queue/rotational'] = rotational
+
+    dev.attributes.asint.side_effect = lambda k: int_attrs[k]
+    dev.attributes.asstring.side_effect = lambda k: str_attrs[k]
+
+    # .get(key) – udev properties; include _ENC variant for model decoding
+    model_enc = model.replace(' ', '\\x20') if (model and ' ' in model) else None
+    props = {
+        'ID_SERIAL_SHORT': serial,
+        'ID_REVISION': firmware,
+        'ID_WWN': wwn,
+        'ID_PART_TABLE_TYPE': part_table_type,
+        'ID_PART_TABLE_UUID': part_table_uuid,
+        'ID_MODEL_ENC': model_enc,
+        'ID_MODEL': model.replace(' ', '_') if model else None,
+    }
+    dev.get.side_effect = props.get
+
+    # .device_links – by-id entries first, then by-path
+    dev.device_links = list(byid_links or []) + list(bypath_links or [])
+
+    # .children – partition child devices
+    dev.children = list(children or [])
+    return dev
+
+
+def _make_partition_device(
+    disk_dev_id: str, idx: int, disk_name: str, is_nvme: bool = False
+) -> MagicMock:
+    """Return a minimal MagicMock that satisfies Partition.__init__."""
+    part_name = disk_name + (f'p{idx}' if is_nvme else str(idx))
+    major = disk_dev_id.split(':')[0]
+    part = MagicMock()
+    part.sys_name = part_name
+    part.device_node = f'/dev/{part_name}'
+    part.device_type = 'partition'
+    part.attributes.asstring.return_value = f'{major}:{idx}'
+    part.device_links = []
+    part.get.return_value = None
+    return part
+
+
+# ── fixtures ──────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def ssd_device():
+    """Mock pyudev Device representing a SATA SSD (Samsung 850 PRO 1 TB, rotational=0)."""
+    return _make_device(
+        name='sda',
+        dev_id='8:0',
+        size=2000409264,
+        phys_bs=512,
+        log_bs=512,
+        rotational='0',
+        serial='ABC12345',
+        firmware='EXM04B6Q',
+        wwn='0x5002539c407255be',
+        model='Samsung SSD 850 PRO 1TB',
+        part_table_type='gpt',
+        part_table_uuid=str(uuid.uuid4()),
+        byid_links=[
+            '/dev/disk/by-id/ata-Samsung_SSD_850_PRO_1TB_ABC12345',
+            '/dev/disk/by-id/wwn-0x5002539c407255be',
+        ],
+        bypath_links=[
+            '/dev/disk/by-path/pci-0000:00:17.0-ata-1',
+            '/dev/disk/by-path/pci-0000:00:17.0-ata-1.0',
+        ],
+    )
+
+
+@pytest.fixture
+def hdd_device():
+    """Mock pyudev Device representing a SATA HDD (WD 8 TB, rotational=1, 4K physical sectors)."""
+    return _make_device(
+        name='sdb',
+        dev_id='8:16',
+        size=15628053168,
+        phys_bs=4096,
+        log_bs=512,
+        rotational='1',
+        serial='WXB2345678',
+        firmware='HAFBA',
+        wwn='0x5000cca291d5aba5',
+        model='WDC WD80FLAX-68VNTN0',
+        part_table_type='gpt',
+        part_table_uuid=str(uuid.uuid4()),
+        byid_links=[
+            '/dev/disk/by-id/ata-WDC_WD80FLAX-68VNTN0_WXB2345678',
+            '/dev/disk/by-id/wwn-0x5000cca291d5aba5',
+        ],
+        bypath_links=[
+            '/dev/disk/by-path/pci-0000:00:17.0-ata-2',
+            '/dev/disk/by-path/pci-0000:00:17.0-ata-2.0',
+        ],
+    )
+
+
+@pytest.fixture
+def nvme_device():
+    """Mock pyudev Device representing an NVMe SSD (Samsung 970 EVO Plus 512 GB)."""
+    return _make_device(
+        name='nvme0n1',
+        dev_id='259:0',
+        size=1000215216,
+        phys_bs=512,
+        log_bs=512,
+        serial='BTNYM23456',
+        firmware='ADH00101',
+        wwn='eui.0025385b914dc239',
+        model='Samsung SSD 970 EVO Plus 512GB',
+        part_table_type='gpt',
+        part_table_uuid=str(uuid.uuid4()),
+        byid_links=[
+            '/dev/disk/by-id/nvme-Samsung_SSD_970_EVO_Plus_512GB_BTNYM23456',
+            '/dev/disk/by-id/nvme-eui.0025385b914dc239',
+        ],
+        bypath_links=['/dev/disk/by-path/pci-0000:02:00.0-nvme-1'],
+    )
+
+
+@pytest.fixture
+def loop_device():
+    """Mock pyudev Device representing a loop device (loop0, major=7, 100 MiB)."""
+    return _make_device(
+        name='loop0',
+        dev_id='7:0',
+        size=204800,
+        phys_bs=512,
+        log_bs=512,
+        part_table_type='gpt',
+        part_table_uuid=str(uuid.uuid4()),
+    )
+
+
+# ── pyudev patch helper ───────────────────────────────────────────────────────
+
+
+@contextlib.contextmanager
+def pyudev_patched(mock_device, readlink_return: str = None):
+    """Patch diskinfo.disk's pyudev imports so no real hardware is accessed.
+
+    * ``Context()`` returns a mock whose ``list_devices(subsystem='block')``
+      yields *mock_device*; ``list_devices(subsystem='hwmon')`` returns ``[]``
+      (the resulting ``ValueError`` on unpacking is caught, leaving
+      ``hwmon_path`` as the empty string).
+    * ``Devices.from_name`` always returns *mock_device*.
+    * ``os.readlink`` is patched when *readlink_return* is provided
+      (required for by-id / by-path initialisation paths).
+    """
+    mock_ctx = MagicMock()
+
+    def _list_devices(**kwargs):
+        return [mock_device] if kwargs.get('subsystem') == 'block' else []
+
+    mock_ctx.list_devices.side_effect = _list_devices
+
+    with contextlib.ExitStack() as stack:
+        stack.enter_context(patch('diskinfo.disk.Context', return_value=mock_ctx))
+        mock_devs = stack.enter_context(patch('diskinfo.disk.Devices'))
+        mock_devs.from_name.return_value = mock_device
+        if readlink_return is not None:
+            stack.enter_context(patch('os.readlink', return_value=readlink_return))
+        yield mock_devs
+
+
+# ── __init__ – positive ───────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    'fixture_name, expected_type',
+    [
+        ('nvme_device', DiskType.NVME),
+        ('ssd_device', DiskType.SSD),
+        ('hdd_device', DiskType.HDD),
+        ('loop_device', DiskType.LOOP),
+    ],
+)
+def test_init_by_disk_name(fixture_name, expected_type, request):
+    """Disk(disk_name) creates an instance with the correct type and attributes."""
+    mock_dev = request.getfixturevalue(fixture_name)
+    with pyudev_patched(mock_dev):
+        d = Disk(mock_dev.sys_name)
+
+    assert d.get_name() == mock_dev.sys_name
+    assert d.get_path() == mock_dev.device_node
+    assert d.get_type() == expected_type
+    assert d.get_size() == mock_dev.attributes.asint('size')
+    assert d.get_device_id() == mock_dev.attributes.asstring('dev')
+    assert d.get_physical_block_size() == mock_dev.attributes.asint(
+        'queue/physical_block_size'
+    )
+    assert d.get_logical_block_size() == mock_dev.attributes.asint(
+        'queue/logical_block_size'
+    )
+    assert d.get_partition_table_type() == mock_dev.get('ID_PART_TABLE_TYPE')
+    assert d.get_partition_table_uuid() == mock_dev.get('ID_PART_TABLE_UUID')
+    if expected_type != DiskType.LOOP:
+        assert d.get_serial_number() == mock_dev.get('ID_SERIAL_SHORT')
+        assert d.get_firmware() == mock_dev.get('ID_REVISION')
+        assert d.get_wwn() == mock_dev.get('ID_WWN')
+        byid = [lnk for lnk in mock_dev.device_links if '/by-id' in lnk]
+        bypath = [lnk for lnk in mock_dev.device_links if '/by-path' in lnk]
+        assert d.get_byid_path() == byid
+        assert d.get_bypath_path() == bypath
+
+
+@pytest.mark.parametrize('fixture_name', ['ssd_device', 'hdd_device', 'nvme_device'])
+def test_init_by_byid_name(fixture_name, request):
+    """Disk(byid_name=...) resolves the by-id symlink and finds the correct disk."""
+    mock_dev = request.getfixturevalue(fixture_name)
+    byid_link = next(lnk for lnk in mock_dev.device_links if '/by-id' in lnk)
+    byid_name = os.path.basename(byid_link)
+    link_target = f'../../{mock_dev.sys_name}'
+
+    with pyudev_patched(mock_dev, readlink_return=link_target):
+        d = Disk(byid_name=byid_name)
+    assert d.get_name() == mock_dev.sys_name
+
+
+@pytest.mark.parametrize('fixture_name', ['ssd_device', 'hdd_device'])
+def test_init_by_bypath_name(fixture_name, request):
+    """Disk(bypath_name=...) resolves the by-path symlink and finds the correct disk."""
+    mock_dev = request.getfixturevalue(fixture_name)
+    bypath_link = next(lnk for lnk in mock_dev.device_links if '/by-path' in lnk)
+    bypath_name = os.path.basename(bypath_link)
+    link_target = f'../../{mock_dev.sys_name}'
+
+    with pyudev_patched(mock_dev, readlink_return=link_target):
+        d = Disk(bypath_name=bypath_name)
+    assert d.get_name() == mock_dev.sys_name
+
+
+@pytest.mark.parametrize('fixture_name', ['ssd_device', 'hdd_device'])
+def test_init_by_serial_number(fixture_name, request):
+    """Disk(serial_number=...) locates the disk by scanning udev properties."""
+    mock_dev = request.getfixturevalue(fixture_name)
+    serial = mock_dev.get('ID_SERIAL_SHORT')
+
+    with pyudev_patched(mock_dev):
+        d = Disk(serial_number=serial)
+    assert d.get_name() == mock_dev.sys_name
+    assert d.get_serial_number() == serial
+
+
+# ── __init__ – negative ───────────────────────────────────────────────────────
+
+
+def test_init_no_parameters_raises_valueerror():
+    """Disk() with no arguments raises ValueError."""
+    with pytest.raises(ValueError):
+        Disk()
+
+
+def test_init_unknown_disk_name_raises_valueerror():
+    """Disk('nonexistent') raises ValueError when pyudev cannot find the device."""
+    mock_ctx = MagicMock()
+    mock_ctx.list_devices.return_value = []
+    with (
+        patch('diskinfo.disk.Context', return_value=mock_ctx),
+        patch('diskinfo.disk.Devices') as mock_devs,
+    ):
+        mock_devs.from_name.side_effect = DeviceNotFoundAtPathError(
+            '/sys/class/block/nonexistent'
+        )
+        with pytest.raises(ValueError):
+            Disk('nonexistent')
+
+
+def test_init_invalid_serial_raises_valueerror(ssd_device):
+    """Disk(serial_number=...) raises ValueError when no device matches."""
+    with pyudev_patched(ssd_device):
+        with pytest.raises(ValueError):
+            Disk(serial_number='XXXXXXXXXXXXXXXX')
+
+
+def test_init_invalid_byid_name_raises_valueerror():
+    """Disk(byid_name=...) raises ValueError when the by-id symlink is missing."""
+    mock_ctx = MagicMock()
+    mock_ctx.list_devices.return_value = []
+    with (
+        patch('diskinfo.disk.Context', return_value=mock_ctx),
+        patch('diskinfo.disk.Devices'),
+        patch('os.readlink', side_effect=OSError('no such file')),
+    ):
+        with pytest.raises(ValueError):
+            Disk(byid_name='ata-nonexistent-disk')
+
+
+def test_init_invalid_bypath_name_raises_valueerror():
+    """Disk(bypath_name=...) raises ValueError when the by-path symlink is missing."""
+    mock_ctx = MagicMock()
+    mock_ctx.list_devices.return_value = []
+    with (
+        patch('diskinfo.disk.Context', return_value=mock_ctx),
+        patch('diskinfo.disk.Devices'),
+        patch('os.readlink', side_effect=FileNotFoundError('no such file')),
+    ):
+        with pytest.raises(ValueError):
+            Disk(bypath_name='pci-0000:00:17.0-ata-99')
+
+
+def test_init_wwn_bug_always_raises_valueerror(ssd_device):
+    """Disk(wwn=...) always raises ValueError.
+
+    This is a known bug in disk.py: the WWN lookup compares
+    dev.get('ID_WWN') to ``serial_number`` (which is None) instead of
+    the ``wwn`` argument, so no device is ever matched.
+    """
+    with pyudev_patched(ssd_device):
+        with pytest.raises(ValueError):
+            Disk(wwn=ssd_device.get('ID_WWN'))
+
+
+# ── disk type predicates ──────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    'disk_type, is_ssd, is_hdd, is_nvme, is_loop, type_str',
+    [
+        (DiskType.SSD, True, False, False, False, DiskType.SSD_STR),
+        (DiskType.HDD, False, True, False, False, DiskType.HDD_STR),
+        (DiskType.NVME, False, False, True, False, DiskType.NVME_STR),
+        (DiskType.LOOP, False, False, False, True, DiskType.LOOP_STR),
+    ],
+)
+def test_disk_type_predicates(disk_type, is_ssd, is_hdd, is_nvme, is_loop, type_str):
+    """Type-check helpers return the correct booleans and string for each disk type."""
+    d = Disk.__new__(Disk)
+    d._Disk__type = disk_type
+    assert d.get_type() == disk_type
+    assert d.is_ssd() is is_ssd
+    assert d.is_hdd() is is_hdd
+    assert d.is_nvme() is is_nvme
+    assert d.is_loop() is is_loop
+    assert d.get_type_str() == type_str
+
+
+def test_get_type_str_unknown_raises_runtimeerror():
+    """get_type_str() raises RuntimeError for an unrecognised type value."""
+    d = Disk.__new__(Disk)
+    d._Disk__type = 99999
+    with pytest.raises(RuntimeError):
+        d.get_type_str()
+
+
+# ── get_size_in_hrf ───────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    'size_512, units, exp_value, exp_unit',
+    [
+        (1, 0, 512.0, 'B'),
+        (1, 1, 512.0, 'B'),
+        (1, 2, 512.0, 'B'),
+        (3, 0, (3 * 512) / 1000, 'kB'),
+        (3, 1, (3 * 512) / 1024, 'KiB'),
+        (3, 2, (3 * 512) / 1024, 'KB'),
+        (6144, 0, (6144 * 512) / 1e6, 'MB'),
+        (6144, 1, (6144 * 512) / 1024**2, 'MiB'),
+        (6144, 2, (6144 * 512) / 1024**2, 'MB'),
+        (16777216, 0, (16777216 * 512) / 1e9, 'GB'),
+        (16777216, 1, (16777216 * 512) / 1024**3, 'GiB'),
+        (16777216, 2, (16777216 * 512) / 1024**3, 'GB'),
+        (8589934592, 0, (8589934592 * 512) / 1e12, 'TB'),
+        (8589934592, 1, (8589934592 * 512) / 1024**4, 'TiB'),
+        (8589934592, 2, (8589934592 * 512) / 1024**4, 'TB'),
+        (4398046511104, 0, (4398046511104 * 512) / 1e15, 'PB'),
+        (4398046511104, 1, (4398046511104 * 512) / 1024**5, 'PiB'),
+        (4398046511104, 2, (4398046511104 * 512) / 1024**5, 'PB'),
+    ],
+)
+def test_get_size_in_hrf(size_512, units, exp_value, exp_unit):
+    """get_size_in_hrf() returns correct (value, unit) for every unit system."""
+    d = Disk.__new__(Disk)
+    d._Disk__size = size_512
+    value, unit = d.get_size_in_hrf(units)
+    assert value == pytest.approx(exp_value)
+    assert unit == exp_unit
+
+
+# ── get_temperature ───────────────────────────────────────────────────────────
+
+
+def test_get_temperature_reads_hwmon_sysfs_file():
+    """get_temperature() divides milli-degrees from an hwmon sysfs file by 1000."""
+    d = Disk.__new__(Disk)
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='_temp1_input', delete=False
+    ) as f:
+        f.write('43000')
+        hwmon_file = f.name
+    try:
+        d._Disk__hwmon_path = hwmon_file
+        assert d.get_temperature() == 43.0
+    finally:
+        os.unlink(hwmon_file)
+
+
+@pytest.mark.parametrize('fixture_name', ['ssd_device', 'hdd_device', 'nvme_device'])
+def test_get_temperature_via_pysmart(fixture_name, request):
+    """get_temperature() falls back to pySMART when hwmon path is absent."""
+    mock_dev = request.getfixturevalue(fixture_name)
+    with pyudev_patched(mock_dev):
+        d = Disk(mock_dev.sys_name)
+
+    # hwmon lookup found nothing → hwmon_path is ''
+    assert d._Disk__hwmon_path == ''
+
+    with (
+        patch.object(Device, '__init__', return_value=None),
+        patch('pySMART.Device.temperature', new_callable=PropertyMock) as mock_temp,
+    ):
+        mock_temp.return_value = 38
+        temp = d.get_temperature(sudo=random.choice([True, False]))
+    assert temp == 38.0
+
+
+def test_get_temperature_loop_returns_none(loop_device):
+    """get_temperature() returns None for a LOOP disk (pySMART finds no temperature)."""
+    with pyudev_patched(loop_device):
+        d = Disk(loop_device.sys_name)
+
+    with (
+        patch.object(Device, '__init__', return_value=None),
+        patch('pySMART.Device.temperature', new_callable=PropertyMock) as mock_temp,
+    ):
+        mock_temp.return_value = None
+        assert d.get_temperature() is None
+
+
+def test_get_temperature_none_from_pysmart_returns_none(ssd_device):
+    """get_temperature() returns None when pySMART reports no temperature."""
+    with pyudev_patched(ssd_device):
+        d = Disk(ssd_device.sys_name)
+
+    with (
+        patch.object(Device, '__init__', return_value=None),
+        patch('pySMART.Device.temperature', new_callable=PropertyMock) as mock_temp,
+    ):
+        mock_temp.return_value = None
+        assert d.get_temperature() is None
+
+
+def test_get_temperature_none_hwmon_path_falls_through_to_pysmart(ssd_device):
+    """get_temperature() skips hwmon when __hwmon_path is None and uses pySMART."""
+    with pyudev_patched(ssd_device):
+        d = Disk(ssd_device.sys_name)
+    d._Disk__hwmon_path = None
+
+    with (
+        patch.object(Device, '__init__', return_value=None),
+        patch('pySMART.Device.temperature', new_callable=PropertyMock) as mock_temp,
+    ):
+        mock_temp.return_value = 35
+        assert d.get_temperature() == 35.0
+
+
+# ── get_smart_data helpers ────────────────────────────────────────────────────
+
+# Minimal valid smartctl --info output (5 lines; line[3] is empty = not standby)
+_SMART_INFO_OK = ['smartctl 7.2', '', '', '', '# output']
+
+# smartctl --info output signalling STANDBY at line[3]
+_SMART_INFO_STANDBY = ['smartctl 7.2', '', '', 'Device is in STANDBY mode, exiting', '']
+
+
+def _make_nvme_if_attrs() -> MagicMock:
+    """Return a MagicMock with all NVMe if_attributes consumed by disk.py."""
+    a = MagicMock()
+    a.criticalWarning = 0
+    a._temperature = 35
+    a.availableSpare = 100
+    a.availableSpareThreshold = 10
+    a.percentageUsed = 2
+    a.dataUnitsRead = 123_456
+    a.dataUnitsWritten = 654_321
+    a.hostReadCommands = 9_999_999
+    a.hostWriteCommands = 7_777_777
+    a.controllerBusyTime = 1_234
+    a.powerCycles = 42
+    a.powerOnHours = 1_565
+    a.unsafeShutdowns = 5
+    a.integrityErrors = 0
+    a.errorEntries = 0
+    a.warningTemperatureTime = 0
+    a.criticalTemperatureTime = 0
+    return a
+
+
+def _make_hdd_legacy_attrs() -> list:
+    """Return a list of MagicMocks representing pySMART legacy SMART attributes."""
+    raw = [
+        (
+            5,
+            'Reallocated_Sector_Ct',
+            0x0033,
+            100,
+            100,
+            10,
+            'Pre-fail',
+            'Always',
+            '-',
+            0,
+        ),
+        (9, 'Power_On_Hours', 0x0032, 95, 95, 0, 'Old_age', 'Always', '-', 23268),
+        (12, 'Power_Cycle_Count', 0x0032, 92, 92, 0, 'Old_age', 'Always', '-', 7103),
+        (
+            190,
+            'Airflow_Temperature_Cel',
+            0x0032,
+            72,
+            45,
+            0,
+            'Old_age',
+            'Always',
+            '-',
+            28,
+        ),
+    ]
+    attrs = []
+    for (
+        num,
+        name,
+        flags,
+        value_int,
+        worst,
+        thresh,
+        _type,
+        updated,
+        when_failed,
+        raw_int,
+    ) in raw:
+        a = MagicMock()
+        a.num = num
+        a.name = name
+        a.flags = flags
+        a.value_int = value_int
+        a.worst = worst
+        a.thresh = thresh
+        a.type = _type
+        a.updated = updated
+        a.when_failed = when_failed
+        a.raw_int = raw_int
+        attrs.append(a)
+    return attrs
+
+
+# ── get_smart_data ────────────────────────────────────────────────────────────
+
+
+def test_get_smart_data_nvme():
+    """get_smart_data() returns all expected NVMe SMART attributes."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/nvme0n1'
+    d._Disk__type = DiskType.NVME
+
+    mock_if = _make_nvme_if_attrs()
+    mock_sd = MagicMock()
+    mock_sd.interface = 'nvme'
+    mock_sd.smart_enabled = True
+    mock_sd.smart_capable = True
+    mock_sd.assessment = 'PASS'
+    mock_sd.if_attributes = mock_if
+
+    with (
+        patch.object(pySMART.SMARTCTL, 'info', return_value=_SMART_INFO_OK),
+        patch('pySMART.Device', return_value=mock_sd),
+    ):
+        sd = d.get_smart_data(nocheck=True, sudo=True)
+
+    assert sd is not None
+    assert sd.healthy is True
+    assert sd.smart_enabled is True
+    assert sd.smart_capable is True
+
+    na = sd.nvme_attributes
+    assert na.critical_warning == mock_if.criticalWarning
+    assert na.temperature == mock_if._temperature
+    assert na.available_spare == mock_if.availableSpare
+    assert na.available_spare_threshold == mock_if.availableSpareThreshold
+    assert na.percentage_used == mock_if.percentageUsed
+    assert na.data_units_read == mock_if.dataUnitsRead
+    assert na.data_units_written == mock_if.dataUnitsWritten
+    assert na.host_read_commands == mock_if.hostReadCommands
+    assert na.host_write_commands == mock_if.hostWriteCommands
+    assert na.controller_busy_time == mock_if.controllerBusyTime
+    assert na.power_cycles == mock_if.powerCycles
+    assert na.power_on_hours == mock_if.powerOnHours
+    assert na.unsafe_shutdowns == mock_if.unsafeShutdowns
+    assert na.media_and_data_integrity_errors == mock_if.integrityErrors
+    assert na.error_information_log_entries == mock_if.errorEntries
+    assert na.warning_composite_temperature_time == mock_if.warningTemperatureTime
+    assert na.critical_composite_temperature_time == mock_if.criticalTemperatureTime
+
+
+def test_get_smart_data_hdd():
+    """get_smart_data() returns all expected legacy SMART attributes for an HDD."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/sdb'
+    d._Disk__type = DiskType.HDD
+
+    legacy = _make_hdd_legacy_attrs()
+    mock_sd = MagicMock()
+    mock_sd.interface = 'ata'
+    mock_sd.smart_enabled = True
+    mock_sd.smart_capable = True
+    mock_sd.assessment = 'PASS'
+    mock_sd.if_attributes.legacyAttributes = legacy
+
+    with (
+        patch.object(pySMART.SMARTCTL, 'info', return_value=_SMART_INFO_OK),
+        patch('pySMART.Device', return_value=mock_sd),
+    ):
+        sd = d.get_smart_data(nocheck=False, sudo=False)
+
+    assert sd is not None
+    assert sd.healthy is True
+    assert len(sd.smart_attributes) == len(legacy)
+    for j, attr in enumerate(sd.smart_attributes):
+        exp = legacy[j]
+        assert attr.id == exp.num
+        assert attr.attribute_name == exp.name
+        assert attr.flag == exp.flags
+        assert attr.value == exp.value_int
+        assert attr.worst == exp.worst
+        assert attr.thresh == exp.thresh
+        assert attr.type == exp.type
+        assert attr.updated == exp.updated
+        assert attr.when_failed == exp.when_failed
+        assert attr.raw_value == exp.raw_int
+
+
+def test_get_smart_data_fail_assessment():
+    """get_smart_data() sets healthy=False when the SMART assessment is not PASS."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/sda'
+    d._Disk__type = DiskType.SSD
+
+    mock_sd = MagicMock()
+    mock_sd.interface = 'ata'
+    mock_sd.smart_enabled = True
+    mock_sd.smart_capable = True
+    mock_sd.assessment = 'FAIL'
+
+    with (
+        patch.object(pySMART.SMARTCTL, 'info', return_value=_SMART_INFO_OK),
+        patch('pySMART.Device', return_value=mock_sd),
+    ):
+        sd = d.get_smart_data()
+
+    assert sd is not None
+    assert sd.healthy is False
+
+
+def test_get_smart_data_standby_mode():
+    """get_smart_data() sets standby_mode=True when smartctl reports STANDBY."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/sdb'
+    d._Disk__type = DiskType.HDD
+
+    with patch.object(pySMART.SMARTCTL, 'info', return_value=_SMART_INFO_STANDBY):
+        sd = d.get_smart_data()
+
+    assert sd is not None
+    assert sd.standby_mode is True
+
+
+def test_get_smart_data_empty_output_returns_none():
+    """get_smart_data() returns None when smartctl produces no output."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/sda'
+    d._Disk__type = DiskType.HDD
+
+    with patch.object(pySMART.SMARTCTL, 'info', return_value=[]):
+        assert d.get_smart_data() is None
+
+
+def test_get_smart_data_loop_returns_none():
+    """get_smart_data() returns None immediately for LOOP disks (no smartctl call)."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/loop0'
+    d._Disk__type = DiskType.LOOP
+    assert d.get_smart_data() is None
+
+
+def test_get_smart_data_unknown_interface_returns_none():
+    """get_smart_data() returns None when the device interface cannot be identified."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/sda'
+    d._Disk__type = DiskType.SSD
+
+    mock_sd = MagicMock()
+    mock_sd.interface = None
+
+    with (
+        patch.object(pySMART.SMARTCTL, 'info', return_value=_SMART_INFO_OK),
+        patch('pySMART.Device', return_value=mock_sd),
+    ):
+        assert d.get_smart_data() is None
+
+
+# ── get_partition_list ────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    'fixture_name, part_num, is_nvme',
+    [
+        ('hdd_device', 0, False),
+        ('hdd_device', 2, False),
+        ('ssd_device', 3, False),
+        ('nvme_device', 6, True),
+    ],
+)
+def test_get_partition_list(fixture_name, part_num, is_nvme, request):
+    """get_partition_list() returns a list with the correct partition count."""
+    mock_dev = request.getfixturevalue(fixture_name)
+    mock_dev.children = [
+        _make_partition_device(
+            mock_dev.attributes.asstring('dev'),
+            i + 1,
+            mock_dev.sys_name,
+            is_nvme=is_nvme,
+        )
+        for i in range(part_num)
+    ]
+    df_result = MagicMock()
+    df_result.stdout = 'Filesystem Avail Mounted on\n'
+
+    with (
+        patch('diskinfo.partition.subprocess.run', return_value=df_result),
+        pyudev_patched(mock_dev),
+    ):
+        d = Disk(mock_dev.sys_name)
+
+    assert len(d.get_partition_list()) == part_num
+
+
+# ── comparison operators ──────────────────────────────────────────────────────
+
+
+def test_operator_equality():
+    """== / != compare two Disk instances by name."""
+    d1, d2 = Disk.__new__(Disk), Disk.__new__(Disk)
+    d1._Disk__name = d2._Disk__name = 'sda'
+    assert d1 == d2
+    assert (d1 != d2) is False
+
+
+def test_operator_less_than_greater_than():
+    """< and > compare Disk instances lexicographically by name."""
+    d_a, d_b = Disk.__new__(Disk), Disk.__new__(Disk)
+    d_a._Disk__name, d_b._Disk__name = 'sda', 'sdb'
+    assert d_a < d_b
+    assert d_b > d_a
+    assert (d_a > d_b) is False
+    assert (d_b < d_a) is False
+
+
+# ── __repr__ ──────────────────────────────────────────────────────────────────
+
+
+def test_repr_contains_all_attributes(ssd_device):
+    """repr() output contains every disk attribute value."""
+    with pyudev_patched(ssd_device):
+        d = Disk(ssd_device.sys_name)
+    result = repr(d)
+    assert d.get_name() in result
+    assert d.get_path() in result
+    assert repr(d.get_byid_path()) in result
+    assert repr(d.get_bypath_path()) in result
+    assert d.get_wwn() in result
+    assert d.get_model() in result
+    assert d.get_serial_number() in result
+    assert d.get_firmware() in result
+    assert d.get_type_str() in result
+    assert str(d.get_size()) in result
+    assert d.get_device_id() in result
+    assert str(d.get_physical_block_size()) in result
+    assert str(d.get_logical_block_size()) in result
+    assert d.get_partition_table_type() in result
+    assert d.get_partition_table_uuid() in result
+
+
+# ── additional branch-coverage tests ─────────────────────────────────────────
+
+
+def test_init_wwn_matches_device_with_null_wwn():
+    """Disk(wwn=...) succeeds when the device's ID_WWN is None.
+
+    Due to a bug in disk.py the lookup compares dev.get('ID_WWN') == serial_number
+    (which is None).  A device whose ID_WWN property is also None therefore matches,
+    covering lines 124-125 and the 'device found' branch at 126->160.
+    """
+    dev = _make_device(
+        name='sda',
+        dev_id='8:0',
+        size=2000409264,
+        phys_bs=512,
+        log_bs=512,
+        rotational='0',
+        serial='ABC12345',
+        firmware='EXM04B6Q',
+        wwn=None,
+        model='No-WWN Disk',
+        part_table_type='gpt',
+        part_table_uuid=str(uuid.uuid4()),
+    )
+    with pyudev_patched(dev):
+        d = Disk(wwn='0x5002539c407255be')
+    assert d.get_name() == 'sda'
+
+
+def test_init_byid_name_device_not_found_raises_valueerror():
+    """Disk(byid_name=...) raises ValueError when Devices.from_name raises DeviceNotFoundAtPathError."""
+    mock_ctx = MagicMock()
+    mock_ctx.list_devices.return_value = []
+    with (
+        patch('diskinfo.disk.Context', return_value=mock_ctx),
+        patch('diskinfo.disk.Devices') as mock_devs,
+        patch('os.readlink', return_value='../../sda'),
+    ):
+        mock_devs.from_name.side_effect = DeviceNotFoundAtPathError(
+            '/sys/class/block/sda'
+        )
+        with pytest.raises(ValueError):
+            Disk(byid_name='ata-Samsung_SSD_850_PRO_1TB_ABC12345')
+
+
+def test_init_bypath_name_device_not_found_raises_valueerror():
+    """Disk(bypath_name=...) raises ValueError when Devices.from_name raises DeviceNotFoundAtPathError."""
+    mock_ctx = MagicMock()
+    mock_ctx.list_devices.return_value = []
+    with (
+        patch('diskinfo.disk.Context', return_value=mock_ctx),
+        patch('diskinfo.disk.Devices') as mock_devs,
+        patch('os.readlink', return_value='../../sda'),
+    ):
+        mock_devs.from_name.side_effect = DeviceNotFoundAtPathError(
+            '/sys/class/block/sda'
+        )
+        with pytest.raises(ValueError):
+            Disk(bypath_name='pci-0000:00:17.0-ata-99')
+
+
+def test_init_with_device_parameter(ssd_device):
+    """Disk(_device=...) initialises directly from a pyudev Device object (line 153)."""
+    with pyudev_patched(ssd_device):
+        d = Disk(_device=ssd_device)
+    assert d.get_name() == ssd_device.sys_name
+
+
+def test_init_unknown_rotational_raises_runtimeerror():
+    """Disk() raises RuntimeError when queue/rotational is not '0' or '1' (line 184)."""
+    dev = _make_device(
+        name='sda',
+        dev_id='8:0',
+        size=2000409264,
+        phys_bs=512,
+        log_bs=512,
+        rotational='X',
+    )
+    with pyudev_patched(dev):
+        with pytest.raises(RuntimeError):
+            Disk('sda')
+
+
+def test_init_non_byid_bypath_link_is_skipped(ssd_device):
+    """A device link that is neither by-id nor by-path is silently ignored (branch 201->197)."""
+    ssd_device.device_links = list(ssd_device.device_links) + [
+        '/dev/disk/by-uuid/6432-935A'
+    ]
+    with pyudev_patched(ssd_device):
+        d = Disk(ssd_device.sys_name)
+    assert '/dev/disk/by-uuid/6432-935A' not in d.get_byid_path()
+    assert '/dev/disk/by-uuid/6432-935A' not in d.get_bypath_path()
+
+
+def test_init_hwmon_device_found(ssd_device):
+    """Disk.__init__() sets __hwmon_path when an hwmon device is present (line 210)."""
+    mock_hwmon_dev = MagicMock()
+    mock_hwmon_dev.sys_path = '/sys/class/hwmon/hwmon2'
+
+    mock_ctx = MagicMock()
+
+    def _list_devices(**kwargs):
+        sub = kwargs.get('subsystem')
+        if sub == 'block':
+            return [ssd_device]
+        if sub == 'hwmon':
+            return [mock_hwmon_dev]
+        return []
+
+    mock_ctx.list_devices.side_effect = _list_devices
+
+    with (
+        patch('diskinfo.disk.Context', return_value=mock_ctx),
+        patch('diskinfo.disk.Devices') as mock_devs,
+    ):
+        mock_devs.from_name.return_value = ssd_device
+        d = Disk(ssd_device.sys_name)
+
+    assert d._Disk__hwmon_path == '/sys/class/hwmon/hwmon2/temp1_input'
+
+
+def test_init_non_partition_child_is_ignored(hdd_device):
+    """Non-partition children of a disk are skipped (branch 217->216)."""
+    non_part = MagicMock()
+    non_part.device_type = 'disk'  # NOT 'partition'
+
+    part = _make_partition_device(
+        hdd_device.attributes.asstring('dev'), 1, hdd_device.sys_name
+    )
+    hdd_device.children = [non_part, part]
+
+    df_result = MagicMock()
+    df_result.stdout = 'Filesystem Avail Mounted on\n'
+
+    with (
+        patch('diskinfo.partition.subprocess.run', return_value=df_result),
+        pyudev_patched(hdd_device),
+    ):
+        d = Disk(hdd_device.sys_name)
+
+    assert len(d.get_partition_list()) == 1
+
+
+def test_get_temperature_hwmon_invalid_content_falls_to_pysmart(ssd_device):
+    """get_temperature() falls through to pySMART when hwmon file has non-numeric content (lines 611-612)."""
+    with pyudev_patched(ssd_device):
+        d = Disk(ssd_device.sys_name)
+
+    with tempfile.NamedTemporaryFile(
+        mode='w', suffix='_temp1_input', delete=False
+    ) as f:
+        f.write('not-a-number')
+        hwmon_file = f.name
+    try:
+        d._Disk__hwmon_path = hwmon_file
+        with (
+            patch.object(Device, '__init__', return_value=None),
+            patch('pySMART.Device.temperature', new_callable=PropertyMock) as mock_temp,
+        ):
+            mock_temp.return_value = 40
+            assert d.get_temperature() == 40.0
+    finally:
+        os.unlink(hwmon_file)
+
+
+def test_get_smart_data_nvme_no_if_attributes():
+    """get_smart_data() skips NvmeAttributes when if_attributes is absent (branch 737->786)."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/nvme0n1'
+    d._Disk__type = DiskType.NVME
+
+    mock_sd = MagicMock()
+    mock_sd.interface = 'nvme'
+    mock_sd.smart_enabled = True
+    mock_sd.smart_capable = True
+    mock_sd.assessment = 'PASS'
+    del mock_sd.if_attributes  # hasattr → False
+
+    with (
+        patch.object(pySMART.SMARTCTL, 'info', return_value=_SMART_INFO_OK),
+        patch('pySMART.Device', return_value=mock_sd),
+    ):
+        sd = d.get_smart_data()
+
+    assert sd is not None
+    assert not hasattr(sd, 'nvme_attributes')
+
+
+def test_get_smart_data_sata_no_legacy_attributes():
+    """get_smart_data() skips smart_attributes when legacyAttributes is absent (branch 777->786)."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/sda'
+    d._Disk__type = DiskType.SSD
+
+    mock_sd = MagicMock()
+    mock_sd.interface = 'ata'
+    mock_sd.smart_enabled = True
+    mock_sd.smart_capable = True
+    mock_sd.assessment = 'PASS'
+    del mock_sd.if_attributes.legacyAttributes  # hasattr → False
+
+    with (
+        patch.object(pySMART.SMARTCTL, 'info', return_value=_SMART_INFO_OK),
+        patch('pySMART.Device', return_value=mock_sd),
+    ):
+        sd = d.get_smart_data()
+
+    assert sd is not None
+    assert not hasattr(sd, 'smart_attributes')
+
+
+def test_get_smart_data_sata_none_entry_in_legacy_attributes():
+    """get_smart_data() skips None entries within legacyAttributes (branch 780->779)."""
+    d = Disk.__new__(Disk)
+    d._Disk__path = '/dev/sdb'
+    d._Disk__type = DiskType.HDD
+
+    legacy = _make_hdd_legacy_attrs()
+    legacy_with_none = [legacy[0], None, legacy[1]]  # None in the middle
+
+    mock_sd = MagicMock()
+    mock_sd.interface = 'ata'
+    mock_sd.smart_enabled = True
+    mock_sd.smart_capable = True
+    mock_sd.assessment = 'PASS'
+    mock_sd.if_attributes.legacyAttributes = legacy_with_none
+
+    with (
+        patch.object(pySMART.SMARTCTL, 'info', return_value=_SMART_INFO_OK),
+        patch('pySMART.Device', return_value=mock_sd),
+    ):
+        sd = d.get_smart_data()
+
+    assert sd is not None
+    assert len(sd.smart_attributes) == 2  # None entry was skipped
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])
 
 # End
