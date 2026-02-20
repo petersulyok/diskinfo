@@ -1,33 +1,67 @@
-# Development Environment
-This is short summary about how to setup the development environment
+# Development
+This is short summary about how to configure the development environment.
 
-## Development tools
+## Python environment
+This project is using `uv` for Python project management, see more details about [installation of `uv`](https://docs.astral.sh/uv/getting-started/installation/).
+`uv` can provide everything that multiple tools (e.g. `pip`, `pyenv`, `venv`) provide, but much faster. For example:
 
-1. Install [`pyenv`](https://github.com/pyenv/pyenv) and install your preferred Python version
-2. Install and activate virtual environment in your working directory
-```
-   python -m venv .venv
-   source .venv/bin/activate
-```
-3. Update `pip` and install required Python tools defined in `requirements-dev.txt`:
-```
-   python -m pip install --upgrade pip
-   pip install -r requirements-dev.txt
-```
-## Automatic creation of a new virtual Python environment
-The previous installation steps can be executed with the help of [this script](https://github.com/petersulyok/diskinfo/blob/main/bin/create_python_env.sh).
-The script can be used in the following way:
-```
-   $ ./bin/create_python_env.sh 3.10.13
-   $ source .venv-3.10.13/bin/activate
-   (.venv-3.10.13) $
-```
-Please note:
-   - Install `pyenv` before use of this script
-   - All dependencies will be installed (both for development and for documentation)
-   - The new virtual Python environment needs to be activated in the user shell too
+* install a Python run-time: `uv python install 3.13`
+* use a specific Python version: `uv python pin 3.13`
+* create virtual Python environment: `uv venv`
+* install all dependencies: `uv sync`
+* build package: `uv build`
 
-## Unit tests and linting
+`uv` has a lock file (`uv.lock`) storing all dependencies, this should be part of version control.
+
+Building a development environment from scratch (with Python 3.12) contains the following steps:
+```
+      pipx install uv
+      pipx ensurepath
+      git clone https://github.com/petersulyok/smfc.git
+      uv python install 3.12
+      uv python pin 3.12
+      uv sync
+      source .venv/bin/activate
+      uv build
+```
+Dependencies are listed in `pyproject.toml` file and the proper version numbers are handled by `uv`:
+```
+      dependencies = [
+          "pySMART",
+          "pyudev"
+      ]
+      
+      [dependency-groups]
+      dev = [
+          "build",
+          "coverage",
+          "mock",
+          "pytest",
+          "pytest-cov",
+          "pytest-mock",
+          "twine"
+      ]
+      lint = [
+          "ruff",
+          "pylint"
+      ]
+      doc = [
+          "alabaster",
+          "Sphinx",
+          "sphinx-rtd-theme",
+          "sphinx-copybutton"
+      ]
+      demo = [
+          "rich"
+      ]
+```
+## Linting
+The code can be checked with `pylint` and `ruff`:
+```
+	pylint src test
+    ruff check
+```
+## Unit tests
 The unit tests can be executed with `pytest`:
 ```
    pytest
@@ -41,35 +75,34 @@ The package is checked with `pylint` in the following way:
 ```
    pylint src/diskinfo/*.py test/*.py
 ```
-Its configuration options can be found `pyproject.toml` file. 
+Their configuration options can be found `pyproject.toml` file. 
 
 
 ## PyPI package
 The `setuptools` is used to create Python distribution package to PyPI. All package parameters are specified in 
 `pyproject.toml` file. The package can be created in `dist` directory:
 ```
-   python -m build
+   uv build
 ```
 The new package can be uploaded to PyPI with `twine`:
 ```
    twine upload --verbose dist/*
 ```
-NOTE: The distribution package will be built and published to PyPI automatically when a new github release created!
+NOTE: The distribution package will be built and published to PyPI automatically when a new GitHub release created!
 
-During the development this package can be installed locally:
+During the development this package can be installed locally with one of the following commands:
 ```
    pip install -e .
+   uv build
 ```
 
 ## Documentation
 This project is using `sphinx` to generate documentation on [readthedocs.io](https://readthedocs.io/). The
-github repository is connected to [readthedocs.io](https://readthedocs.io/) and when a new commit is
-created in github, it will trigger documentation update on  [readthedocs.io](https://readthedocs.io/) side.
-
-The documentation can be built and tested locally:
+GitHub repository is connected to [readthedocs.io](https://readthedocs.io/) and when a new commit is
+created in GitHub, it will trigger documentation update on  [readthedocs.io](https://readthedocs.io/) side.
+The required Python packages are managed by `uv`. The documentation can be built and tested locally:
 ```
    cd docs
-   pip install -r requirements-docs.txt
    make html
 ```
 The HTML documentation will be created in `./docs/build/html` folder.
@@ -82,12 +115,12 @@ the page ignoring browser cache (e.g. CTRL + SHIFT + R).
 The project implemented the following GitHub workflows:
 
 1. **Unit test and lint execution** (`test.yml`). A commit triggers this action:
-   - executes unit test on `ubuntu-latest` OS and on Python versions `3.8`, `3.9`, `3.10`, `3.11`, `3.12`
-   - executes `pylint`
+   - executes unit test on `ubuntu-latest` OS and on Python versions `3.10`, `3.11`, `3.12`, `3.13`, `3.14`
+   - executes `pylint` and `ruff`
    - generates coverage data and upload it to [codecov.io](https://codecov.io/)
 
 2. **Publish Python distribution packages to PyPI** (`publish.yml`). A published release triggers this action:
-   - build distribution package on Python `3.10`
+   - build distribution package on Python `3.14`
    - upload the new package to PyPI
 
 ## How to create a new release
