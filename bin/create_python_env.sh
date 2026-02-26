@@ -39,7 +39,15 @@ if ! command -v uv > /dev/null 2>&1; then
     fi
 
     # Make uv available in the current shell session.
-    . "$HOME/.local/bin/env" 2>/dev/null || export PATH="$HOME/.local/bin:$PATH"
+    case ":$PATH:" in
+        *":$HOME/.local/bin:"*) ;;
+        *)
+            export PATH="$HOME/.local/bin:$PATH"
+            if ! grep -q '\.local/bin' "$HOME/.profile" 2>/dev/null; then
+                printf '\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$HOME/.profile"
+            fi
+            ;;
+    esac
 
     if ! command -v uv > /dev/null 2>&1; then
         echo "Error: uv was installed but cannot be executed; check your PATH."
