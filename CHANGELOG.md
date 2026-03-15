@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.0.0] - 2026-03-15
 
 ### Added
-- Minor refactoring of a file system attributes with change of the public API:
+- Minor refactoring of a file system attributes with change of the public API (fixing issue #7):
    - Partition and file system attributes are separated and stored in different classes
    - New class created for filesystem attributes, called `FileSystem`
    - Partitions do not contain file system attributes anymore, but have a FileSystem class reference
