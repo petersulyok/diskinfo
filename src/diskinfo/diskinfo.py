@@ -42,7 +42,7 @@ class DiskInfo:
 
         # Iterate on block devices.
         c = Context()
-        for device in c.list_devices(subsystem='block', DEVTYPE='disk'):
+        for device in c.list_devices(subsystem="block", DEVTYPE="disk"):
             new_disk = Disk(_device=device)
             # Empty loop device is skipped
             if not (new_disk.is_loop() and new_disk.get_size() == 0):
@@ -81,7 +81,7 @@ class DiskInfo:
 
         # Check invalid filters.
         if included.intersection(excluded):
-            raise ValueError('Parameter error: same value on included and excluded list.')
+            raise ValueError("Parameter error: same value on included and excluded list.")
 
         # Count number of disks based on the specified filters.
         disk_number = 0
@@ -135,7 +135,7 @@ class DiskInfo:
 
         # Check invalid filters.
         if included.intersection(excluded):
-            raise ValueError('Parameter error: same value on included and excluded list.')
+            raise ValueError("Parameter error: same value on included and excluded list.")
 
         # Collect selected disks based on the specified filters.
         for disk in self.__disk_list:
@@ -160,8 +160,8 @@ class DiskInfo:
 
     def __repr__(self):
         """String representation of the DiskInfo class."""
-        return f'DiskInfo(number_of_disks={len(self.__disk_list)}, ' \
-               f'list_of_disks={self.__disk_list})'
+        return (f"DiskInfo(number_of_disks={len(self.__disk_list)}, "
+                f"list_of_disks={self.__disk_list})")
 
 
 # End

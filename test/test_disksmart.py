@@ -12,59 +12,33 @@ from diskinfo.disksmart import SmartAttribute, NvmeAttributes, DiskSmartData
 def test_smart_attribute_stores_all_fields():
     """SmartAttribute.__init__() stores all ten field values correctly."""
     attr = SmartAttribute(
-        5, 'Reallocated_Sector_Ct', 0x0033, 100, 100, 10, 'Pre-fail', 'Always', '-', 0
+        5, "Reallocated_Sector_Ct", 0x0033, 100, 100, 10, "Pre-fail", "Always", "-", 0
     )
     assert attr.id == 5
-    assert attr.attribute_name == 'Reallocated_Sector_Ct'
+    assert attr.attribute_name == "Reallocated_Sector_Ct"
     assert attr.flag == 0x0033
     assert attr.value == 100
     assert attr.worst == 100
     assert attr.thresh == 10
-    assert attr.type == 'Pre-fail'
-    assert attr.updated == 'Always'
-    assert attr.when_failed == '-'
+    assert attr.type == "Pre-fail"
+    assert attr.updated == "Always"
+    assert attr.when_failed == "-"
     assert attr.raw_value == 0
 
 
 @pytest.mark.parametrize(
-    '_id, name, flag, value, worst, thresh, _type, updated, when_failed, raw',
+    "_id, name, flag, value, worst, thresh, _type, updated, when_failed, raw",
     [
-        (9, 'Power_On_Hours', 0x0032, 95, 95, 0, 'Old_age', 'Always', '-', 23268),
-        (12, 'Power_Cycle_Count', 0x0032, 92, 92, 0, 'Old_age', 'Always', '-', 7103),
-        (177, 'Wear_Leveling_Count', 0x0013, 99, 99, 0, 'Pre-fail', 'Always', '-', 20),
-        (
-            241,
-            'Total_LBAs_Written',
-            0x0032,
-            99,
-            99,
-            0,
-            'Old_age',
-            'Always',
-            '-',
-            9_869_978_356,
-        ),
-        (
-            187,
-            'Uncorrectable_Error_Cnt',
-            0x0032,
-            100,
-            100,
-            0,
-            'Old_age',
-            'Always',
-            'now',
-            1,
-        ),
+        (9, "Power_On_Hours", 0x0032, 95, 95, 0, "Old_age", "Always", "-", 23268),
+        (12, "Power_Cycle_Count", 0x0032, 92, 92, 0, "Old_age", "Always", "-", 7103),
+        (177, "Wear_Leveling_Count", 0x0013, 99, 99, 0, "Pre-fail", "Always", "-", 20),
+        (241, "Total_LBAs_Written", 0x0032, 99, 99, 0, "Old_age", "Always", "-", 9_869_978_356),
+        (187, "Uncorrectable_Error_Cnt", 0x0032, 100, 100, 0, "Old_age", "Always", "now", 1),
     ],
 )
-def test_smart_attribute_parametrized(
-    _id, name, flag, value, worst, thresh, _type, updated, when_failed, raw
-):
+def test_smart_attribute_parametrized(_id, name, flag, value, worst, thresh, _type, updated, when_failed, raw):
     """SmartAttribute correctly stores every parametrised combination of values."""
-    attr = SmartAttribute(
-        _id, name, flag, value, worst, thresh, _type, updated, when_failed, raw
-    )
+    attr = SmartAttribute(_id, name, flag, value, worst, thresh, _type, updated, when_failed, raw)
     assert attr.id == _id
     assert attr.attribute_name == name
     assert attr.flag == flag
@@ -153,36 +127,10 @@ def _make_smart_data() -> DiskSmartData:
     """Return a DiskSmartData with four representative SMART attributes."""
     sd = DiskSmartData()
     sd.smart_attributes = [
-        SmartAttribute(
-            5,
-            'Reallocated_Sector_Ct',
-            0x0033,
-            100,
-            100,
-            10,
-            'Pre-fail',
-            'Always',
-            '-',
-            0,
-        ),
-        SmartAttribute(
-            9, 'Power_On_Hours', 0x0032, 95, 95, 0, 'Old_age', 'Always', '-', 23268
-        ),
-        SmartAttribute(
-            12, 'Power_Cycle_Count', 0x0032, 92, 92, 0, 'Old_age', 'Always', '-', 7103
-        ),
-        SmartAttribute(
-            190,
-            'Airflow_Temperature_Cel',
-            0x0032,
-            72,
-            45,
-            0,
-            'Old_age',
-            'Always',
-            '-',
-            28,
-        ),
+        SmartAttribute(5, "Reallocated_Sector_Ct", 0x0033, 100, 100, 10, "Pre-fail", "Always", "-", 0),
+        SmartAttribute(9, "Power_On_Hours", 0x0032, 95, 95, 0, "Old_age", "Always", "-", 23268),
+        SmartAttribute(12, "Power_Cycle_Count", 0x0032, 92, 92, 0, "Old_age", "Always", "-", 7103),
+        SmartAttribute(190, "Airflow_Temperature_Cel", 0x0032, 72, 45, 0, "Old_age", "Always", "-", 28),
     ]
     return sd
 
@@ -220,34 +168,97 @@ def test_find_by_id_empty_list_returns_minus_one():
 def test_find_by_name_exact_match_returns_index():
     """find_smart_attribute_by_name() returns the index on an exact name match."""
     sd = _make_smart_data()
-    assert sd.find_smart_attribute_by_name('Reallocated_Sector_Ct') == 0
-    assert sd.find_smart_attribute_by_name('Power_On_Hours') == 1
-    assert sd.find_smart_attribute_by_name('Power_Cycle_Count') == 2
-    assert sd.find_smart_attribute_by_name('Airflow_Temperature_Cel') == 3
+    assert sd.find_smart_attribute_by_name("Reallocated_Sector_Ct") == 0
+    assert sd.find_smart_attribute_by_name("Power_On_Hours") == 1
+    assert sd.find_smart_attribute_by_name("Power_Cycle_Count") == 2
+    assert sd.find_smart_attribute_by_name("Airflow_Temperature_Cel") == 3
 
 
 def test_find_by_name_substring_match():
     """find_smart_attribute_by_name() finds attributes by substring (in operator)."""
     sd = _make_smart_data()
-    assert sd.find_smart_attribute_by_name('Power_On') == 1  # prefix of Power_On_Hours
-    assert sd.find_smart_attribute_by_name('Cycle') == 2  # infix of Power_Cycle_Count
-    assert (
-        sd.find_smart_attribute_by_name('Airflow') == 3
-    )  # prefix of Airflow_Temperature_Cel
+    assert sd.find_smart_attribute_by_name("Power_On") == 1  # prefix of Power_On_Hours
+    assert sd.find_smart_attribute_by_name("Cycle") == 2  # infix of Power_Cycle_Count
+    assert sd.find_smart_attribute_by_name("Airflow") == 3  # prefix of Airflow_Temperature_Cel
 
 
 def test_find_by_name_not_found_returns_minus_one():
     """find_smart_attribute_by_name() returns -1 when no attribute name matches."""
     sd = _make_smart_data()
-    assert sd.find_smart_attribute_by_name('Nonexistent_Attr') == -1
-    assert sd.find_smart_attribute_by_name('') == 0  # empty string is in every string
+    assert sd.find_smart_attribute_by_name("Nonexistent_Attr") == -1
+    assert sd.find_smart_attribute_by_name("") == 0  # empty string is in every string
 
 
 def test_find_by_name_empty_list_returns_minus_one():
     """find_smart_attribute_by_name() returns -1 when smart_attributes is empty."""
     sd = DiskSmartData()
     sd.smart_attributes = []
-    assert sd.find_smart_attribute_by_name('Power_On_Hours') == -1
+    assert sd.find_smart_attribute_by_name("Power_On_Hours") == -1
+
+
+# ── __repr__ methods ─────────────────────────────────────────────────────────
+
+
+def test_smart_attribute_repr():
+    """repr() output contains all SmartAttribute field values."""
+    attr = SmartAttribute(
+        5, "Reallocated_Sector_Ct", 0x0033, 100, 100, 10, "Pre-fail", "Always", "-", 0
+    )
+    result = repr(attr)
+    assert "SmartAttribute(" in result
+    assert "Reallocated_Sector_Ct" in result
+    assert "Pre-fail" in result
+    assert "Always" in result
+
+
+def test_nvme_attributes_repr():
+    """repr() output contains all NvmeAttributes field values."""
+    na = NvmeAttributes(
+        critical_warning=0,
+        temperature=35,
+        available_spare=100,
+        available_spare_threshold=10,
+        percentage_used=2,
+        data_units_read=123_456,
+        data_units_written=654_321,
+        host_read_commands=9_999_999,
+        host_write_commands=7_777_777,
+        controller_busy_time=1_234,
+        power_cycles=42,
+        power_on_hours=1_565,
+        unsafe_shutdowns=5,
+        media_and_data_integrity_errors=0,
+        error_information_log_entries=0,
+        warning_composite_temperature_time=0,
+        critical_composite_temperature_time=0,
+    )
+    result = repr(na)
+    assert "NvmeAttributes(" in result
+    assert "temperature=35" in result
+    assert "power_on_hours=1565" in result
+    assert "power_cycles=42" in result
+
+
+def test_disk_smart_data_repr():
+    """repr() output contains DiskSmartData summary fields."""
+    sd = DiskSmartData()
+    sd.smart_enabled = True
+    sd.smart_capable = True
+    sd.healthy = True
+    sd.standby_mode = False
+    result = repr(sd)
+    assert "DiskSmartData(" in result
+    assert "smart_enabled=True" in result
+    assert "healthy=True" in result
+    assert "standby_mode=False" in result
+
+
+def test_disk_smart_data_repr_unset_fields():
+    """repr() handles DiskSmartData with unset optional fields gracefully."""
+    sd = DiskSmartData()
+    result = repr(sd)
+    assert "DiskSmartData(" in result
+    assert "smart_enabled=None" in result
 
 
 # End

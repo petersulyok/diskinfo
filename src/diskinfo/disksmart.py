@@ -75,6 +75,19 @@ class SmartAttribute:
         self.when_failed = when_failed
         self.raw_value = raw_value
 
+    def __repr__(self):
+        """String representation of the SmartAttribute class."""
+        return (f"SmartAttribute(id={self.id}, "
+                f"attribute_name={self.attribute_name}, "
+                f"flag={self.flag}, "
+                f"value={self.value}, "
+                f"worst={self.worst}, "
+                f"thresh={self.thresh}, "
+                f"type={self.type}, "
+                f"updated={self.updated}, "
+                f"when_failed={self.when_failed}, "
+                f"raw_value={self.raw_value})")
+
 
 class NvmeAttributes:
     """This class implements NVME attributes. Read more about NVME attributes:
@@ -171,6 +184,26 @@ class NvmeAttributes:
         self.warning_composite_temperature_time = warning_composite_temperature_time
         self.critical_composite_temperature_time = critical_composite_temperature_time
 
+    def __repr__(self):
+        """String representation of the NvmeAttributes class."""
+        return (f"NvmeAttributes(critical_warning={self.critical_warning}, "
+                f"temperature={self.temperature}, "
+                f"available_spare={self.available_spare}, "
+                f"available_spare_threshold={self.available_spare_threshold}, "
+                f"percentage_used={self.percentage_used}, "
+                f"data_units_read={self.data_units_read}, "
+                f"data_units_written={self.data_units_written}, "
+                f"host_read_commands={self.host_read_commands}, "
+                f"host_write_commands={self.host_write_commands}, "
+                f"controller_busy_time={self.controller_busy_time}, "
+                f"power_cycles={self.power_cycles}, "
+                f"power_on_hours={self.power_on_hours}, "
+                f"unsafe_shutdowns={self.unsafe_shutdowns}, "
+                f"media_and_data_integrity_errors={self.media_and_data_integrity_errors}, "
+                f"error_information_log_entries={self.error_information_log_entries}, "
+                f"warning_composite_temperature_time={self.warning_composite_temperature_time}, "
+                f"critical_composite_temperature_time={self.critical_composite_temperature_time})")
+
 
 class DiskSmartData:
     """This class presents all collected SMART data for a disk. This class is created by
@@ -264,6 +297,13 @@ class DiskSmartData:
             if name_val in item.attribute_name:
                 return index
         return -1
+
+    def __repr__(self):
+        """String representation of the DiskSmartData class."""
+        return (f"DiskSmartData(smart_enabled={getattr(self, 'smart_enabled', None)}, "
+                f"smart_capable={getattr(self, 'smart_capable', None)}, "
+                f"healthy={getattr(self, 'healthy', None)}, "
+                f"standby_mode={getattr(self, 'standby_mode', None)})")
 
 
 # End

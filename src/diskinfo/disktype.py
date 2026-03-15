@@ -15,13 +15,13 @@ class DiskType:
     """NVME disk type."""
     LOOP = 8
     """LOOP disk type."""
-    HDD_STR = 'HDD'
+    HDD_STR = "HDD"
     """Name of the hard disk type."""
-    SSD_STR = 'SSD'
+    SSD_STR = "SSD"
     """Name of the SSD disk type."""
-    NVME_STR = 'NVME'
+    NVME_STR = "NVME"
     """Name of the NVME disk type."""
-    LOOP_STR = 'LOOP'
+    LOOP_STR = "LOOP"
     """Name of the LOOP disk type."""
 
 

@@ -6,7 +6,7 @@ from typing import List, Tuple, Union
 from pyudev import Device
 
 
-def _read_file(path, encoding: str = 'utf-8') -> str:
+def _read_file(path, encoding: str = "utf-8") -> str:
     """Reads the text content of the specified file. The function will hide :py:obj:`IOError` and
     :py:obj:`FileNotFound` exceptions during the file operations. The result bytes will be read with the specified
     encoding and stripped.
@@ -23,14 +23,14 @@ def _read_file(path, encoding: str = 'utf-8') -> str:
 
             >>> from diskinfo import *
             >>> _read_file("/sys/block/sda/dev")
-            '8:0'
+            "8:0"
 
     """
-    result: str = ''
+    result: str = ""
     try:
-        with open(path, 'rt', encoding=encoding) as file:
+        with open(path, "rt", encoding=encoding) as file:
             result = file.read().strip()
-    except (IOError, FileNotFoundError):
+    except OSError:
         pass
     return result
 
@@ -67,9 +67,9 @@ def size_in_hrf(size_value: int, units: int = 0) -> Tuple[float, str]:
             11.7 TiB
 
     """
-    metric_units: List[str] = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB']
-    iec_units: List[str] = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB']
-    legacy_units: List[str] = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
+    metric_units: List[str] = ["B", "kB", "MB", "GB", "TB", "PB", "EB"]
+    iec_units: List[str] = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"]
+    legacy_units: List[str] = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
     divider: int  # Divider for the specified unit.
     hrf_size: float  # Result size
     hfr_unit: str  # Result unit
@@ -77,9 +77,9 @@ def size_in_hrf(size_value: int, units: int = 0) -> Tuple[float, str]:
 
     # Validate input parameters.
     if units not in (0, 1, 2):
-        raise ValueError(f'Invalid units parameter ({units}).')
+        raise ValueError(f"Invalid units parameter ({units}).")
     if size_value < 0:
-        raise ValueError(f'Invalid size value ({size_value}).')
+        raise ValueError(f"Invalid size value ({size_value}).")
 
     # Set up the proper divider.
     if units == 0:
@@ -143,8 +143,8 @@ def time_in_hrf(time: int, unit: int = 0, short_format: bool = False) -> Tuple[f
             6.6 yr
 
     """
-    time_long_units: List[str] = ['second', 'minute', 'hour', 'day', 'year']
-    time_short_units: List[str] = ['s', 'min', 'h', 'd', 'yr']
+    time_long_units: List[str] = ["second", "minute", "hour", "day", "year"]
+    time_short_units: List[str] = ["s", "min", "h", "d", "yr"]
     time_dividers: List[int] = [60, 60, 24, 365, 1]
 
     divider: int  # Divider for the specified unit.
@@ -154,10 +154,10 @@ def time_in_hrf(time: int, unit: int = 0, short_format: bool = False) -> Tuple[f
 
     # Validate input parameters.
     if time < 0:
-        raise ValueError(f'Invalid input time value ({time}).')
+        raise ValueError(f"Invalid input time value ({time}).")
     length = len(time_long_units) - 1
     if unit < 0 or unit > length:
-        raise ValueError(f'Invalid input unit ({unit}).')
+        raise ValueError(f"Invalid input unit ({unit}).")
 
     # Calculate the proper time.
     hrf_time = time
@@ -196,8 +196,8 @@ def _pyudev_getint(device: Device, key: str, default_value: int = None) -> Union
             >>> from diskinfo import *
             >>> from pyudev import *
             >>> c = Context()
-            >>> d = Devices.from_name(c, 'block', 'sda1')
-            >>> print(_pyudev_getint(d, 'ID_PART_ENTRY_SIZE'))
+            >>> d = Devices.from_name(c, "block", "sda1")
+            >>> print(_pyudev_getint(d, "ID_PART_ENTRY_SIZE"))
             20000409264
 
     """
@@ -233,18 +233,18 @@ def _pyudev_getenc(dev: Device, key: str) -> Union[str, None]:
             >>> from diskinfo import *
             >>> from pyudev import *
             >>> c = Context()
-            >>> d = Devices.from_name(c, 'block', 'sda')
-            >>> print(_pyudev_getenc(d, 'ID_MODEL'))
+            >>> d = Devices.from_name(c, "block", "sda")
+            >>> print(_pyudev_getenc(d, "ID_MODEL"))
             Samsung SSD 850 PRO 1TB
 
     """
     value: str
 
     # Read and decode the `_ENC` key.
-    value = dev.get(key + '_ENC')
+    value = dev.get(key + "_ENC")
     if value:
-        if '\\x20' in value:
-            return value.replace('\\x20', ' ').strip()
+        if "\\x20" in value:
+            return value.replace("\\x20", " ").strip()
     # Read the simple key.
     return dev.get(key)
 

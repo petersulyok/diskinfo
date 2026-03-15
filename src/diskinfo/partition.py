@@ -2,11 +2,10 @@
 #    Module `partition`: implements `Partition` class.
 #    Peter Sulyok (C) 2022-2026.
 #
-import subprocess
-import re
 from typing import List, Tuple
 from pyudev import Device
-from diskinfo.utils import size_in_hrf, _pyudev_getint, _pyudev_getenc
+from diskinfo.utils import size_in_hrf, _pyudev_getint
+from diskinfo.filesystem import FileSystem
 
 
 class Partition:
@@ -17,16 +16,11 @@ class Partition:
 
         1. The class creation and the get functions will not generate disk operations and will not change the
            power state of the hard disk.
-        2. The class uses the `df` command to find the mounting point and available space of a file system.
-        3. A list of partition classes are created with the creation of :class:`~diskinfo.Disk` class and later can
+        2. A list of partition classes are created with the creation of :class:`~diskinfo.Disk` class and later can
            be accessed with :meth:`~diskinfo.Disk.get_partition_list()` method.
 
     Args:
         _device (pyudev.Device): pyudev.Device class
-
-    Raises:
-        FileNotFoundError: `df` command not found
-        OSError: `df` command cannot be executed
 
 
     Example:
@@ -65,83 +59,52 @@ class Partition:
     __part_number: int          # Partition number
     __part_offset: int          # Partition first sector
     __part_size: int            # Partition size, in sectors
-    __fs_label: str             # File system label
-    __fs_uuid: str              # File system UUID
-    __fs_type: str              # File system type
-    __fs_version: str           # File system version
-    __fs_usage: str             # File system usage
-    __fs_free_size: int         # File system free/available 512-bytes blocks
-    __fs_mounting_point: str    # File system mounting folder
+    __filesystem: FileSystem    # File system information
 
     def __init__(self, _device: Device) -> None:
         # Save partition name, path and device id.
         self.__name = _device.sys_name
         self.__path = _device.device_node
-        self.__part_dev_id = _device.attributes.asstring('dev')
+        self.__part_dev_id = _device.attributes.asstring("dev")
 
         # Save several path elements for the partition.
         self.__byid_path = []
-        self.__bypath_path = ''
-        self.__bypartuuid_path = ''
-        self.__bypartlabel_path = ''
-        self.__bylabel_path = ''
-        self.__byuuid_path = ''
+        self.__bypath_path = ""
+        self.__bypartuuid_path = ""
+        self.__bypartlabel_path = ""
+        self.__bylabel_path = ""
+        self.__byuuid_path = ""
         for link in _device.device_links:
-            if link.startswith('/dev/disk/by-id'):
+            if link.startswith("/dev/disk/by-id"):
                 self.__byid_path.append(link)
                 continue
-            if link.startswith('/dev/disk/by-path'):
+            if link.startswith("/dev/disk/by-path"):
                 self.__bypath_path = link
                 continue
-            if link.startswith('/dev/disk/by-partuuid'):
+            if link.startswith("/dev/disk/by-partuuid"):
                 self.__bypartuuid_path = link
                 continue
-            if link.startswith('/dev/disk/by-partlabel'):
+            if link.startswith("/dev/disk/by-partlabel"):
                 self.__bypartlabel_path = link
                 continue
-            if link.startswith('/dev/disk/by-label'):
+            if link.startswith("/dev/disk/by-label"):
                 self.__bylabel_path = link
                 continue
-            if link.startswith('/dev/disk/by-uuid'):
+            if link.startswith("/dev/disk/by-uuid"):
                 self.__byuuid_path = link
                 continue
 
         # Save further partition attributes.
-        self.__part_scheme = _device.get('ID_PART_ENTRY_SCHEME')
-        self.__part_label = _device.get('ID_PART_ENTRY_NAME')
-        self.__part_uuid = _device.get('ID_PART_ENTRY_UUID')
-        self.__part_type = _device.get('ID_PART_ENTRY_TYPE')
-        self.__part_number = _pyudev_getint(_device, 'ID_PART_ENTRY_NUMBER', 0)
-        self.__part_offset = _pyudev_getint(_device, 'ID_PART_ENTRY_OFFSET', -1)
-        self.__part_size = _pyudev_getint(_device, 'ID_PART_ENTRY_SIZE', 0)
-        self.__fs_label = _pyudev_getenc(_device, 'ID_FS_LABEL')
-        self.__fs_uuid = _pyudev_getenc(_device, 'ID_FS_UUID')
-        self.__fs_type = _device.get('ID_FS_TYPE')
-        self.__fs_version = _device.get('ID_FS_VERSION')
-        self.__fs_usage = _device.get('ID_FS_USAGE')
-        self.__fs_mounting_point = ''
-        self.__fs_free_size = 0
+        self.__part_scheme = _device.get("ID_PART_ENTRY_SCHEME")
+        self.__part_label = _device.get("ID_PART_ENTRY_NAME")
+        self.__part_uuid = _device.get("ID_PART_ENTRY_UUID")
+        self.__part_type = _device.get("ID_PART_ENTRY_TYPE")
+        self.__part_number = _pyudev_getint(_device, "ID_PART_ENTRY_NUMBER", 0)
+        self.__part_offset = _pyudev_getint(_device, "ID_PART_ENTRY_OFFSET", -1)
+        self.__part_size = _pyudev_getint(_device, "ID_PART_ENTRY_SIZE", 0)
 
-        # Save partition free space and mounting point.
-        try:
-            # Execute `df` command.
-            result = subprocess.run(
-                ['df', '--block-size', '512', '--output=source,avail,target'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=False,
-                text=True,
-            )
-            # Parse output: find free size and mounting point
-            output_lines = result.stdout.splitlines()
-            for line in output_lines:
-                items = re.sub(r'\s+', ' ', line).split(maxsplit=2)
-                if items[0] == self.__path:
-                    self.__fs_free_size = int(items[1])
-                    self.__fs_mounting_point = items[2]
-                    break
-        except (FileNotFoundError, OSError, ValueError) as e:
-            raise e
+        # Delegate filesystem information to FileSystem.
+        self.__filesystem = FileSystem(_device)
 
     def get_name(self) -> str:
         """Returns the name of the partition (e.g. `sda1` or `nvme0n1p1`).
@@ -203,18 +166,18 @@ class Partition:
                 >>> for item in plist:
                 ...     print(item.get_name(), "-", item.get_byid_path())
                 ...
-                nvme0n1p1 - ['/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part1',
-                 '/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part1']
-                nvme0n1p2 - ['/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part2',
-                 '/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part2']
-                nvme0n1p3 - ['/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part3',
-                '/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part3']
-                nvme0n1p4 - ['/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part4',
-                 '/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part4']
-                nvme0n1p5 - ['/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part5',
-                 '/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part5']
-                nvme0n1p6 - ['/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part6',
-                 '/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part6']
+                nvme0n1p1 - ["/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part1",
+                 "/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part1"]
+                nvme0n1p2 - ["/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part2",
+                 "/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part2"]
+                nvme0n1p3 - ["/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part3",
+                "/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part3"]
+                nvme0n1p4 - ["/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part4",
+                 "/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part4"]
+                nvme0n1p5 - ["/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part5",
+                 "/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part5"]
+                nvme0n1p6 - ["/dev/disk/by-id/nvme-WDS100T1X0E-00AFY0_2140GF374501-part6",
+                 "/dev/disk/by-id/nvme-eui.e8238fa6bf540001001b555a49bfc681-part6"]
 
         """
         return self.__byid_path
@@ -559,201 +522,28 @@ class Partition:
         """
         return size_in_hrf(self.__part_size * 512, units)
 
-    def get_fs_label(self) -> str:
-        """Returns the label of the file system. The result could be empty if the file system does not have a label.
-
-        Example:
-            An example about use of the function::
-
-                >>> from diskinfo import Disk
-                >>> disk = Disk("nvme0n1")
-                >>> plist = disk.get_partition_list()
-                >>> for item in plist:
-                ...     print(item.get_name(), "-", item.get_fs_label())
-                ...
-                nvme0n1p1 - SYSTEM
-                nvme0n1p2 -
-                nvme0n1p3 - Windows
-                nvme0n1p4 - Recovery tools
-                nvme0n1p5 - Debian
-                nvme0n1p6 - Arch Linux
-
-        """
-        return self.__fs_label
-
-    def get_fs_uuid(self) -> str:
-        """Returns the UUID of the file system. The result could be empty if the partition does not contain a
-        file system.
-
-        Example:
-            An example about use of the function::
-
-                >>> from diskinfo import Disk
-                >>> disk = Disk("nvme0n1")
-                >>> plist = disk.get_partition_list()
-                >>> for item in plist:
-                ...     print(item.get_name(), "-", item.get_fs_uuid())
-                ...
-                nvme0n1p1 - 6432-935A
-                nvme0n1p2 -
-                nvme0n1p3 - 0CA833E3A833CA4A
-                nvme0n1p4 - 784034274033EB10
-                nvme0n1p5 - d54d33ea-d892-44d9-ae24-e3c6216d7a32
-                nvme0n1p6 - a0b1c6e7-2541-4e89-93eb-898f6d544a1e
-
-        """
-        return self.__fs_uuid
-
-    def get_fs_type(self) -> str:
-        """Returns the type of the file system. The result could be empty if the partition does not contain a
-        file system.
-
-        Example:
-            An example about use of the function::
-
-                >>> from diskinfo import Disk
-                >>> disk = Disk("nvme0n1")
-                >>> plist = disk.get_partition_list()
-                >>> for item in plist:
-                ...     print(item.get_name(), "-", item.get_fs_type())
-                ...
-                nvme0n1p1 - vfat
-                nvme0n1p2 -
-                nvme0n1p3 - ntfs
-                nvme0n1p4 - ntfs
-                nvme0n1p5 - ext4
-                nvme0n1p6 - ext4
-
-        """
-        return self.__fs_type
-
-    def get_fs_version(self) -> str:
-        """Returns the version of the file system. The result could be empty if the partition does not contain a
-        file system or does not have a version.
-
-        Example:
-            An example about use of the function::
-
-                >>> from diskinfo import Disk
-                >>> disk = Disk("nvme0n1")
-                >>> plist = disk.get_partition_list()
-                >>> for item in plist:
-                ...     print(item.get_name(), "-", item.get_fs_version())
-                ...
-                nvme0n1p1 - FAT32
-                nvme0n1p2 -
-                nvme0n1p3 -
-                nvme0n1p4 -
-                nvme0n1p5 - 1.0
-                nvme0n1p6 - 1.0
-
-        """
-        return self.__fs_version
-
-    def get_fs_usage(self) -> str:
-        """Returns the usage of the file system. The result could be empty if the partition does not contain a
-        file system. Valid values are `filesystem` or `other` for special partitions (e.g. for a swap partition).
-
-        Example:
-            An example about use of the function::
-
-                >>> from diskinfo import Disk
-                >>> disk = Disk("nvme0n1")
-                >>> plist = disk.get_partition_list()
-                >>> for item in plist:
-                ...     print(item.get_name(), "-", item.get_fs_usage())
-                ...
-                nvme0n1p1 - filesystem
-                nvme0n1p2 -
-                nvme0n1p3 - filesystem
-                nvme0n1p4 - filesystem
-                nvme0n1p5 - filesystem
-                nvme0n1p6 - filesystem
-
-        """
-        return self.__fs_usage
-
-    def get_fs_free_size(self) -> int:
-        """Returns the free size of the file system in 512-byte blocks. The result could be 0 if the partition does not
-        contain a file system.
-
-        Example:
-            An example about use of the function::
-
-                >>> from diskinfo import Disk
-                >>> disk = Disk("nvme0n1")
-                >>> plist = disk.get_partition_list()
-                >>> for item in plist:
-                ...     print(item.get_name(), "-", item.get_fs_free_size())
-                ...
-                nvme0n1p1 - 971968
-                nvme0n1p2 - 0
-                nvme0n1p3 - 214591944
-                nvme0n1p4 - 0
-                nvme0n1p5 - 141095712
-                nvme0n1p6 - 114470872
-
-        """
-        return self.__fs_free_size
-
-    def get_fs_free_size_in_hrf(self, units: int = 0) -> Tuple[float, str]:
-        """Returns the free size of the file system in human-readable form. The result could be 0 if the partition
-        does not contain a file system.
-
-        Args:
-            units (int): unit system will be used for the calculation and in the result:
-
-                            - 0 metric units (default)
-                            - 1 IEC units
-                            - 2 legacy units
-
-                         Read more about `units here <https://en.wikipedia.org/wiki/Byte>`_.
+    def get_filesystem(self) -> FileSystem:
+        """Returns the :class:`~diskinfo.FileSystem` object associated with this partition.
 
         Returns:
-            Tuple[float, str]: size in human-readable form, proper unit
-
-        Example:
-            An example about use of the function::
-
-                >>> from diskinfo import Disk
-                >>> disk = Disk("nvme0n1")
-                >>> plist = disk.get_partition_list()
-                >>> for item in plist:
-                ...     s, u = size_in_hrf(item.get_fs_free_size()*512)
-                ...     print(item.get_name(), "-", f"{s:.1f} {u}")
-                ...
-                nvme0n1p1 - 497.6 MB
-                nvme0n1p2 - 0.0 B
-                nvme0n1p3 - 109.9 GB
-                nvme0n1p4 - 0.0 B
-                nvme0n1p5 - 72.2 GB
-                nvme0n1p6 - 58.6 GB
+            FileSystem: filesystem information for this partition
 
         """
-        return size_in_hrf(self.__fs_free_size * 512, units)
+        return self.__filesystem
 
-    def get_fs_mounting_point(self) -> str:
-        """Returns the mounting point of the file system. The result could be empty if the partition does not
-        contain any file system, or it is not mounted.
-
-        Example:
-            An example about use of the function::
-
-                >>> from diskinfo import Disk
-                >>> disk = Disk("nvme0n1")
-                >>> plist = disk.get_partition_list()
-                >>> for item in plist:
-                ...     print(item.get_name(), "-", item.get_fs_mounting_point())
-                ...
-                nvme0n1p1 - /boot/efi
-                nvme0n1p2 -
-                nvme0n1p3 - /mnt/win11
-                nvme0n1p4 -
-                nvme0n1p5 - /
-                nvme0n1p6 - /mnt/arch
-
-        """
-        return self.__fs_mounting_point
+    def __repr__(self):
+        """String representation of the Partition class."""
+        return (f"Partition(name={self.__name}, "
+                f"path={self.__path}, "
+                f"device_id={self.__part_dev_id}, "
+                f"part_scheme={self.__part_scheme}, "
+                f"part_label={self.__part_label}, "
+                f"part_uuid={self.__part_uuid}, "
+                f"part_type={self.__part_type}, "
+                f"part_number={self.__part_number}, "
+                f"part_offset={self.__part_offset}, "
+                f"part_size={self.__part_size}, "
+                f"filesystem={self.__filesystem})")
 
 
 # End

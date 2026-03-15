@@ -35,8 +35,6 @@ The library has the following run-time requirements:
             *   - NVME
                 - none
 
-    - for reading disk partition information with :meth:`~diskinfo.Disk.get_partition_list()` method, the `df` command
-      is required.
     - optionally, for the demo `Rich <https://pypi.org/project/rich/>`_ Python library is required
 
 
@@ -178,6 +176,22 @@ The :class:`~diskinfo.Disk` class contains the following disk attributes:
         - UUID of the partition table on disk
         -
 
+A disk may contain a raw file system (i.e. a file system created directly on the block device without a partition
+table). This can be checked with :meth:`~diskinfo.Disk.has_filesystem()` and the file system information can be
+accessed with :meth:`~diskinfo.Disk.get_filesystem()`::
+
+    >>> from diskinfo import Disk
+    >>> d = Disk("sdb")
+    >>> if d.has_filesystem():
+    ...     fs = d.get_filesystem()
+    ...     print(f"Type: {fs.get_fs_type()}, mounted on: {fs.get_fs_mounting_point()}")
+    ... else:
+    ...     print(f"Partition table: {d.get_partition_table_type()}")
+    ...
+    Type: ext4, mounted on: /mnt/data
+
+See :class:`~diskinfo.FileSystem` class for the full list of available file system attributes.
+
 Use case 2: explore disks
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 Disks can be explored with the creation of the :class:`~diskinfo.DiskInfo` class. During this process all disks will be
@@ -316,8 +330,8 @@ See the detailed list of the NVME attributes in :class:`~diskinfo.NvmeAttributes
 Please note that the :meth:`~diskinfo.Disk.get_smart_data()` method relies on `smartctl` command.
 It means that the caller needs to have special access rights (i.e. `sudo` or `root`).
 
-Use case 6: read partition list
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use case 6: read partition list and file system information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 After having a :class:`~diskinfo.Disk` class instance, the partition list can be read with the help of
 :meth:`~diskinfo.Disk.get_partition_list()` method.
 
@@ -397,6 +411,45 @@ The :class:`~diskinfo.Partition` class contains the following partition attribut
     *   - Partition size
         - Partition size in 512-byte blocks
         -
+
+File system information is stored in a separate :class:`~diskinfo.FileSystem` class. Each :class:`~diskinfo.Partition`
+has an associated :class:`~diskinfo.FileSystem` instance that can be accessed with the
+:meth:`~diskinfo.Partition.get_filesystem()` method::
+
+    >>> from diskinfo import Disk
+    >>> disk = Disk("nvme0n1")
+    >>> plist = disk.get_partition_list()
+    >>> for item in plist:
+    ...     fs = item.get_filesystem()
+    ...     print(f"{item.get_name()}: {fs.get_fs_type()} mounted on {fs.get_fs_mounting_point()}")
+    ...
+    nvme0n1p1: vfat mounted on /boot/efi
+    nvme0n1p2: ntfs mounted on
+    nvme0n1p3: ntfs mounted on
+    nvme0n1p4: ntfs mounted on
+    nvme0n1p5: ext4 mounted on /
+    nvme0n1p6: ext4 mounted on /home
+
+A :class:`~diskinfo.Disk` can also have a raw file system (i.e. a file system created directly on the block device
+without a partition table). This can be checked with :meth:`~diskinfo.Disk.has_filesystem()` and accessed with
+:meth:`~diskinfo.Disk.get_filesystem()`::
+
+    >>> from diskinfo import Disk
+    >>> d = Disk("sdb")
+    >>> if d.has_filesystem():
+    ...     fs = d.get_filesystem()
+    ...     print(fs.get_fs_type())
+    ...
+    ext4
+
+The :class:`~diskinfo.FileSystem` class contains the following attributes:
+
+.. list-table::
+    :header-rows: 1
+
+    *   - Attribute
+        - Description
+        - Sample value
     *   - File system label
         - File system label
         -
@@ -418,3 +471,4 @@ The :class:`~diskinfo.Partition` class contains the following partition attribut
     *   - File system mounting point
         - File system mounting point
         - `/` or `/home`
+
