@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [4.0.0] - 2026-03-15
+
+### Added
+- Minor refactoring of a file system attributes with change of the public API:
+   - Partition and file system attributes are separated and stored in different classes
+   - New class created for filesystem attributes, called `FileSystem`
+   - Partitions do not contain file system attributes anymore, but have a FileSystem class reference
+   - Disk could also have a raw file system (without any partition) and could also contain a FileSystem class reference
+   - Demo program updated with the support of raw file systems
+   - A new Class diagram added to API reference
+   - All unit-tests updated
+
+
 ## [3.2.0] - 2026-02-20
 
 ### Added
