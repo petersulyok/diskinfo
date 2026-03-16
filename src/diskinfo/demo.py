@@ -208,6 +208,8 @@ def partition_demo(name: str):
         fs_table.add_row("version", f"[bold gray54]{fs.get_fs_version()}[/]")
         fs_table.add_row("usage", f"[bold blue]{fs.get_fs_usage()}[/]")
         fs_table.add_row("mounting point", f"[bold green]{fs.get_fs_mounting_point()}[/]")
+        s, u = fs.get_fs_size_in_hrf()
+        fs_table.add_row("size", f"[bold blue]{s:.1f} {u}[/]")
         s, u = fs.get_fs_free_size_in_hrf()
         fs_table.add_row("free size", f"[bold blue]{s:.1f} {u}[/]")
         fs_panel = Panel(f"[markdown.strong]Raw filesystem on disk[/] [bold green]{name}[/]", box=box.MINIMAL,
