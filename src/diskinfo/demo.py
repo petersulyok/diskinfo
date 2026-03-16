@@ -252,7 +252,7 @@ def usage():
         "\tpython -m diskinfo.demo            - displays all disks\n"
         "\tpython -m diskinfo.demo sda        - displays sda disk attributes\n"
         "\tpython -m diskinfo.demo sda -s     - displays sda SMART attributes\n"
-        "\tpython -m diskinfo.demo sda -p     - displays sda partitions\n"
+        "\tpython -m diskinfo.demo sda -p     - displays sda partitions or raw file system\n"
     )
 
 
