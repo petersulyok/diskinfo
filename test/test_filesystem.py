@@ -78,6 +78,7 @@ def test_filesystem_stores_all_attributes():
     assert fs.get_fs_type() == "ext4"
     assert fs.get_fs_version() == "1.0"
     assert fs.get_fs_usage() == "filesystem"
+    assert fs.get_fs_size() == 1000000
     assert fs.get_fs_free_size() == 1000
     assert fs.get_fs_mounting_point() == "/mnt/data"
 
@@ -86,12 +87,13 @@ def test_filesystem_stores_all_attributes():
 
 
 def test_filesystem_unmounted_leaves_defaults():
-    """FileSystem leaves free_size=0 and mount_point='' when device is not mounted."""
+    """FileSystem leaves size=0, free_size=0 and mount_point='' when device is not mounted."""
     dev = _make_fs_device(path="/dev/sdb")
     m = _proc_mounts(("/dev/sda1", "/"))  # sda1, not sdb
     with patch("builtins.open", m):
         fs = FileSystem(dev)
 
+    assert fs.get_fs_size() == 0
     assert fs.get_fs_free_size() == 0
     assert fs.get_fs_mounting_point() == ""
 
@@ -103,6 +105,7 @@ def test_filesystem_empty_proc_mounts_leaves_defaults():
     with patch("builtins.open", m):
         fs = FileSystem(dev)
 
+    assert fs.get_fs_size() == 0
     assert fs.get_fs_free_size() == 0
     assert fs.get_fs_mounting_point() == ""
 
@@ -143,6 +146,18 @@ def test_filesystem_statvfs_computes_free_size_correctly():
     assert fs.get_fs_free_size() == 8192
 
 
+def test_filesystem_statvfs_computes_size_correctly():
+    """FileSystem correctly computes total size from statvfs f_blocks and f_frsize."""
+    dev = _make_fs_device(path="/dev/sdb")
+    # f_blocks=1000000, f_frsize=4096 → (1000000 * 4096) / 512 = 8_000_000 blocks of 512 bytes
+    m = _proc_mounts(("/dev/sdb", "/mnt"))
+    with (patch("builtins.open", m),
+          patch("os.statvfs", return_value=_statvfs_result(f_bavail=1024, f_frsize=4096))):
+        fs = FileSystem(dev)
+
+    assert fs.get_fs_size() == 8_000_000
+
+
 # ── FileSystem.__init__ – error handling ─────────────────────────────────
 
 
@@ -155,6 +170,7 @@ def test_filesystem_statvfs_oserror_leaves_free_size_zero():
         fs = FileSystem(dev)
 
     assert fs.get_fs_mounting_point() == "/mnt"
+    assert fs.get_fs_size() == 0
     assert fs.get_fs_free_size() == 0
 
 
@@ -165,6 +181,7 @@ def test_filesystem_proc_mounts_oserror_leaves_defaults():
         fs = FileSystem(dev)
 
     assert fs.get_fs_mounting_point() == ""
+    assert fs.get_fs_size() == 0
     assert fs.get_fs_free_size() == 0
 
 
@@ -198,6 +215,32 @@ def test_filesystem_get_fs_free_size_in_hrf(units, exp_unit):
         )
 
 
+@pytest.mark.parametrize(
+    "units, exp_unit",
+    [
+        (0, "GB"),
+        (1, "GiB"),
+        (2, "GB"),
+    ],
+)
+def test_filesystem_get_fs_size_in_hrf(units, exp_unit):
+    """get_fs_size_in_hrf() returns total size in the requested unit system."""
+    dev = _make_fs_device(path="/dev/sdb")
+    # f_blocks=1000000, f_frsize=4096 → total = 4_096_000_000 bytes ≈ 4.1 GB
+    m = _proc_mounts(("/dev/sdb", "/mnt"))
+    with (patch("builtins.open", m),
+          patch("os.statvfs", return_value=_statvfs_result(f_bavail=1024, f_frsize=4096))):
+        fs = FileSystem(dev)
+
+    value, unit = fs.get_fs_size_in_hrf(units=units)
+    assert unit == exp_unit
+    expected_bytes = 1_000_000 * 4096
+    if units == 0:
+        assert value == pytest.approx(expected_bytes / (1_000**3))
+    else:
+        assert value == pytest.approx(expected_bytes / (1_024**3))
+
+
 # ── FileSystem – __repr__ ────────────────────────────────────────────────
 
 
@@ -223,6 +266,7 @@ def test_filesystem_repr():
     assert "ext4" in result
     assert "1.0" in result
     assert "filesystem" in result
+    assert "fs_size=" in result
     assert "/mnt" in result
 
 

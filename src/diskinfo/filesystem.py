@@ -32,6 +32,7 @@ class FileSystem:
     __fs_type: str              # File system type
     __fs_version: str           # File system version
     __fs_usage: str             # File system usage
+    __fs_size: int              # File system total size in 512-byte blocks
     __fs_free_size: int         # File system free/available 512-bytes blocks
     __fs_mounting_point: str    # File system mounting folder
 
@@ -43,6 +44,7 @@ class FileSystem:
         self.__fs_version = _device.get("ID_FS_VERSION")
         self.__fs_usage = _device.get("ID_FS_USAGE")
         self.__fs_mounting_point = ""
+        self.__fs_size = 0
         self.__fs_free_size = 0
 
         # Find mounting point from /proc/mounts and free space via os.statvfs().
@@ -57,6 +59,7 @@ class FileSystem:
                         self.__fs_mounting_point = parts[1]
                         try:
                             st = os.statvfs(parts[1])
+                            self.__fs_size = (st.f_blocks * st.f_frsize) // 512
                             self.__fs_free_size = (st.f_bavail * st.f_frsize) // 512
                         except OSError:
                             # statvfs can fail if the mount point becomes stale or inaccessible
@@ -100,6 +103,31 @@ class FileSystem:
         """
         return self.__fs_usage
 
+    def get_fs_size(self) -> int:
+        """Returns the total size of the file system in 512-byte blocks. The result could be 0 if the device does not
+        contain a file system or if the file system is not mounted.
+        """
+        return self.__fs_size
+
+    def get_fs_size_in_hrf(self, units: int = 0) -> Tuple[float, str]:
+        """Returns the total size of the file system in human-readable form. The result could be 0 if the device
+        does not contain a file system or if the file system is not mounted.
+
+        Args:
+            units (int): unit system will be used for the calculation and in the result:
+
+                            - 0 metric units (default)
+                            - 1 IEC units
+                            - 2 legacy units
+
+                         Read more about `units here <https://en.wikipedia.org/wiki/Byte>`_.
+
+        Returns:
+            Tuple[float, str]: size in human-readable form, proper unit
+
+        """
+        return size_in_hrf(self.__fs_size * 512, units)
+
     def get_fs_free_size(self) -> int:
         """Returns the free size of the file system in 512-byte blocks. The result could be 0 if the device does not
         contain a file system or if the file system is not mounted.
@@ -138,6 +166,7 @@ class FileSystem:
                 f"fs_type={self.__fs_type}, "
                 f"fs_version={self.__fs_version}, "
                 f"fs_usage={self.__fs_usage}, "
+                f"fs_size={self.__fs_size}, "
                 f"fs_free_size={self.__fs_free_size}, "
                 f"fs_mounting_point={self.__fs_mounting_point})")
 
