@@ -8,6 +8,7 @@ This Python library can assist in collecting disk information on Linux. In more 
     - read disk temperature
     - read SMART attributes of a disk
     - read partition list of a disk
+    - read raw file system information of a disk
 
 
 Installation
@@ -101,7 +102,7 @@ There are similar persistent constructions for disk partitions, too.
 
 How to use
 ----------
-The following chapters will present the six use cases listed in the :ref:`Introduction` chapter above.
+The following chapters will present the seven use cases listed in the :ref:`Introduction` chapter above.
 
 Use case 1: collect information about a disk
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -177,22 +178,6 @@ The :class:`~diskinfo.Disk` class contains the following disk attributes:
     *   - partition table uuid
         - UUID of the partition table on disk
         -
-
-A disk may contain a raw file system (i.e. a file system created directly on the block device without a partition
-table). This can be checked with :meth:`~diskinfo.Disk.has_filesystem()` and the file system information can be
-accessed with :meth:`~diskinfo.Disk.get_filesystem()`::
-
-    >>> from diskinfo import Disk
-    >>> d = Disk("sdb")
-    >>> if d.has_filesystem():
-    ...     fs = d.get_filesystem()
-    ...     print(f"Type: {fs.get_fs_type()}, mounted on: {fs.get_fs_mounting_point()}")
-    ... else:
-    ...     print(f"Partition table: {d.get_partition_table_type()}")
-    ...
-    Type: ext4, mounted on: /mnt/data
-
-See :class:`~diskinfo.FileSystem` class for the full list of available file system attributes.
 
 Use case 2: explore disks
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -432,18 +417,6 @@ has an associated :class:`~diskinfo.FileSystem` instance that can be accessed wi
     nvme0n1p5: ext4 mounted on /
     nvme0n1p6: ext4 mounted on /home
 
-A :class:`~diskinfo.Disk` can also have a raw file system (i.e. a file system created directly on the block device
-without a partition table). This can be checked with :meth:`~diskinfo.Disk.has_filesystem()` and accessed with
-:meth:`~diskinfo.Disk.get_filesystem()`::
-
-    >>> from diskinfo import Disk
-    >>> d = Disk("sdb")
-    >>> if d.has_filesystem():
-    ...     fs = d.get_filesystem()
-    ...     print(fs.get_fs_type())
-    ...
-    ext4
-
 The :class:`~diskinfo.FileSystem` class contains the following attributes:
 
 .. list-table::
@@ -473,4 +446,22 @@ The :class:`~diskinfo.FileSystem` class contains the following attributes:
     *   - File system mounting point
         - File system mounting point
         - `/` or `/home`
+
+Use case 7: read raw file system information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+A disk may contain a raw file system (i.e. a file system created directly on the block device without a partition
+table). This can be checked with :meth:`~diskinfo.Disk.has_filesystem()` and the file system information can be
+accessed with :meth:`~diskinfo.Disk.get_filesystem()`::
+
+    >>> from diskinfo import Disk
+    >>> d = Disk("sdb")
+    >>> if d.has_filesystem():
+    ...     fs = d.get_filesystem()
+    ...     print(f"Type: {fs.get_fs_type()}, mounted on: {fs.get_fs_mounting_point()}")
+    ... else:
+    ...     print(f"Partition table: {d.get_partition_table_type()}")
+    ...
+    Type: ext4, mounted on: /mnt/data
+
+See :class:`~diskinfo.FileSystem` class for the full list of available file system attributes.
 

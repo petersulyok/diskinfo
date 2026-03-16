@@ -13,7 +13,8 @@ Disk information Python library can assist in collecting disk information on Lin
 - translate between traditional and persistent disk names
 - read current disk temperature
 - read SMART data of a disk
-- read partition list of a disk 
+- read partition list of a disk
+- read raw file system information of a disk
 
 Installation
 ------------
