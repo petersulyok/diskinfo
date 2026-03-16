@@ -70,6 +70,8 @@ The fourth demo screen will display the list of partitions on a specified disk::
 
 .. image:: https://github.com/petersulyok/diskinfo/raw/main/docs/diskinfo_rich_demo_3.png
 
+When applicable, the raw filesystem information is displayed instead of the partition list.
+
 
 Persistent disk names
 ---------------------
