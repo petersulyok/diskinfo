@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.1.0] - 2026-03-16
 
 ### Added
-- New methods added to `FileSystem` class: `get_fs_size()` and `get_fs_size_in_hrf()` for total filesystem size
+- New methods added to `FileSystem` class: `get_fs_size()` and `get_fs_size_in_hrf()` for total filesystem size.
+- Documentation and tests are updated.
+- Demo updated to show this new feature for raw file systems.
 
 
 ## [4.0.1] - 2026-03-15
