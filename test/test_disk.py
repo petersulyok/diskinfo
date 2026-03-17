@@ -5,7 +5,6 @@
 # pylint: disable=redefined-outer-name
 import os
 import uuid
-import random
 import tempfile
 import contextlib
 from typing import List
@@ -456,7 +455,8 @@ def test_get_temperature_reads_hwmon_sysfs_file():
 
 
 @pytest.mark.parametrize("fixture_name", ["ssd_device", "hdd_device", "nvme_device"])
-def test_get_temperature_via_pysmart(fixture_name, request):
+@pytest.mark.parametrize("sudo", [True, False])
+def test_get_temperature_via_pysmart(fixture_name, sudo, request):
     """get_temperature() falls back to pySMART when hwmon path is absent."""
     mock_dev = request.getfixturevalue(fixture_name)
     with pyudev_patched(mock_dev):
@@ -468,7 +468,7 @@ def test_get_temperature_via_pysmart(fixture_name, request):
     with (patch.object(Device, "__init__", return_value=None),
           patch("pySMART.Device.temperature", new_callable=PropertyMock) as mock_temp):
         mock_temp.return_value = 38
-        temp = d.get_temperature(sudo=random.choice([True, False]))
+        temp = d.get_temperature(sudo=sudo)
     assert temp == 38.0
 
 
