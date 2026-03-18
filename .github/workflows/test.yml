@@ -12,6 +12,8 @@ jobs:
   test:
 
     runs-on: ${{ matrix.os }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     strategy:
       matrix:
         os: ["ubuntu-latest"]
@@ -43,7 +45,7 @@ jobs:
         run: uv run pytest --cov=src/diskinfo --cov-report=xml
       - name: Upload coverage to Codecov
         if: "matrix.coverage"
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           files: ./coverage.xml
