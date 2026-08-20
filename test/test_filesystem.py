@@ -5,7 +5,7 @@
 import os
 from unittest.mock import MagicMock, patch, mock_open
 import pytest
-from diskinfo.filesystem import FileSystem
+from diskinfo.filesystem import FileSystem, _unmangle_path
 
 
 # ── mock helpers ──────────────────────────────────────────────────────────────
@@ -268,6 +268,73 @@ def test_filesystem_repr():
     assert "filesystem" in result
     assert "fs_size=" in result
     assert "/mnt" in result
+
+
+# ── _unmangle_path ────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "mangled, expected",
+    [
+        ("/mnt/data", "/mnt/data"),
+        ("", ""),
+        ("/run/media/user/Laptop\\040Files", "/run/media/user/Laptop Files"),
+        ("/mnt/tab\\011here", "/mnt/tab\there"),
+        ("/mnt/new\\012line", "/mnt/new\nline"),
+        ("/mnt/back\\134slash", "/mnt/back\\slash"),
+        ("/mnt/a\\040b\\040c", "/mnt/a b c"),
+        ("/mnt/mixed\\040and\\134escaped", "/mnt/mixed and\\escaped"),
+    ],
+)
+def test_unmangle_path_decodes_octal_escapes(mangled, expected):
+    """_unmangle_path() decodes the octal escape sequences of the kernel mount table."""
+    assert _unmangle_path(mangled) == expected
+
+
+def test_unmangle_path_does_not_double_decode():
+    """_unmangle_path() decodes an escaped backslash without decoding the text that follows it."""
+    # `\134040` is an escaped backslash followed by the literal text `040`.
+    assert _unmangle_path("/mnt/x\\134040") == "/mnt/x\\040"
+
+
+# ── FileSystem.__init__ – mangled paths in /proc/mounts ───────────────────────
+
+
+def test_filesystem_unmangles_mount_point_with_space():
+    """FileSystem decodes \\040 in the mounting point and calls statvfs() with the decoded path."""
+    dev = _make_fs_device(path="/dev/sdc4")
+    m = _proc_mounts(("/dev/sdc4", "/run/media/pchauhan/Laptop\\040Files"))
+    with (patch("builtins.open", m),
+          patch("os.statvfs", return_value=_statvfs_result(f_bavail=2048, f_frsize=512)) as mock_statvfs):
+        fs = FileSystem(dev)
+
+    assert fs.get_fs_mounting_point() == "/run/media/pchauhan/Laptop Files"
+    mock_statvfs.assert_called_once_with("/run/media/pchauhan/Laptop Files")
+    assert fs.get_fs_free_size() == 2048
+
+
+def test_filesystem_unmangles_mount_point_with_tab_and_backslash():
+    """FileSystem decodes the tab and backslash escape sequences in the mounting point."""
+    dev = _make_fs_device(path="/dev/sdb1")
+    m = _proc_mounts(("/dev/sdb1", "/mnt/a\\011b\\134c"))
+    with (patch("builtins.open", m),
+          patch("os.statvfs", return_value=_statvfs_result(f_bavail=100, f_frsize=512)) as mock_statvfs):
+        fs = FileSystem(dev)
+
+    assert fs.get_fs_mounting_point() == "/mnt/a\tb\\c"
+    mock_statvfs.assert_called_once_with("/mnt/a\tb\\c")
+
+
+def test_filesystem_unmangles_device_node():
+    """FileSystem matches a device node that is escaped in /proc/mounts."""
+    dev = _make_fs_device(path="/dev/disk/by-label/My Disk")
+    m = _proc_mounts(("/dev/disk/by-label/My\\040Disk", "/mnt/data"))
+    with (patch("builtins.open", m),
+          patch("os.statvfs", return_value=_statvfs_result(f_bavail=64, f_frsize=512))):
+        fs = FileSystem(dev)
+
+    assert fs.get_fs_mounting_point() == "/mnt/data"
+    assert fs.get_fs_free_size() == 64
 
 
 # End

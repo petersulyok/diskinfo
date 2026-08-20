@@ -3,12 +3,31 @@
 #    Peter Sulyok (C) 2022-2026.
 #
 import os
+import re
 from typing import Tuple
 from pyudev import Device
 from diskinfo.utils import size_in_hrf, _pyudev_getenc
 
 # Path to the kernel mount table.
 _PROC_MOUNTS = "/proc/mounts"
+
+# Octal escape sequence used by the kernel in the mount table (e.g. `\\040` for a space character).
+_MOUNT_ESCAPE_RE = re.compile(r"\\([0-7]{3})")
+
+
+def _unmangle_path(path: str) -> str:
+    """Decodes the octal escape sequences of a path in the kernel mount table. The kernel escapes the space,
+    tab, newline and backslash characters (i.e. ``\\040``, ``\\011``, ``\\012`` and ``\\134``) in the device node and
+    in the mounting point fields of ``/proc/mounts``.
+
+    Args:
+        path (str): path with escape sequences
+
+    Returns:
+        str: decoded path
+
+    """
+    return _MOUNT_ESCAPE_RE.sub(lambda m: chr(int(m.group(1), 8)), path)
 
 
 class FileSystem:
@@ -19,7 +38,8 @@ class FileSystem:
 
         1. The mounting point and available space are determined by reading ``/proc/mounts`` and calling
            :func:`os.statvfs`. If the file system is not mounted, the mounting point will be empty and the
-           free size will be ``0``.
+           free size will be ``0``. The octal escape sequences of the kernel mount table (e.g. ``\\040`` for a
+           space character) are decoded.
         2. Instances are created internally by :class:`~diskinfo.Partition` and :class:`~diskinfo.Disk`.
 
     Args:
@@ -55,10 +75,10 @@ class FileSystem:
                     parts = line.split()
                     if len(parts) < 2:
                         continue
-                    if parts[0] == path:
-                        self.__fs_mounting_point = parts[1]
+                    if _unmangle_path(parts[0]) == path:
+                        self.__fs_mounting_point = _unmangle_path(parts[1])
                         try:
-                            st = os.statvfs(parts[1])
+                            st = os.statvfs(self.__fs_mounting_point)
                             self.__fs_size = (st.f_blocks * st.f_frsize) // 512
                             self.__fs_free_size = (st.f_bavail * st.f_frsize) // 512
                         except OSError:
@@ -155,7 +175,8 @@ class FileSystem:
 
     def get_fs_mounting_point(self) -> str:
         """Returns the mounting point of the file system. The result could be empty if the device does not
-        contain any file system, or it is not mounted.
+        contain any file system, or it is not mounted. The octal escape sequences of the kernel mount table
+        (e.g. ``\\040`` for a space character) are decoded in the result.
         """
         return self.__fs_mounting_point
 
