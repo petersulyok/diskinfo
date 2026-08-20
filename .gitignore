@@ -130,3 +130,6 @@ dmypy.json
 # uv/ruff
 .python-version
 .ruff_cache
+
+# Draft files
+.draft/
