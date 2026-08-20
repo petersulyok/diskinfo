@@ -307,7 +307,8 @@ class Disk:
         return self.__wwn
 
     def get_model(self) -> str:
-        """Returns the disk model string.
+        """Returns the disk model string. The escape sequences of the udev property (e.g. ``\\x20`` for a space
+        character) are decoded in the result.
 
         Example:
             An example about the use of this function::

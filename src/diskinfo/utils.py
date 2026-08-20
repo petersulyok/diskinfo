@@ -2,8 +2,35 @@
 #    Module `utils`: implements utility functions.
 #    Peter Sulyok (C) 2022-2026.
 #
+import re
 from typing import List, Tuple, Union
 from pyudev import Device
+
+# Escape sequences of an udev `_ENC` property value (e.g. `\\x20` for a space character). One non-ASCII
+# character is stored as several consecutive sequences, one per UTF-8 byte, so they are matched in groups.
+_UDEV_ESCAPE_RE = re.compile(r"(?:\\x[0-9a-fA-F]{2})+")
+
+
+def _unescape_udev_value(value: str) -> str:
+    """Decodes the escape sequences of an udev ``_ENC`` property value. The udev escapes all bytes outside its
+    safe character set in the form of ``\\xNN``, where ``NN`` is the hexadecimal value of the byte. The escaped
+    bytes of a group are decoded together as an UTF-8 character.
+
+    Args:
+        value (str): property value with escape sequences
+
+    Returns:
+        str: decoded property value
+
+    Example:
+        An example about the use of the function::
+
+            >>> from diskinfo import *
+            >>> _unescape_udev_value("CL\\xc3\\x89\\x20USB")
+            "CLÉ USB"
+
+    """
+    return _UDEV_ESCAPE_RE.sub(lambda m: bytes.fromhex(m.group(0).replace("\\x", "")).decode("utf-8", "replace"), value)
 
 
 def _read_file(path, encoding: str = "utf-8") -> str:
@@ -217,8 +244,9 @@ def _pyudev_getint(device: Device, key: str, default_value: int = None) -> Union
 
 def _pyudev_getenc(dev: Device, key: str) -> Union[str, None]:
     """Returns one of the device attribute key pairs. There are udev attributes key pairs (e.g. `ID_MODEL` and
-    `ID_MODEL_ENC`), where this function first tries to read and decode the `_ENC` version of the key then the simple
-    key if the previous one does not exist.
+    `ID_MODEL_ENC`), where this function reads and decodes the `_ENC` version of the key if it exists, otherwise
+    the simple key will be read. The `_ENC` version is always preferred, because the simple key contains the
+    sanitized value of udev (e.g. the space characters are replaced there).
 
     Args:
         device (pyudev.Device): pyudev.Device() class
@@ -243,8 +271,7 @@ def _pyudev_getenc(dev: Device, key: str) -> Union[str, None]:
     # Read and decode the `_ENC` key.
     value = dev.get(key + "_ENC")
     if value:
-        if "\\x20" in value:
-            return value.replace("\\x20", " ").strip()
+        return _unescape_udev_value(value).strip()
     # Read the simple key.
     return dev.get(key)
 

@@ -12,6 +12,7 @@ from diskinfo.utils import (
     time_in_hrf,
     _pyudev_getint,
     _pyudev_getenc,
+    _unescape_udev_value,
 )
 
 
@@ -263,13 +264,29 @@ def test_pyudev_getenc_falls_back_when_enc_is_none():
     assert _pyudev_getenc(dev, "ID_MODEL") == "Samsung_SSD_850"
 
 
-def test_pyudev_getenc_enc_without_x20_falls_back_to_plain_key():
-    """_pyudev_getenc() uses the plain key when _ENC exists but has no \\x20."""
+def test_pyudev_getenc_prefers_enc_key_without_escapes():
+    """_pyudev_getenc() uses the _ENC key even if it does not contain any escape sequence."""
     dev = MagicMock()
     props = {"ID_MODEL_ENC": "SamsungSSD850", "ID_MODEL": "SamsungSSD850_plain"}
     dev.get.side_effect = props.get
-    # ENC has no \x20, so falls through to plain key
-    assert _pyudev_getenc(dev, "ID_MODEL") == "SamsungSSD850_plain"
+    # The _ENC key is the unsanitized value, so it wins over the plain key (issue #9).
+    assert _pyudev_getenc(dev, "ID_MODEL") == "SamsungSSD850"
+
+
+def test_pyudev_getenc_decodes_non_ascii_with_space():
+    """_pyudev_getenc() decodes a non-ASCII character and a space in the same value (issue #9)."""
+    dev = MagicMock()
+    props = {"ID_FS_LABEL_ENC": "CL\\xc3\\x89\\x20USB", "ID_FS_LABEL": "CLÉ_USB"}
+    dev.get.side_effect = props.get
+    assert _pyudev_getenc(dev, "ID_FS_LABEL") == "CLÉ USB"
+
+
+def test_pyudev_getenc_decodes_non_ascii_without_space():
+    """_pyudev_getenc() decodes a non-ASCII character when the value has no space (issue #9)."""
+    dev = MagicMock()
+    props = {"ID_FS_LABEL_ENC": "CL\\xc3\\x89USB", "ID_FS_LABEL": "CL_USB"}
+    dev.get.side_effect = props.get
+    assert _pyudev_getenc(dev, "ID_FS_LABEL") == "CLÉUSB"
 
 
 def test_pyudev_getenc_returns_none_when_both_keys_absent():
@@ -285,6 +302,38 @@ def test_pyudev_getenc_strips_whitespace_after_decode():
     props = {"ID_FS_LABEL_ENC": "\\x20My\\x20Label\\x20", "ID_FS_LABEL": "raw"}
     dev.get.side_effect = props.get
     assert _pyudev_getenc(dev, "ID_FS_LABEL") == "My Label"
+
+
+# ── _unescape_udev_value ──────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "escaped, expected",
+    [
+        ("SYSTEM", "SYSTEM"),
+        ("", ""),
+        ("Recovery\\x20tools", "Recovery tools"),
+        ("Samsung\\x20SSD\\x20850", "Samsung SSD 850"),
+        ("CL\\xc3\\x89\\x20USB", "CLÉ USB"),
+        ("CL\\xc3\\x89USB", "CLÉUSB"),
+        ("caf\\xc3\\xa9\\x20dr\\xc3\\xafve", "café drïve"),
+        ("\\xe2\\x82\\xac", "€"),
+        ("\\xC3\\x89", "É"),
+    ],
+)
+def test_unescape_udev_value_decodes_escapes(escaped, expected):
+    """_unescape_udev_value() decodes the udev escape sequences into UTF-8 characters."""
+    assert _unescape_udev_value(escaped) == expected
+
+
+def test_unescape_udev_value_invalid_utf8_is_replaced():
+    """_unescape_udev_value() replaces an invalid UTF-8 byte instead of raising an exception."""
+    assert _unescape_udev_value("bad\\xffend") == "bad\ufffdend"
+
+
+def test_unescape_udev_value_keeps_non_escape_text():
+    """_unescape_udev_value() keeps a backslash that is not part of an escape sequence."""
+    assert _unescape_udev_value("a\\xzz\\x41") == "a\\xzzA"
 
 
 # End
