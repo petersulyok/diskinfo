@@ -242,6 +242,35 @@ def _pyudev_getint(device: Device, key: str, default_value: int = None) -> Union
     return default_value
 
 
+def _pyudev_getesc(dev: Device, key: str) -> Union[str, None]:
+    """Returns a device attribute value where udev stores the escaped value in the property itself, so there is
+    no `_ENC` key pair (e.g. `ID_PART_ENTRY_NAME`). The escape sequences of the value will be decoded and the
+    result will be stripped.
+
+    Args:
+        device (pyudev.Device): pyudev.Device() class
+        key (str): attribute key
+
+    Returns:
+        Union[str, None]: str attribute value or None
+
+    Example:
+        An example about the use of the function::
+
+            >>> from diskinfo import *
+            >>> from pyudev import *
+            >>> c = Context()
+            >>> d = Devices.from_name(c, "block", "sda1")
+            >>> print(_pyudev_getesc(d, "ID_PART_ENTRY_NAME"))
+            Basic data partition
+
+    """
+    value = dev.get(key)
+    if value:
+        return _unescape_udev_value(value).strip()
+    return value
+
+
 def _pyudev_getenc(dev: Device, key: str) -> Union[str, None]:
     """Returns one of the device attribute key pairs. There are udev attributes key pairs (e.g. `ID_MODEL` and
     `ID_MODEL_ENC`), where this function reads and decodes the `_ENC` version of the key if it exists, otherwise

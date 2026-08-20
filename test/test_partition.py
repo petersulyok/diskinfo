@@ -373,4 +373,39 @@ def test_partition_repr():
     assert "filesystem=" in result
 
 
+# ── Partition – udev escape sequences in the partition label ─────────────────
+
+
+@pytest.mark.parametrize(
+    "escaped, expected",
+    [
+        ("EFI\\x20system\\x20partition", "EFI system partition"),
+        ("Basic\\x20data\\x20partition", "Basic data partition"),
+        ("Microsoft\\x20reserved\\x20partition", "Microsoft reserved partition"),
+        ("Boot", "Boot"),
+        ("Donn\\xc3\\xa9es", "Données"),
+    ],
+)
+def test_partition_decodes_part_label(escaped, expected):
+    """Partition decodes the udev escape sequences of the partition label (issue #10)."""
+    dev = _make_part_device(part_label=escaped)
+    m = _proc_mounts(("/dev/sda1", "/boot/efi"))
+    with (patch("builtins.open", m),
+          patch("os.statvfs", return_value=_statvfs_result(f_bavail=512000))):
+        p = Partition(dev)
+
+    assert p.get_part_label() == expected
+
+
+def test_partition_missing_part_label_stays_none():
+    """Partition keeps the missing partition label as None instead of raising an exception."""
+    dev = _make_part_device(part_label=None)
+    m = _proc_mounts(("/dev/sda1", "/boot/efi"))
+    with (patch("builtins.open", m),
+          patch("os.statvfs", return_value=_statvfs_result(f_bavail=512000))):
+        p = Partition(dev)
+
+    assert p.get_part_label() is None
+
+
 # End

@@ -13,6 +13,7 @@ from diskinfo.utils import (
     _pyudev_getint,
     _pyudev_getenc,
     _unescape_udev_value,
+    _pyudev_getesc,
 )
 
 
@@ -334,6 +335,37 @@ def test_unescape_udev_value_invalid_utf8_is_replaced():
 def test_unescape_udev_value_keeps_non_escape_text():
     """_unescape_udev_value() keeps a backslash that is not part of an escape sequence."""
     assert _unescape_udev_value("a\\xzz\\x41") == "a\\xzzA"
+
+
+# ── _pyudev_getesc ────────────────────────────────────────────────────────────
+
+
+def test_pyudev_getesc_decodes_escapes():
+    """_pyudev_getesc() decodes the escape sequences stored in the property value itself."""
+    dev = MagicMock()
+    dev.get.side_effect = {"ID_PART_ENTRY_NAME": "Basic\\x20data\\x20partition"}.get
+    assert _pyudev_getesc(dev, "ID_PART_ENTRY_NAME") == "Basic data partition"
+
+
+def test_pyudev_getesc_strips_whitespace_after_decode():
+    """_pyudev_getesc() strips the leading and trailing whitespaces after the decoding."""
+    dev = MagicMock()
+    dev.get.side_effect = {"ID_PART_ENTRY_NAME": "\\x20Boot\\x20"}.get
+    assert _pyudev_getesc(dev, "ID_PART_ENTRY_NAME") == "Boot"
+
+
+def test_pyudev_getesc_missing_key_returns_none():
+    """_pyudev_getesc() returns None if the key does not exist."""
+    dev = MagicMock()
+    dev.get.return_value = None
+    assert _pyudev_getesc(dev, "ID_PART_ENTRY_NAME") is None
+
+
+def test_pyudev_getesc_empty_value_is_kept():
+    """_pyudev_getesc() returns the empty value without decoding."""
+    dev = MagicMock()
+    dev.get.return_value = ""
+    assert _pyudev_getesc(dev, "ID_PART_ENTRY_NAME") == ""
 
 
 # End
