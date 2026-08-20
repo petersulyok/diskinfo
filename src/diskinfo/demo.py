@@ -227,7 +227,8 @@ def partition_demo(name: str):
         table.add_column("Type", justify="left", style="bold orchid")
         table.add_column("Start", justify="right", style="bold gray54")
         table.add_column("Size", justify="right", style="bold gray54")
-        table.add_column("Label", justify="left", style="bold purple3")
+        table.add_column("Part label", justify="left", style="bold sky_blue3")
+        table.add_column("FS label", justify="left", style="bold purple3")
         table.add_column("Mounting point", justify="left", style="bold green")
         table.add_column("Free", justify="right", style="bold blue")
         for p in plist:
@@ -237,7 +238,7 @@ def partition_demo(name: str):
             else:
                 free_size_str = "  - %"
             table.add_row(p.get_name(), fs.get_fs_type(), str(p.get_part_offset()), str(p.get_part_size()),
-                          fs.get_fs_label(), fs.get_fs_mounting_point(), free_size_str)
+                          p.get_part_label(), fs.get_fs_label(), fs.get_fs_mounting_point(), free_size_str)
             group = Group(panel, table)
 
     rprint(Panel(group, title="[markdown.strong]diskinfo demo: partitions[/]", title_align="left",
