@@ -427,10 +427,10 @@ The :class:`~diskinfo.FileSystem` class contains the following attributes:
         - Sample value
     *   - File system label
         - File system label
-        -
+        - `CLÉ USB`
     *   - File system UUID
         - File system UUID
-        -
+        - `d54d33ea-d892-44d9-ae24-e3c6216d7a32`
     *   - File system type
         - File system type
         - `ntfs` or `ext4`
@@ -440,12 +440,15 @@ The :class:`~diskinfo.FileSystem` class contains the following attributes:
     *   - File system usage
         - File system usage
         - `filesystem` or `other`
+    *   - File system size
+        - File system size in 512-byte blocks
+        -
     *   - File system free size
         - File system free size in 512-byte blocks
         -
     *   - File system mounting point
         - File system mounting point
-        - `/` or `/home`
+        - `/home` or `/mnt/My Files`
 
 Use case 7: read raw file system information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
