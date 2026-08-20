@@ -9,7 +9,7 @@
 project = "diskinfo"
 copyright = "2022-2026, Peter Sulyok"
 author = "Peter Sulyok"
-release = "4.1.2"
+release = "4.1.3"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
