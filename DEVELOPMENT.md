@@ -131,3 +131,12 @@ Follow these steps to create a new release:
 7. Commit all changes and test again
 8. Create a new release on GitHub with the same version number and the new package will be published on PyPI
    automatically
+
+NOTE: After a new release, the badges in `README.md` on GitHub may display the old values (e.g. the previous
+package version or Python versions) for up to 3 days, because GitHub caches the badge images. The cached image can
+be refreshed: copy the `https://camo.githubusercontent.com/...` address of the badge in the browser (_Copy image
+address_) and purge it:
+```
+   curl -X PURGE <camo-url>
+```
+Then reload the page ignoring browser cache (e.g. CTRL + SHIFT + R).
