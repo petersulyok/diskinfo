@@ -1,4 +1,4 @@
-name: Unit test and lint execution.
+name: Tests
 
 on:
   push:
