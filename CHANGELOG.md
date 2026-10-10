@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.2] - 2026-10-11
 
+### Added
+- New Python 3.15 support.
+
 ### Changed
-- Supported Python versions are 3.11-3.15 now: Python 3.10 support was dropped and Python 3.15 was added.
+- Python 3.10 support was dropped, the minimum Python version is 3.11 now.
 - 100% unit test coverage is required now.
 - The unused `mock` and `pytest-mock` packages were removed from the development dependencies.
 - `DEVELOPMENT.md` was updated.
+- GitHub workflow actions were upgraded to their latest versions.
 
 
 ## [4.1.3] - 2026-08-21
