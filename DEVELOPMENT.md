@@ -1,29 +1,30 @@
 # Development
-This is short summary about how to configure the development environment.
+This is a short summary about how to configure the development environment.
 
 ## Python environment
 This project is using `uv` for Python project management, see more details about [installation of `uv`](https://docs.astral.sh/uv/getting-started/installation/).
 `uv` can provide everything that multiple tools (e.g. `pip`, `pyenv`, `venv`) provide, but much faster. For example:
 
-* install a Python run-time: `uv python install 3.13`
-* use a specific Python version: `uv python pin 3.13`
+* install a Python run-time: `uv python install 3.14`
+* use a specific Python version: `uv python pin 3.14`
 * create virtual Python environment: `uv venv`
 * install all dependencies: `uv sync`
 * build package: `uv build`
 
 `uv` has a lock file (`uv.lock`) storing all dependencies, this should be part of version control.
 
-Building a development environment from scratch (with Python 3.12) contains the following steps:
+Building a development environment from scratch (with Python 3.14) contains the following steps:
 ```
       pipx install uv
       pipx ensurepath
-      git clone https://github.com/petersulyok/smfc.git
-      uv python install 3.12
-      uv python pin 3.12
+      git clone https://github.com/petersulyok/diskinfo.git
+      cd diskinfo
+      uv python install 3.14
+      uv python pin 3.14
       uv sync
-      source .venv/bin/activate
-      uv build
 ```
+`uv sync` also installs the `diskinfo` package itself in editable mode, so no extra installation step is needed.
+The tools can be executed with `uv run` without activating the virtual environment.
 Dependencies are listed in `pyproject.toml` file and the proper version numbers are handled by `uv`:
 ```
       dependencies = [
@@ -35,10 +36,8 @@ Dependencies are listed in `pyproject.toml` file and the proper version numbers 
       dev = [
           "build",
           "coverage",
-          "mock",
           "pytest",
           "pytest-cov",
-          "pytest-mock",
           "twine"
       ]
       lint = [
@@ -58,24 +57,21 @@ Dependencies are listed in `pyproject.toml` file and the proper version numbers 
 ## Linting
 The code can be checked with `pylint` and `ruff`:
 ```
-	pylint src test
-    ruff check
+   uv run pylint src/diskinfo/ test/
+   uv run ruff check .
 ```
+Their configuration options can be found in `pyproject.toml` file.
 ## Unit tests
 The unit tests can be executed with `pytest`:
 ```
-   pytest
+   uv run pytest
 ```
 The coverage can be also measured for unit tests:
 ```
-   pytest --cov=src --cov=test --cov-report=html
+   uv run pytest --cov --cov-report=html
 ```
-The HTML report will be generated at `./htmlcov` directory.
-The package is checked with `pylint` in the following way:
-```
-   pylint src/diskinfo/*.py test/*.py
-```
-Their configuration options can be found `pyproject.toml` file. 
+The HTML report will be generated at `./htmlcov` directory. The coverage settings are in `pyproject.toml` file,
+100% coverage is required, otherwise the coverage measurement fails.
 
 
 ## PyPI package
@@ -86,15 +82,10 @@ The `setuptools` is used to create Python distribution package to PyPI. All pack
 ```
 The new package can be uploaded to PyPI with `twine`:
 ```
-   twine upload --verbose dist/*
+   uv run twine upload --verbose dist/*
 ```
 NOTE: The distribution package will be built and published to PyPI automatically when a new GitHub release created!
 
-During the development this package can be installed locally with one of the following commands:
-```
-   pip install -e .
-   uv build
-```
 
 ## Documentation
 This project is using `sphinx` to generate documentation on [readthedocs.io](https://readthedocs.io/). The
@@ -103,11 +94,11 @@ created in GitHub, it will trigger documentation update on  [readthedocs.io](htt
 The required Python packages are managed by `uv`. The documentation can be built and tested locally:
 ```
    cd docs
-   make html
+   uv run make html
 ```
 The HTML documentation will be created in `./docs/build/html` folder.
 
-NOTE: Many times the browsers do not display new version of documentation (because of caching?). You may try to reload
+NOTE: Many times the browsers do not display new version of documentation (because of caching). You may try to reload
 the page ignoring browser cache (e.g. CTRL + SHIFT + R).
 
 
@@ -115,7 +106,7 @@ the page ignoring browser cache (e.g. CTRL + SHIFT + R).
 The project implemented the following GitHub workflows:
 
 1. **Unit test and lint execution** (`test.yml`). A commit triggers this action:
-   - executes unit test on `ubuntu-latest` OS and on Python versions `3.10`, `3.11`, `3.12`, `3.13`, `3.14`
+   - executes unit test on `ubuntu-latest` OS and on Python versions `3.11`, `3.12`, `3.13`, `3.14`, `3.15`
    - executes `pylint` and `ruff`
    - generates coverage data and upload it to [codecov.io](https://codecov.io/)
 
@@ -127,7 +118,7 @@ The project implemented the following GitHub workflows:
 Follow these steps to create a new release:
 
 1. Commit all changes
-2. Run `pytest` and `pylint` and correct all warnings and errors
+2. Run `pytest`, `pylint` and `ruff` and correct all warnings and errors
 3. Generate documentation locally and check it
 4. Change the version number in `pyproject.toml`
 5. Update `CHANGELOG.md` with the new release information

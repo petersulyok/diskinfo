@@ -19,7 +19,7 @@ Standard installation from `pypi <https://pypi.org>`_::
 
 The library has the following run-time requirements:
 
-    - Python version >= `3.10`
+    - Python version >= `3.11`
     - for reading SMART data with :meth:`~diskinfo.Disk.get_smart_data()` method, the `smartmontools` package is required
     - for reading disk temperature with :meth:`~diskinfo.Disk.get_temperature()` method, the following dependencies
       needs to be considered:
