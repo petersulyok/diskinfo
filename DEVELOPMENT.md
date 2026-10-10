@@ -120,9 +120,14 @@ Follow these steps to create a new release:
 1. Commit all changes
 2. Run `pytest`, `pylint` and `ruff` and correct all warnings and errors
 3. Generate documentation locally and check it
-4. Change the version number in `pyproject.toml`
+4. Change the version number and upgrade the dependencies with `uv` (e.g. for version `4.2.0`):
+   ```
+   uv version 4.2.0       # sets the version in pyproject.toml
+   uv lock --upgrade      # upgrades all packages in uv.lock to the latest versions
+   uv sync                # installs the new versions into .venv
+   ```
 5. Update `CHANGELOG.md` with the new release information
-6. Update the version number in  `docs/source/conf.py` 
+6. Update the version number in `docs/source/conf.py`
 7. Commit all changes and test again
 8. Create a new release on GitHub with the same version number and the new package will be published on PyPI
    automatically
