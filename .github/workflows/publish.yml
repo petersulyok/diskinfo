@@ -14,11 +14,11 @@ jobs:
       attestations: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: main
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: "3.14"
       - name: Build a binary wheel and a source tarball
