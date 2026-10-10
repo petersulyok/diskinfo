@@ -105,7 +105,7 @@ the page ignoring browser cache (e.g. CTRL + SHIFT + R).
 ## GitHub workflows
 The project implemented the following GitHub workflows:
 
-1. **Unit test and lint execution** (`test.yml`). A commit triggers this action:
+1. **Tests** (`test.yml`). A commit triggers this action:
    - executes unit test on `ubuntu-latest` OS and on Python versions `3.11`, `3.12`, `3.13`, `3.14`, `3.15`
    - executes `pylint` and `ruff`
    - generates coverage data and upload it to [codecov.io](https://codecov.io/)
