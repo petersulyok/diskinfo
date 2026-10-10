@@ -37,7 +37,7 @@ jobs:
       - name: Lint with ruff and pylint
         run: |
           uv run ruff check .
-          uv run pylint src/diskinfo/ test/
+          uv run pylint src test
       - name: Test with pytest
         run: uv run pytest
       - name: Generate coverage report

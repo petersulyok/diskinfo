@@ -57,7 +57,7 @@ Dependencies are listed in `pyproject.toml` file and the proper version numbers 
 ## Linting
 The code can be checked with `pylint` and `ruff`:
 ```
-   uv run pylint src/diskinfo/ test/
+   uv run pylint src test
    uv run ruff check .
 ```
 Their configuration options can be found in `pyproject.toml` file.
