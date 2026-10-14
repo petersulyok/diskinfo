@@ -498,7 +498,7 @@ wheels = [
 
 [[package]]
 name = "diskinfo"
-version = "4.2.0"
+version = "4.2.1"
 source = { editable = "." }
 default-groups = ["dev", "doc", "lint"]
 dependencies = [
