@@ -33,8 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   backslash characters do not break the free size calculation in `FileSystem` anymore
   (reported in [#8](https://github.com/petersulyok/diskinfo/issues/8) by @Pratham-Chauhan).
 - All escape sequences of the udev `_ENC` properties are decoded now, so file system labels, UUIDs and disk
-  models containing non-ASCII characters are returned properly
-  ([#9](https://github.com/petersulyok/diskinfo/issues/9)).
+  models containing special characters are returned properly, e.g. `Backup (2024)` instead of
+  `Backup \x282024\x29` ([#9](https://github.com/petersulyok/diskinfo/issues/9)).
 - The udev escape sequences of the partition label are decoded now, so `Partition.get_part_label()` returns
   `Basic data partition` instead of `Basic\x20data\x20partition`
   ([#10](https://github.com/petersulyok/diskinfo/issues/10)).
