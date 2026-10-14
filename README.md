@@ -4,7 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/diskinfo/badge/?version=latest)](https://diskinfo.readthedocs.io/en/latest/?badge=latest)
 [![Issues](https://img.shields.io/github/issues/petersulyok/diskinfo)](https://github.com/petersulyok/diskinfo/issues)
 [![Supported Python Versions](https://img.shields.io/pypi/pyversions/diskinfo)](https://pypi.org/project/diskinfo)
-[![PyPI version](https://badge.fury.io/py/diskinfo.svg)](https://badge.fury.io/py/diskinfo)
+[![PyPI version](https://img.shields.io/pypi/v/diskinfo)](https://pypi.org/project/diskinfo)
 
 Disk information Python library can assist in collecting disk information on Linux. In more details, it can:
 

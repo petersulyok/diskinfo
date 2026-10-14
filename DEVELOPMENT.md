@@ -133,7 +133,7 @@ Follow these steps to create a new release:
    automatically
 
 NOTE: After a new release, the badges in `README.md` on GitHub may display the old values (e.g. the previous
-package version or Python versions) for up to 3 days, because GitHub caches the badge images. The cached image can
+package version or Python versions) for up to a day, because GitHub caches the badge images. The cached image can
 be refreshed: copy the `https://camo.githubusercontent.com/...` address of the badge in the browser (_Copy image
 address_) and purge it:
 ```
