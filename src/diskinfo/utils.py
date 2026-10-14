@@ -6,8 +6,8 @@ import re
 from typing import List, Tuple, Union
 from pyudev import Device
 
-# Escape sequences of an udev `_ENC` property value (e.g. `\\x20` for a space character). One non-ASCII
-# character is stored as several consecutive sequences, one per UTF-8 byte, so they are matched in groups.
+# Escape sequences of an udev `_ENC` property value (e.g. `\\x20` for a space or `\\x28` for a `(` character).
+# Consecutive sequences are matched in groups, so the bytes of a multibyte UTF-8 character are decoded together.
 _UDEV_ESCAPE_RE = re.compile(r"(?:\\x[0-9a-fA-F]{2})+")
 
 
@@ -26,8 +26,8 @@ def _unescape_udev_value(value: str) -> str:
         An example about the use of the function::
 
             >>> from diskinfo import *
-            >>> _unescape_udev_value("CL\\xc3\\x89\\x20USB")
-            "CLÉ USB"
+            >>> _unescape_udev_value("Backup\\x20\\x282024\\x29")
+            "Backup (2024)"
 
     """
     return _UDEV_ESCAPE_RE.sub(lambda m: bytes.fromhex(m.group(0).replace("\\x", "")).decode("utf-8", "replace"), value)

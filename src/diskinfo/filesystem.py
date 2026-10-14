@@ -96,8 +96,8 @@ class FileSystem:
 
     def get_fs_label(self) -> str:
         """Returns the label of the file system. The result could be empty if the file system does not have a
-        label. The escape sequences of the udev property (e.g. ``\\xc3\\x89`` for the ``É`` character) are decoded
-        in the result.
+        label. The escape sequences of the udev property (e.g. ``\\x28`` and ``\\x29`` for the ``(`` and ``)``
+        characters) are decoded in the result.
         """
         return self.__fs_label
 

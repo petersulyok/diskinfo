@@ -311,6 +311,22 @@ def test_pyudev_getenc_decodes_non_ascii_without_space():
     assert _pyudev_getenc(dev, "ID_FS_LABEL") == "CLÉUSB"
 
 
+@pytest.mark.parametrize(
+    "plain, enc, expected",
+    [
+        ("Backup_(2024)", "Backup\\x20\\x282024\\x29", "Backup (2024)"),
+        ("Tom's_Disk", "Tom\\x27s\\x20Disk", "Tom's Disk"),
+        ("Média&Co", "Média\\x26Co", "Média&Co"),
+        ("CLÉ_USB", "CLÉ\\x20USB", "CLÉ USB"),
+    ],
+)
+def test_pyudev_getenc_decodes_libblkid_values(plain, enc, expected):
+    """_pyudev_getenc() returns the real label from the property pairs produced by libblkid (`blkid -p -o udev`)."""
+    dev = MagicMock()
+    dev.get.side_effect = {"ID_FS_LABEL": plain, "ID_FS_LABEL_ENC": enc}.get
+    assert _pyudev_getenc(dev, "ID_FS_LABEL") == expected
+
+
 def test_pyudev_getenc_returns_empty_string_when_both_keys_absent():
     """_pyudev_getenc() returns an empty string when neither _ENC nor plain key exists."""
     dev = MagicMock()
@@ -341,6 +357,10 @@ def test_pyudev_getenc_strips_whitespace_after_decode():
         ("caf\\xc3\\xa9\\x20dr\\xc3\\xafve", "café drïve"),
         ("\\xe2\\x82\\xac", "€"),
         ("\\xC3\\x89", "É"),
+        # Values as libblkid encodes them: special ASCII characters are escaped, non-ASCII letters are not.
+        ("Backup\\x20\\x282024\\x29", "Backup (2024)"),
+        ("Tom\\x27s\\x20Disk", "Tom's Disk"),
+        ("Média\\x26Co", "Média&Co"),
     ],
 )
 def test_unescape_udev_value_decodes_escapes(escaped, expected):
