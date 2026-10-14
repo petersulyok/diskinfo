@@ -4,7 +4,7 @@
 #
 from typing import List, Tuple
 from pyudev import Device
-from diskinfo.utils import size_in_hrf, _pyudev_getint, _pyudev_getesc
+from diskinfo.utils import size_in_hrf, _pyudev_getint, _pyudev_getesc, _pyudev_getstr
 from diskinfo.filesystem import FileSystem
 
 
@@ -95,10 +95,10 @@ class Partition:
                 continue
 
         # Save further partition attributes.
-        self.__part_scheme = _device.get("ID_PART_ENTRY_SCHEME")
+        self.__part_scheme = _pyudev_getstr(_device, "ID_PART_ENTRY_SCHEME")
         self.__part_label = _pyudev_getesc(_device, "ID_PART_ENTRY_NAME")
-        self.__part_uuid = _device.get("ID_PART_ENTRY_UUID")
-        self.__part_type = _device.get("ID_PART_ENTRY_TYPE")
+        self.__part_uuid = _pyudev_getstr(_device, "ID_PART_ENTRY_UUID")
+        self.__part_type = _pyudev_getstr(_device, "ID_PART_ENTRY_TYPE")
         self.__part_number = _pyudev_getint(_device, "ID_PART_ENTRY_NUMBER", 0)
         self.__part_offset = _pyudev_getint(_device, "ID_PART_ENTRY_OFFSET", -1)
         self.__part_size = _pyudev_getint(_device, "ID_PART_ENTRY_SIZE", 0)

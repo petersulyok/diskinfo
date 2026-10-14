@@ -397,15 +397,30 @@ def test_partition_decodes_part_label(escaped, expected):
     assert p.get_part_label() == expected
 
 
-def test_partition_missing_part_label_stays_none():
-    """Partition keeps the missing partition label as None instead of raising an exception."""
+def test_partition_missing_part_label_returns_empty_string():
+    """Partition returns an empty string for a missing partition label instead of raising an exception."""
     dev = _make_part_device(part_label=None)
     m = _proc_mounts(("/dev/sda1", "/boot/efi"))
     with (patch("builtins.open", m),
           patch("os.statvfs", return_value=_statvfs_result(f_bavail=512000))):
         p = Partition(dev)
 
-    assert p.get_part_label() is None
+    assert p.get_part_label() == ""
+
+
+def test_partition_missing_properties_return_empty_strings():
+    """Partition and its FileSystem return empty strings (not None) for all missing udev string properties."""
+    dev = _make_part_device(scheme=None, part_label=None, part_uuid=None, part_type=None, fs_label=None,
+                            fs_uuid=None, fs_type=None, fs_version=None, fs_usage=None)
+    with patch("builtins.open", _proc_mounts()):
+        p = Partition(dev)
+
+    fs = p.get_filesystem()
+    values = [p.get_part_scheme(), p.get_part_label(), p.get_part_uuid(), p.get_part_type(), fs.get_fs_label(),
+              fs.get_fs_uuid(), fs.get_fs_type(), fs.get_fs_version(), fs.get_fs_usage()]
+    assert values == [""] * 9
+    # A typical caller pattern must not fail on a partition without a label.
+    assert fs.get_fs_label().startswith("hassos") is False
 
 
 # End

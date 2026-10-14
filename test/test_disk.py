@@ -1053,6 +1053,18 @@ def test_disk_blank_no_filesystem():
     assert d.get_filesystem() is None
 
 
+def test_disk_missing_properties_return_empty_strings():
+    """Disk returns empty strings (not None) for all missing udev string properties."""
+    dev = _make_device(name="sdc", dev_id="8:32", size=2097152, phys_bs=512, log_bs=512, rotational="1",
+                       serial=None, firmware=None, wwn=None, model=None, part_table_type=None, part_table_uuid=None)
+    with pyudev_patched(dev):
+        d = Disk(dev.sys_name)
+
+    values = [d.get_serial_number(), d.get_firmware(), d.get_wwn(), d.get_model(), d.get_partition_table_type(),
+              d.get_partition_table_uuid()]
+    assert values == [""] * 6
+
+
 def test_disk_with_partitions_no_raw_filesystem(ssd_device):
     """Disk does not detect a raw filesystem when partitions exist."""
     part = _make_partition_device(

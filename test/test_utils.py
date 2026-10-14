@@ -14,6 +14,7 @@ from diskinfo.utils import (
     _pyudev_getenc,
     _unescape_udev_value,
     _pyudev_getesc,
+    _pyudev_getstr,
 )
 
 
@@ -246,6 +247,26 @@ def test_pyudev_getint_non_integer_no_default_returns_none():
     assert _pyudev_getint(dev, "key") is None
 
 
+# ── _pyudev_getstr ────────────────────────────────────────────────────────────
+
+
+def test_pyudev_getstr_returns_value():
+    """_pyudev_getstr() returns the value of an existing key."""
+    dev = MagicMock()
+    dev.get.side_effect = {"ID_FS_TYPE": "ext4"}.get
+    assert _pyudev_getstr(dev, "ID_FS_TYPE") == "ext4"
+
+
+@pytest.mark.parametrize("value", [None, ""], ids=["missing", "empty"])
+def test_pyudev_getstr_missing_or_empty_returns_empty_string(value):
+    """_pyudev_getstr() returns an empty string if the key does not exist or its value is empty."""
+    dev = MagicMock()
+    dev.get.return_value = value
+    result = _pyudev_getstr(dev, "ID_FS_TYPE")
+    assert result == ""
+    assert isinstance(result, str)
+
+
 # ── _pyudev_getenc ────────────────────────────────────────────────────────────
 
 
@@ -290,11 +311,11 @@ def test_pyudev_getenc_decodes_non_ascii_without_space():
     assert _pyudev_getenc(dev, "ID_FS_LABEL") == "CLÉUSB"
 
 
-def test_pyudev_getenc_returns_none_when_both_keys_absent():
-    """_pyudev_getenc() returns None when neither _ENC nor plain key exists."""
+def test_pyudev_getenc_returns_empty_string_when_both_keys_absent():
+    """_pyudev_getenc() returns an empty string when neither _ENC nor plain key exists."""
     dev = MagicMock()
     dev.get.return_value = None
-    assert _pyudev_getenc(dev, "ID_MODEL") is None
+    assert _pyudev_getenc(dev, "ID_MODEL") == ""
 
 
 def test_pyudev_getenc_strips_whitespace_after_decode():
@@ -354,11 +375,11 @@ def test_pyudev_getesc_strips_whitespace_after_decode():
     assert _pyudev_getesc(dev, "ID_PART_ENTRY_NAME") == "Boot"
 
 
-def test_pyudev_getesc_missing_key_returns_none():
-    """_pyudev_getesc() returns None if the key does not exist."""
+def test_pyudev_getesc_missing_key_returns_empty_string():
+    """_pyudev_getesc() returns an empty string if the key does not exist."""
     dev = MagicMock()
     dev.get.return_value = None
-    assert _pyudev_getesc(dev, "ID_PART_ENTRY_NAME") is None
+    assert _pyudev_getesc(dev, "ID_PART_ENTRY_NAME") == ""
 
 
 def test_pyudev_getesc_empty_value_is_kept():

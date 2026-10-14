@@ -7,7 +7,7 @@ import re
 from typing import List, Tuple, Union
 import pySMART
 from pyudev import Context, Device, Devices, DeviceNotFoundAtPathError
-from diskinfo.utils import _read_file, size_in_hrf, _pyudev_getenc
+from diskinfo.utils import _read_file, size_in_hrf, _pyudev_getenc, _pyudev_getstr
 from diskinfo.disktype import DiskType
 from diskinfo.filesystem import FileSystem
 from diskinfo.partition import Partition
@@ -186,11 +186,11 @@ class Disk:
                 raise RuntimeError(f"Disk type cannot be determined: disk={pyudev_device.sys_name}, queue/rotational={rotational}.")
 
         # Read further disk attributes.
-        self.__serial_number = pyudev_device.get("ID_SERIAL_SHORT")
-        self.__firmware = pyudev_device.get("ID_REVISION")
-        self.__wwn = pyudev_device.get("ID_WWN")
-        self.__part_table_type = pyudev_device.get("ID_PART_TABLE_TYPE")
-        self.__part_table_uuid = pyudev_device.get("ID_PART_TABLE_UUID")
+        self.__serial_number = _pyudev_getstr(pyudev_device, "ID_SERIAL_SHORT")
+        self.__firmware = _pyudev_getstr(pyudev_device, "ID_REVISION")
+        self.__wwn = _pyudev_getstr(pyudev_device, "ID_WWN")
+        self.__part_table_type = _pyudev_getstr(pyudev_device, "ID_PART_TABLE_TYPE")
+        self.__part_table_uuid = _pyudev_getstr(pyudev_device, "ID_PART_TABLE_UUID")
         self.__model = _pyudev_getenc(pyudev_device, "ID_MODEL")
 
         # Read `/dev/disk/by-byid/` and `/dev/disk/by-path/` path elements.

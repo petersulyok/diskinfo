@@ -242,17 +242,42 @@ def _pyudev_getint(device: Device, key: str, default_value: int = None) -> Union
     return default_value
 
 
-def _pyudev_getesc(dev: Device, key: str) -> Union[str, None]:
-    """Returns a device attribute value where udev stores the escaped value in the property itself, so there is
-    no `_ENC` key pair (e.g. `ID_PART_ENTRY_NAME`). The escape sequences of the value will be decoded and the
-    result will be stripped.
+def _pyudev_getstr(device: Device, key: str) -> str:
+    """Returns a string attribute value of a pyudev.Device() class. The function returns an empty string if the
+    attribute does not exist.
 
     Args:
         device (pyudev.Device): pyudev.Device() class
         key (str): attribute key
 
     Returns:
-        Union[str, None]: str attribute value or None
+        str: attribute value or empty string
+
+    Example:
+        An example about the use of the function::
+
+            >>> from diskinfo import *
+            >>> from pyudev import *
+            >>> c = Context()
+            >>> d = Devices.from_name(c, "block", "sda1")
+            >>> print(_pyudev_getstr(d, "ID_FS_TYPE"))
+            ext4
+
+    """
+    return device.get(key) or ""
+
+
+def _pyudev_getesc(dev: Device, key: str) -> str:
+    """Returns a device attribute value where udev stores the escaped value in the property itself, so there is
+    no `_ENC` key pair (e.g. `ID_PART_ENTRY_NAME`). The escape sequences of the value will be decoded and the
+    result will be stripped. The function returns an empty string if the attribute does not exist.
+
+    Args:
+        device (pyudev.Device): pyudev.Device() class
+        key (str): attribute key
+
+    Returns:
+        str: attribute value or empty string
 
     Example:
         An example about the use of the function::
@@ -268,21 +293,22 @@ def _pyudev_getesc(dev: Device, key: str) -> Union[str, None]:
     value = dev.get(key)
     if value:
         return _unescape_udev_value(value).strip()
-    return value
+    return ""
 
 
-def _pyudev_getenc(dev: Device, key: str) -> Union[str, None]:
+def _pyudev_getenc(dev: Device, key: str) -> str:
     """Returns one of the device attribute key pairs. There are udev attributes key pairs (e.g. `ID_MODEL` and
     `ID_MODEL_ENC`), where this function reads and decodes the `_ENC` version of the key if it exists, otherwise
     the simple key will be read. The `_ENC` version is always preferred, because the simple key contains the
-    sanitized value of udev (e.g. the space characters are replaced there).
+    sanitized value of udev (e.g. the space characters are replaced there). The function returns an empty string
+    if none of the attributes exists.
 
     Args:
         device (pyudev.Device): pyudev.Device() class
         key (str): attribute key
 
     Returns:
-        Union[str, None]: str attribute value or None
+        str: attribute value or empty string
 
     Example:
         An example about the use of the function::
@@ -302,7 +328,7 @@ def _pyudev_getenc(dev: Device, key: str) -> Union[str, None]:
     if value:
         return _unescape_udev_value(value).strip()
     # Read the simple key.
-    return dev.get(key)
+    return dev.get(key) or ""
 
 
 # End

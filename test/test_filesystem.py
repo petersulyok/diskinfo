@@ -83,6 +83,31 @@ def test_filesystem_stores_all_attributes():
     assert fs.get_fs_mounting_point() == "/mnt/data"
 
 
+@pytest.mark.parametrize("attribute", ["fs_label", "fs_uuid", "fs_type", "fs_version", "fs_usage"])
+def test_filesystem_missing_attribute_returns_empty_string(attribute):
+    """FileSystem returns an empty string (not None) when a udev property is missing."""
+    dev = _make_fs_device(**{attribute: None})
+    with patch("builtins.open", _proc_mounts()):
+        fs = FileSystem(dev)
+
+    value = getattr(fs, f"get_{attribute}")()
+    assert value == ""
+    assert isinstance(value, str)
+
+
+def test_filesystem_without_any_property_returns_empty_strings():
+    """FileSystem of a device without file system properties (e.g. a reserved partition) returns empty values."""
+    dev = _make_fs_device(fs_label=None, fs_uuid=None, fs_type=None, fs_version=None, fs_usage=None)
+    with patch("builtins.open", _proc_mounts()):
+        fs = FileSystem(dev)
+
+    values = [fs.get_fs_label(), fs.get_fs_uuid(), fs.get_fs_type(), fs.get_fs_version(), fs.get_fs_usage(),
+              fs.get_fs_mounting_point()]
+    assert values == [""] * 6
+    assert fs.get_fs_size() == 0
+    assert fs.get_fs_free_size() == 0
+
+
 # ── FileSystem.__init__ – /proc/mounts parsing ──────────────────────────
 
 

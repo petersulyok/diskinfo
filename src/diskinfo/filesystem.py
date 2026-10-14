@@ -6,7 +6,7 @@ import os
 import re
 from typing import Tuple
 from pyudev import Device
-from diskinfo.utils import size_in_hrf, _pyudev_getenc
+from diskinfo.utils import size_in_hrf, _pyudev_getenc, _pyudev_getstr
 
 # Path to the kernel mount table.
 _PROC_MOUNTS = "/proc/mounts"
@@ -60,9 +60,9 @@ class FileSystem:
         # Read filesystem attributes from udev properties.
         self.__fs_label = _pyudev_getenc(_device, "ID_FS_LABEL")
         self.__fs_uuid = _pyudev_getenc(_device, "ID_FS_UUID")
-        self.__fs_type = _device.get("ID_FS_TYPE")
-        self.__fs_version = _device.get("ID_FS_VERSION")
-        self.__fs_usage = _device.get("ID_FS_USAGE")
+        self.__fs_type = _pyudev_getstr(_device, "ID_FS_TYPE")
+        self.__fs_version = _pyudev_getstr(_device, "ID_FS_VERSION")
+        self.__fs_usage = _pyudev_getstr(_device, "ID_FS_USAGE")
         self.__fs_mounting_point = ""
         self.__fs_size = 0
         self.__fs_free_size = 0
